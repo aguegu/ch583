@@ -7,20 +7,21 @@ This repo is folked from https://github.com/openwch/ch583. The goal is provide a
 
 * GCC toolchains
 
+*riscv-embedded-gcc.tar.xz* is the gzipped of 'RISC-V Embedded GCC' folder in [MRS_Toolchain_Linux_x64_V1.80.tar.xz](http://file.mounriver.com/tools/MRS_Toolchain_Linux_x64_V1.80.tar.xz), extract it with
+
 ```
 tar xJf riscv-embedded-gcc.tar.xz`
 ```
 
-`riscv-embedded-gcc.tar.xz` is the gzipped of 'RISC-V Embedded GCC' folder in [MRS_Toolchain_Linux_x64_V1.80.tar.xz](http://file.mounriver.com/tools/MRS_Toolchain_Linux_x64_V1.80.tar.xz), extract it with
-
 * install USB driver for ISP
+
+*isp/WCHISPTool_CMD* folder comes from [WCHISPTool_CMD_ZIP](https://www.wch.cn/downloads/WCHISPTool_CMD_ZIP.html) (Linux x64)
+*isp/config.ini* is exported from [WCHISPTool on Windows](https://www.wch.cn/downloads/WCHISPTool_Setup_exe.html)
+
 ```
 cd isp/driver
 sudo make install
 ```
-
-`isp/WCHISPTool_CMD` folder comes from [WCHISPTool_CMD_ZIP](https://www.wch.cn/downloads/WCHISPTool_CMD_ZIP.html) (Linux x64)
-`isp/config.ini` is exported from [WCHISPTool on Windows](https://www.wch.cn/downloads/WCHISPTool_Setup_exe.html)
 
 2. Try Demo Codes
 
@@ -31,11 +32,11 @@ cd examples/UART1
 make
 ```
 
-It would get the *hex* file compiled in its `dist/` folder
+It would get the *hex* file compiled in its `dist/` folder.
 
-to program this hex into the board. you would have to make the chip go into ISP mode.
+To program this hex into the board, you would have to make the chip go into ISP mode.
 
-Take the official `CH583M-R0-1v1` EVT board as example, it would take these steps.
+Take the official `CH583M-R0-1v1` EVT board [Circuit schematic](EVT/PUB/CH583SCH.PDF) as example, it would take these steps.
 
 ![CH583 EVT Board](datasheets/ch583-evt.avif)
 
@@ -57,32 +58,32 @@ Take the official `CH583M-R0-1v1` EVT board as example, it would take these step
 
       ***But the MCU would exit ISP mode in like 5 seconds***
 
-During this short ISP period, try
+  4. During this short ISP period, try
 
-```
-make flash
-```
+  ```
+  make flash
+  ```
 
-If everything works, the output would look like
+  If everything works, the output would look like
 
-```
-sudo ../../isp/WCHISPTool_CMD -p /dev/ch37x0 -c ../../isp/config.ini -o program -f dist/UART1.hex
+  ```
+  sudo ../../isp/WCHISPTool_CMD -p /dev/ch37x0 -c ../../isp/config.ini -o program -f dist/UART1.hex
 
-=====ISP_Command_Tool=====
+  =====ISP_Command_Tool=====
 
-TOOL VERSION:  V3.60
+  TOOL VERSION:  V3.60
 
-p:/dev/ch37x0
-b:0
-v:0
-c:../../isp/config.ini
-o:0
-f:dist/UART1.hex
+  p:/dev/ch37x0
+  b:0
+  v:0
+  c:../../isp/config.ini
+  o:0
+  f:dist/UART1.hex
 
-{"Device":"/dev/ch37x0","Status":"Ready"}
-{"Device":"/dev/ch37x0", "Status":"Programming", "Progress":100%}
-{"Device":/dev/ch37x0", "Status":"Finished", "Code":0,"Message":"Succeed"}
-```
+  {"Device":"/dev/ch37x0","Status":"Ready"}
+  {"Device":"/dev/ch37x0", "Status":"Programming", "Progress":100%}
+  {"Device":/dev/ch37x0", "Status":"Finished", "Code":0,"Message":"Succeed"}
+  ```
 
 Enjoy and have fun.
 
@@ -92,12 +93,6 @@ Enjoy and have fun.
 ### Overview
 
 The CH583 is a 32-bit RISC microcontroller integrated with BLE wireless communication. The CH583 provides abundant peripheral sources, such as 2Mbps BLE communication module, 2 full-speed USB host and device controller and transceiver, 2 SPIs, 4 UARTs, ADC, touch-key detection module and RTC, etc.
-
-
-
-### System Block Diagram
-
-<img src="image\frame.jpg" alt="frame" style="zoom:50%;" />
 
 ### Features
 
