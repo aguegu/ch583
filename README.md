@@ -1,10 +1,16 @@
+@aguegu/ch583
+===
+
+This repo is folked from https://github.com/openwch/ch583. The goal is provide a quick and plain work environment to ch58x development under Linux.
+
+
 # RISC-V Core BLE5.3 MCU, CH583
 
 ### Overview
 
 The CH583 is a 32-bit RISC microcontroller integrated with BLE wireless communication. The CH583 provides abundant peripheral sources, such as 2Mbps BLE communication module, 2 full-speed USB host and device controller and transceiver, 2 SPIs, 4 UARTs, ADC, touch-key detection module and RTC, etc.
 
- 
+
 
 ### System Block Diagram
 
