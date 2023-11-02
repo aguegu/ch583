@@ -42,6 +42,7 @@ version:
 
 clean:
 	rm -rf $(OUTPUT_DIR)
+	mkdir -p $(OUTPUT_DIR)/asm
 
 $(OUTPUT_DIR)/asm/%.o: %.S
 	$(CC) $(CFLAGS) -MMD -MP -x assembler-with-cpp -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
