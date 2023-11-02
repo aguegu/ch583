@@ -6,7 +6,7 @@
 // to see Leds blink
 
 int main() {
-  SetSysClock(CLK_SOURCE_HSE_16MHz);
+  SetSysClock(CLK_SOURCE_PLL_60MHz);
 
   GPIOB_ModeCfg(GPIO_Pin_18, GPIO_ModeOut_PP_5mA);
   GPIOB_ModeCfg(GPIO_Pin_19, GPIO_ModeOut_PP_5mA);
