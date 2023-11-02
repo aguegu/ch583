@@ -2,6 +2,7 @@
 BIN     = ../../riscv-embedded-gcc/bin
 CC      = $(BIN)/riscv-none-embed-gcc
 CFLAGS  = -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -g
+DEFINES = 
 
 OUTPUT_DIR = ./dist
 
@@ -48,7 +49,7 @@ $(OUTPUT_DIR)/asm/%.o: %.S
 	$(CC) $(CFLAGS) -MMD -MP -x assembler-with-cpp -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
 $(OUTPUT_DIR)/%.o: %.c
-	$(CC) $(CFLAGS) -MMD -MP $(INCLUDE) -DDEBUG=1 -std=gnu99 -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
+	$(CC) $(CFLAGS) -MMD -MP $(INCLUDE) $(DEFINES) -std=gnu99 -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
 $(TARGET).elf: $(StdPeriphDriver_OBJECTS) $(RVMSIS_OBJECTS) $(Project_OBJECTS) $(Startup_OBJECTS)
 	$(CC) $(CFLAGS) -T "$(LINK_FILE)" -nostartfiles -Xlinker --gc-sections -L"../" -L"$(StdPeriphDriver_ROOT)" -Xlinker --print-memory-usage -Wl,-Map,"$(TARGET).map" --specs=nano.specs --specs=nosys.specs -o "$(TARGET).elf" $^ -lISP583

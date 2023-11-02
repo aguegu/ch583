@@ -2,7 +2,7 @@
 BIN     = ../../riscv-embedded-gcc/bin
 CC      = $(BIN)/riscv-none-embed-gcc
 CFLAGS  = -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -g
-DEFINES = -DDEBUG=1 -DFREQ_SYS=16000000
+DEFINES = 
 
 OUTPUT_DIR = ./dist
 
