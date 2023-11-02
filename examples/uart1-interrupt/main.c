@@ -10,7 +10,7 @@ int main() {
 
   GPIOA_SetBits(GPIO_Pin_9);
   GPIOA_ModeCfg(GPIO_Pin_8, GPIO_ModeIN_PU);      // RXD: PA8, in with pullup
-  GPIOA_ModeCfg(GPIO_Pin_9, GPIO_ModeOut_PP_5mA); // TXD: PA9, pushpoll, but set it high beforehand
+  GPIOA_ModeCfg(GPIO_Pin_9, GPIO_ModeOut_PP_5mA); // TXD: PA9, pushpull, but set it high beforehand
   UART1_DefInit();  // default baudrate 115200
   // UART1_BaudRateCfg(9600); // uncomment if prefer other baudrate
 
