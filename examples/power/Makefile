@@ -16,7 +16,7 @@ Project_OBJECTS := $(addprefix $(OUTPUT_DIR)/, $(Project_SOURCE:.c=.o))
 StdPeriphDriver_ROOT    = ../../EVT/EXAM/SRC/StdPeriphDriver
 StdPeriphDriver_INC_DIR = $(StdPeriphDriver_ROOT)/inc
 StdPeriphDriver_SRC_DIR = $(StdPeriphDriver_ROOT)
-StdPeriphDriver_SOURCE  = CH58x_uart1.c CH58x_sys.c CH58x_gpio.c CH58x_pwr.c
+StdPeriphDriver_SOURCE  = CH58x_uart1.c CH58x_sys.c CH58x_gpio.c CH58x_pwr.c CH58x_clk.c
 StdPeriphDriver_OBJECTS := $(addprefix $(OUTPUT_DIR)/, $(StdPeriphDriver_SOURCE:.c=.o))
 
 RVMSIS_ROOT		= ../../EVT/EXAM/SRC/RVMSIS

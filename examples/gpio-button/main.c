@@ -6,12 +6,12 @@
 // to see Leds blink
 // PB4 is connected to the Key Button onboard
 
-int main() {  
+int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
 
   GPIOB_ModeCfg(GPIO_Pin_18, GPIO_ModeOut_PP_5mA);  // Led 1
   GPIOB_ModeCfg(GPIO_Pin_19, GPIO_ModeOut_PP_5mA);  // Led 2
-  GPIOB_ModeCfg(GPIO_Pin_4, GPIO_ModeIN_PU);        // Key
+  GPIOB_ModeCfg(GPIO_Pin_4, GPIO_ModeIN_PU);        // Key Button
 
   while(1) {
     if (GPIOB_ReadPortPin(GPIO_Pin_4)) {
