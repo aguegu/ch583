@@ -3,6 +3,8 @@
 
 This repo is folked from https://github.com/openwch/ch583. The goal is provide a quick and plain work environment to ch58x development under Linux and without `Mounriver Studio`.
 
+Since WCH ch581/ch582/ch583 share the same datasheets and official EVT examples, this repo should be fine for WCH ch58x series.
+
 1. Setup Toolchains
 
 * GCC toolchains
@@ -25,10 +27,10 @@ sudo make install
 
 2. Try Demo Codes
 
-* Goto `examples`, like `examples/UART1`
+* Goto `examples`, like `examples/gpio-toggleLed`
 
 ```
-cd examples/UART1
+cd examples/gpio-toggleLed
 make
 ```
 
