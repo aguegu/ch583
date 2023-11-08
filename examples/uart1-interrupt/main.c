@@ -33,7 +33,7 @@ void UART1_IRQHandler(void) {
       UART1_GetLinSTA();
       break;
     case UART_II_RECV_RDY: // 数据达到设置触发点
-      for (i = 0; i != trigB; i++)         {
+      for (i = 0; i != trigB; i++) {
         RxBuff[i] = UART1_RecvByte();
         UART1_SendByte(RxBuff[i]);
       }
@@ -42,7 +42,7 @@ void UART1_IRQHandler(void) {
       i = UART1_RecvString(RxBuff);
       UART1_SendString(RxBuff, i);
       break;
-    case UART_II_THR_EMPTY: // 发送缓存区空，可继续发送
+    case UART_II_THR_EMPTY: // 发送缓存区空，可继续发送      
       break;
     case UART_II_MODEM_CHG: // 只支持串口0
       break;

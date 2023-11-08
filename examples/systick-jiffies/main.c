@@ -2,6 +2,7 @@
 #include "CH58x_common.h"
 
 volatile uint32_t jiffies = 0;
+uint32_t wfiCounts = 0;
 
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
@@ -18,6 +19,7 @@ void delayInJiffy(uint32_t t) {
       t--;
       start++;
     } else {
+      wfiCounts++;
       __WFI();
       __nop();
       __nop();
@@ -39,7 +41,7 @@ int main() {
 
   while(1) {
     GPIOB_InverseBits(GPIO_Pin_18 | GPIO_Pin_19);
-    printf("ChipID: %02x, SysClock: %ldHz, jiffies: %ld\n", R8_CHIP_ID, GetSysClock(), jiffies);
+    printf("ChipID: %02x, SysClock: %ldHz, jiffies: %ld, wfiCounts: %ld\n", R8_CHIP_ID, GetSysClock(), jiffies, wfiCounts);
     delayInJiffy(60);
   }
 }
