@@ -3,10 +3,10 @@
  * Author             : WCH
  * Version            : V1.0
  * Date               : 2022/11/04
- * Description        : 
+ * Description        :
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -14,8 +14,8 @@
 #include "CH58x_common.h"
 
 /**
- * Note: Ö÷»úÓë´Ó»úµÄDEBUG½Ó¿ÚĞèÒªÍ¬Ê±´ò¿ª»ò¹Ø±Õ£¬
- * ·ñÔò»á²úÉúÊ±ĞòÎÊÌâ¡£
+ * Note: ä¸»æœºä¸ä»æœºçš„DEBUGæ¥å£éœ€è¦åŒæ—¶æ‰“å¼€æˆ–å…³é—­ï¼Œ
+ * å¦åˆ™ä¼šäº§ç”Ÿæ—¶åºé—®é¢˜ã€‚
  */
 // #define CONFIG_I2C_DEBUG
 
@@ -60,7 +60,7 @@ void i2c_app_init(uint8_t address)
     I2C_ITConfig(I2C_IT_BUF, ENABLE);
     I2C_ITConfig(I2C_IT_EVT, ENABLE);
     I2C_ITConfig(I2C_IT_ERR, ENABLE);
-    
+
     PFIC_EnableIRQ(I2C_IRQn);
 }
 
@@ -271,7 +271,7 @@ void I2C_IRQHandler(void)
                 /* if there is data to send, send it, otherwise stop */
                 if (i2c_master_buffer_index < i2c_master_buffer_length) {
                     I2C_SendData(i2c_master_buffer[i2c_master_buffer_index++]);
-                    I2C_DBG("  send (%#x)\n", 
+                    I2C_DBG("  send (%#x)\n",
                             i2c_master_buffer[i2c_master_buffer_index - 1]);
                 } else {
                     if (i2c_send_stop) {
@@ -305,14 +305,14 @@ void I2C_IRQHandler(void)
             I2C_DBG("Master receiver:\n");
 
             /* address sent, ack received */
-            if(event & RB_I2C_ADDR) { 
+            if(event & RB_I2C_ADDR) {
                 /* ack if more bytes are expected, otherwise nack */
                 if (i2c_master_buffer_length) {
                     I2C_AcknowledgeConfig(ENABLE);
                     I2C_DBG("  address sent\n");
                     I2C_DBG("  ACK next\n");
                 } else {
-                    //XXX: Should not delay too match before NACK 
+                    //XXX: Should not delay too match before NACK
                     I2C_AcknowledgeConfig(DISABLE);
                     is_nack_sent = true;
                     I2C_DBG("  address sent\n");
@@ -322,14 +322,14 @@ void I2C_IRQHandler(void)
 
             /* data reveived */
             if (event & (RB_I2C_RxNE)) {
-                /* put byte into buffer */ 
+                /* put byte into buffer */
                 i2c_master_buffer[i2c_master_buffer_index++] = I2C_ReceiveData();
 
                 if (i2c_master_buffer_index < i2c_master_buffer_length) {
                     I2C_AcknowledgeConfig(ENABLE);
                     I2C_DBG("  ACK next\n");
                 } else {
-                    //XXX: Should not delay too match before NACK 
+                    //XXX: Should not delay too match before NACK
                     I2C_AcknowledgeConfig(DISABLE);
                     I2C_DBG("  NACK next\n");
 
@@ -355,7 +355,7 @@ void I2C_IRQHandler(void)
                     }
                 }
 
-                I2C_DBG("  received data (%#x)\n", 
+                I2C_DBG("  received data (%#x)\n",
                         i2c_master_buffer[i2c_master_buffer_index - 1]);
 
             }
@@ -390,7 +390,7 @@ void I2C_IRQHandler(void)
 
             if (event & ((RB_I2C_TRA << 16) | RB_I2C_TxE)) {
                 I2C_DBG("Slave transmitter address matched\n");
-                
+
                 i2c_state = I2C_STX;
                 i2c_slave_txbuffer_index = 0;
                 i2c_slave_txbuffer_length = 0;
@@ -428,7 +428,7 @@ void I2C_IRQHandler(void)
                 if (i2c_slave_txbuffer_index < i2c_slave_txbuffer_length) {
                     /* copy data to output register */
                     I2C_SendData(i2c_slave_txbuffer[i2c_slave_txbuffer_index++]);
-                    I2C_DBG("  send (%#x)\n", 
+                    I2C_DBG("  send (%#x)\n",
                         i2c_slave_txbuffer[i2c_slave_txbuffer_index - 1]);
                 } else {
                     I2C_SendData(0xff);
@@ -445,7 +445,7 @@ void I2C_IRQHandler(void)
                     /* put byte in buffer and ack */
                     i2c_slave_rxbuffer[i2c_slave_rxbuffer_index++] = I2C_ReceiveData();
                     I2C_AcknowledgeConfig(ENABLE);
-                    I2C_DBG("  received (%#x)\n", 
+                    I2C_DBG("  received (%#x)\n",
                             i2c_slave_rxbuffer[i2c_slave_rxbuffer_index - 1]);
                 } else {
                     // otherwise nack
@@ -467,7 +467,7 @@ void I2C_IRQHandler(void)
                 i2c_slave_rxbuffer_index = 0;
             }
 
-            if (event & RB_I2C_AF) {  
+            if (event & RB_I2C_AF) {
                 I2C_ClearFlag(I2C_FLAG_AF);
 
                 /* ack future responses */
@@ -486,35 +486,35 @@ void I2C_IRQHandler(void)
 
     if (event & RB_I2C_ARLO) {
         I2C_ClearFlag(RB_I2C_ARLO);
-        
+
         i2c_error = I2C_ARB_LOST;
         I2C_DBG("RB_I2C_ARLO\n");
     }
 
     if (event & RB_I2C_OVR) {
         I2C_ClearFlag(RB_I2C_OVR);
-        
+
         i2c_error = I2C_OVR;
         I2C_DBG("RB_I2C_OVR\n");
     }
 
     if (event & RB_I2C_PECERR) {
         I2C_ClearFlag(RB_I2C_PECERR);
-        
+
         i2c_error = I2C_PECERR;
         I2C_DBG("RB_I2C_PECERR\n");
     }
 
     if (event & RB_I2C_TIMEOUT) {
         I2C_ClearFlag(RB_I2C_TIMEOUT);
-        
+
         i2c_error = I2C_TIMEOUT;
         I2C_DBG("RB_I2C_TIMEOUT\n");
     }
 
     if (event & RB_I2C_SMBALERT) {
         I2C_ClearFlag(RB_I2C_SMBALERT);
-        
+
         i2c_error = I2C_SMBALERT;
         I2C_DBG("RB_I2C_SMBALERT\n");
     }
