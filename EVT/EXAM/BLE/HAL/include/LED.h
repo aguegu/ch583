@@ -6,7 +6,7 @@
  * Description        :
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -46,7 +46,7 @@ extern "C" {
  * TYPEDEFS
  */
 
-/* Á¬½ÓÒ»¸öLEDÓÃÓÚ¼à¿ØÑİÊ¾³ÌĞòµÄ½ø¶È,µÍµçÆ½LEDÁÁ */
+/* è¿æ¥ä¸€ä¸ªLEDç”¨äºç›‘æ§æ¼”ç¤ºç¨‹åºçš„è¿›åº¦,ä½ç”µå¹³LEDäº® */
 
 /* 1 - LED */
 #define LED1_BV                 BV(15)
