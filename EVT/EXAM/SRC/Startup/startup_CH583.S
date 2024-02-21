@@ -6,7 +6,7 @@
  * Description        :
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -122,12 +122,12 @@ WDOG_BAT_IRQHandler: 1:  j 1b
 	.weak	handle_reset
 	.align	1
 handle_reset:
-.option push 
-.option	norelax 
+.option push
+.option	norelax
 	la gp, __global_pointer$
-.option	pop 
+.option	pop
 1:
-	la sp, _eusrstack 
+	la sp, _eusrstack
 
 /* Load highcode code  section from flash to RAM */
 2:
@@ -164,25 +164,23 @@ handle_reset:
 	addi a0, a0, 4
 	bltu a0, a1, 1b
 2:
-	/* Á÷Ë®Ïß¿ØÖÆÎ» & ¶¯Ì¬Ô¤²â¿ØÖÆÎ» */
+	/* æµæ°´çº¿æ§åˆ¶ä½ & åŠ¨æ€é¢„æµ‹æ§åˆ¶ä½ */
 	li t0, 0x1f
 	csrw 0xbc0, t0
-	/* ´ò¿ªÇ¶Ì×ÖĞ¶Ï¡¢Ó²¼şÑ¹Õ»¹¦ÄÜ */
+	/* æ‰“å¼€åµŒå¥—ä¸­æ–­ã€ç¡¬ä»¶å‹æ ˆåŠŸèƒ½ */
 	li t0, 0x3
 	csrw 0x804, t0
-	
+
     li t0, 0x88
     csrs mstatus, t0
 	la t0, _vector_base
 
-	/* ÅäÖÃÏòÁ¿±íÄ£Ê½Îª¾ø¶ÔµØÖ·Ä£Ê½ */
+	/* é…ç½®å‘é‡è¡¨æ¨¡å¼ä¸ºç»å¯¹åœ°å€æ¨¡å¼ */
     ori t0, t0, 3
 	csrw mtvec, t0
 
 	la t0, main
 	csrw mepc, t0
-	
-	
+
+
 	mret
-
-

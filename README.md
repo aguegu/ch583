@@ -53,7 +53,7 @@ Take the official `CH583M-R0-1v1` EVT board [Circuit schematic](EVT/PUB/CH583SCH
       Bus XXX Device YYY: ID 4348:55e0 WinChipHead
       ```
 
-      * If `isp/driver` is installed successfully, a new device should show up with `ls -l/dev/ch37*` command.
+      * If `isp/driver` is installed successfully, a new device should show up with `ls -l /dev/ch37*` command.
       ```
       crw------- 1 root root 180, 200 Nov  1 16:24 /dev/ch37x0
       ```
