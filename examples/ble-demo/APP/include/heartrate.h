@@ -28,7 +28,6 @@ extern "C" {
 // Heart Rate Task Events
 #define START_DEVICE_EVT               0x0001
 #define HEART_PERIODIC_EVT             0x0002
-#define BATT_PERIODIC_EVT              0x0004
 #define HEART_CONN_PARAM_UPDATE_EVT    0x0008
 
 #define HEARTRATE_MEAS_LEN             9

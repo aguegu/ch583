@@ -14,7 +14,6 @@
  * INCLUDES
  */
 #include "config.h"
-#include "battservice.h"
 #include "heartrateservice.h"
 
 /*********************************************************************
