@@ -15,7 +15,6 @@
  */
 
 #include "config.h"
-#include "battservice.h"
 #include "devinfoservice.h"
 #include "heartrate.h"
 #include "heartrateservice.h"
@@ -59,12 +58,6 @@
 
 // Delay of start connect paramter update
 #define DEFAULT_CONN_PARAM_UPDATE_DELAY      1600
-
-// Battery level is critical when it is less than this %
-#define DEFAULT_BATT_CRITICAL_LEVEL          6
-
-// Battery measurement period in (625us)
-#define DEFAULT_BATT_PERIOD                  24000
 
 // Some values used to simulate measurements
 #define BPM_DEFAULT                          73
@@ -127,8 +120,7 @@ static uint8_t advertData[] = {
     GAP_ADTYPE_16BIT_MORE,
     LO_UINT16(HEARTRATE_SERV_UUID),
     HI_UINT16(HEARTRATE_SERV_UUID),
-    LO_UINT16(BATT_SERV_UUID),
-    HI_UINT16(BATT_SERV_UUID)};
+    };
 
 // Device name attribute value
 static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "Heart Rate Sensor";
@@ -166,10 +158,8 @@ static BOOL heartRateAdvCancelled = FALSE;
 static void heartRate_ProcessTMOSMsg(tmos_event_hdr_t *pMsg);
 static void HeartRateGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEvent);
 static void heartRatePeriodicTask(void);
-static void heartRateBattPeriodicTask(void);
 static void heartRateMeasNotify(void);
 static void heartRateCB(uint8_t event);
-static void heartRateBattCB(uint8_t event);
 
 /*********************************************************************
  * PROFILE CALLBACKS
@@ -241,24 +231,14 @@ void HeartRate_Init()
         HeartRate_SetParameter(HEARTRATE_SENS_LOC, sizeof(uint8_t), &sensLoc);
     }
 
-    // Setup Battery Characteristic Values
-    {
-        uint8_t critical = DEFAULT_BATT_CRITICAL_LEVEL;
-        Batt_SetParameter(BATT_PARAM_CRITICAL_LEVEL, sizeof(uint8_t), &critical);
-    }
-
     // Initialize GATT attributes
     GGS_AddService(GATT_ALL_SERVICES);         // GAP
     GATTServApp_AddService(GATT_ALL_SERVICES); // GATT attributes
     HeartRate_AddService(GATT_ALL_SERVICES);
     DevInfo_AddService();
-    Batt_AddService();
 
     // Register for Heart Rate service callback
     HeartRate_Register(heartRateCB);
-
-    // Register for Battery service callback;
-    Batt_Register(heartRateBattCB);
 
     // Setup a delayed profile startup
     tmos_set_event(heartRate_TaskID, START_DEVICE_EVT);
@@ -309,14 +289,6 @@ uint16_t HeartRate_ProcessEvent(uint8_t task_id, uint16_t events)
         heartRatePeriodicTask();
 
         return (events ^ HEART_PERIODIC_EVT);
-    }
-
-    if(events & BATT_PERIODIC_EVT)
-    {
-        // Perform periodic battery task
-        heartRateBattPeriodicTask();
-
-        return (events ^ BATT_PERIODIC_EVT);
     }
 
     if(events & HEART_CONN_PARAM_UPDATE_EVT)
@@ -440,7 +412,6 @@ static void HeartRateGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEven
 
         // reset client characteristic configuration descriptors
         HeartRate_HandleConnStatusCB(gapConnHandle, LINKDB_STATUS_UPDATE_REMOVED);
-        Batt_HandleConnStatusCB(gapConnHandle, LINKDB_STATUS_UPDATE_REMOVED);
 
         // link loss -- use fast advertising
         GAP_SetParamValue(TGAP_DISC_ADV_INT_MIN, DEFAULT_FAST_ADV_INTERVAL);
@@ -524,32 +495,6 @@ static void heartRateCB(uint8_t event)
 }
 
 /*********************************************************************
- * @fn      heartRateBattCB
- *
- * @brief   Callback function for battery service.
- *
- * @param   event - service event
- *
- * @return  none
- */
-static void heartRateBattCB(uint8_t event)
-{
-    if(event == BATT_LEVEL_NOTI_ENABLED)
-    {
-        // if connected start periodic measurement
-        if(gapProfileState == GAPROLE_CONNECTED)
-        {
-            tmos_start_task(heartRate_TaskID, BATT_PERIODIC_EVT, DEFAULT_BATT_PERIOD);
-        }
-    }
-    else if(event == BATT_LEVEL_NOTI_DISABLED)
-    {
-        // stop periodic measurement
-        tmos_stop_task(heartRate_TaskID, BATT_PERIODIC_EVT);
-    }
-}
-
-/*********************************************************************
  * @fn      heartRatePeriodicTask
  *
  * @brief   Perform a periodic heart rate application task.
@@ -567,27 +512,6 @@ static void heartRatePeriodicTask(void)
 
         // Restart timer
         tmos_start_task(heartRate_TaskID, HEART_PERIODIC_EVT, DEFAULT_HEARTRATE_PERIOD);
-    }
-}
-
-/*********************************************************************
- * @fn      heartRateBattPeriodicTask
- *
- * @brief   Perform a periodic task for battery measurement.
- *
- * @param   none
- *
- * @return  none
- */
-static void heartRateBattPeriodicTask(void)
-{
-    if(gapProfileState == GAPROLE_CONNECTED)
-    {
-        // perform battery level check
-        Batt_MeasLevel();
-
-        // Restart timer
-        tmos_start_task(heartRate_TaskID, BATT_PERIODIC_EVT, DEFAULT_BATT_PERIOD);
     }
 }
 
