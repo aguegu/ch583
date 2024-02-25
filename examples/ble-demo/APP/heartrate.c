@@ -15,7 +15,6 @@
  */
 
 #include "config.h"
-#include "devinfoservice.h"
 #include "heartrate.h"
 #include "heartrateservice.h"
 /*********************************************************************
@@ -90,37 +89,22 @@ static gapRole_States_t gapProfileState = GAPROLE_INIT;
 
 // GAP Profile - Name attribute for SCAN RSP data
 static uint8_t scanRspData[] = {
-    0x12, // length of this data
-    GAP_ADTYPE_LOCAL_NAME_COMPLETE,
-    'H',
-    'e',
-    'a',
-    'r',
-    't',
-    ' ',
-    'R',
-    'a',
-    't',
-    'e',
-    ' ',
-    'S',
-    'e',
-    'n',
-    's',
-    'o',
-    'r'};
+  0x12, // length of this data
+  GAP_ADTYPE_LOCAL_NAME_COMPLETE,
+  'H', 'e', 'a', 'r', 't', ' ', 'R', 'a', 't', 'e', ' ', 'S', 'e', 'n', 's', 'o', 'r'
+};
 
 static uint8_t advertData[] = {
-    // flags
-    0x02,
-    GAP_ADTYPE_FLAGS,
-    GAP_ADTYPE_FLAGS_GENERAL | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
-    // service UUIDs
-    0x05,
-    GAP_ADTYPE_16BIT_MORE,
-    LO_UINT16(HEARTRATE_SERV_UUID),
-    HI_UINT16(HEARTRATE_SERV_UUID),
-    };
+  // flags
+  0x02,
+  GAP_ADTYPE_FLAGS,
+  GAP_ADTYPE_FLAGS_GENERAL | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
+  // service UUIDs, , to notify central devices what services are included
+  0x03,       // length of this data
+  GAP_ADTYPE_16BIT_MORE,
+  LO_UINT16(HEARTRATE_SERV_UUID),
+  HI_UINT16(HEARTRATE_SERV_UUID),
+};
 
 // Device name attribute value
 static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "Heart Rate Sensor";
@@ -139,13 +123,14 @@ static uint16_t heartRateRrInterval2 = HEARTRATE_BPM_TO_RR(BPM_DEFAULT);
 
 // flags for simulated measurements
 static const uint8_t heartRateFlags[FLAGS_IDX_MAX] = {
-    HEARTRATE_FLAGS_CONTACT_NOT_SUP,
-    HEARTRATE_FLAGS_CONTACT_NOT_DET,
-    HEARTRATE_FLAGS_CONTACT_DET | HEARTRATE_FLAGS_ENERGY_EXP,
-    HEARTRATE_FLAGS_CONTACT_DET | HEARTRATE_FLAGS_RR,
-    HEARTRATE_FLAGS_CONTACT_DET | HEARTRATE_FLAGS_ENERGY_EXP | HEARTRATE_FLAGS_RR,
-    HEARTRATE_FLAGS_FORMAT_UINT16 | HEARTRATE_FLAGS_CONTACT_DET | HEARTRATE_FLAGS_ENERGY_EXP | HEARTRATE_FLAGS_RR,
-    0x00};
+  HEARTRATE_FLAGS_CONTACT_NOT_SUP,
+  HEARTRATE_FLAGS_CONTACT_NOT_DET,
+  HEARTRATE_FLAGS_CONTACT_DET | HEARTRATE_FLAGS_ENERGY_EXP,
+  HEARTRATE_FLAGS_CONTACT_DET | HEARTRATE_FLAGS_RR,
+  HEARTRATE_FLAGS_CONTACT_DET | HEARTRATE_FLAGS_ENERGY_EXP | HEARTRATE_FLAGS_RR,
+  HEARTRATE_FLAGS_FORMAT_UINT16 | HEARTRATE_FLAGS_CONTACT_DET | HEARTRATE_FLAGS_ENERGY_EXP | HEARTRATE_FLAGS_RR,
+  0x00
+};
 
 static uint8_t heartRateFlagsIdx = 0;
 
@@ -167,14 +152,15 @@ static void heartRateCB(uint8_t event);
 
 // GAP Role Callbacks
 static gapRolesCBs_t heartRatePeripheralCB = {
-    HeartRateGapStateCB, // Profile State Change Callbacks
-    NULL,                // When a valid RSSI is read from controller
-    NULL};
+  HeartRateGapStateCB, // Profile State Change Callbacks
+  NULL,                // When a valid RSSI is read from controller
+  NULL
+};
 
 // Bond Manager Callbacks
 static gapBondCBs_t heartRateBondCB = {
-    NULL, // Passcode callback
-    NULL  // Pairing state callback
+  NULL, // Passcode callback
+  NULL  // Pairing state callback
 };
 
 /*********************************************************************
@@ -195,53 +181,51 @@ static gapBondCBs_t heartRateBondCB = {
  *
  * @return  none
  */
-void HeartRate_Init()
-{
-    heartRate_TaskID = TMOS_ProcessEventRegister(HeartRate_ProcessEvent);
+void HeartRate_Init() {
+  heartRate_TaskID = TMOS_ProcessEventRegister(HeartRate_ProcessEvent);
 
-    // Setup the GAP Peripheral Role Profile
-    {
-        uint8_t initial_advertising_enable = TRUE;
+  // Setup the GAP Peripheral Role Profile
+  {
+    uint8_t initial_advertising_enable = TRUE;
 
-        // Set the GAP Role Parameters
-        GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &initial_advertising_enable);
-        GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData), scanRspData);
-        GAPRole_SetParameter(GAPROLE_ADVERT_DATA, sizeof(advertData), advertData);
-    }
-    // Set the GAP Characteristics
-    GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName);
+    // Set the GAP Role Parameters
+    GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &initial_advertising_enable);
+    GAPRole_SetParameter(GAPROLE_SCAN_RSP_DATA, sizeof(scanRspData), scanRspData);
+    GAPRole_SetParameter(GAPROLE_ADVERT_DATA, sizeof(advertData), advertData);
+  }
+  // Set the GAP Characteristics
+  GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName);
 
-    // Setup the GAP Bond Manager
-    {
-        uint32_t passkey = 0; // passkey "000000"
-        uint8_t  pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
-        uint8_t  mitm = FALSE;
-        uint8_t  ioCap = GAPBOND_IO_CAP_DISPLAY_ONLY;
-        uint8_t  bonding = TRUE;
-        GAPBondMgr_SetParameter(GAPBOND_PERI_DEFAULT_PASSCODE, sizeof(uint32_t), &passkey);
-        GAPBondMgr_SetParameter(GAPBOND_PERI_PAIRING_MODE, sizeof(uint8_t), &pairMode);
-        GAPBondMgr_SetParameter(GAPBOND_PERI_MITM_PROTECTION, sizeof(uint8_t), &mitm);
-        GAPBondMgr_SetParameter(GAPBOND_PERI_IO_CAPABILITIES, sizeof(uint8_t), &ioCap);
-        GAPBondMgr_SetParameter(GAPBOND_PERI_BONDING_ENABLED, sizeof(uint8_t), &bonding);
-    }
+  // Setup the GAP Bond Manager
+  {
+    uint32_t passkey = 0; // passkey "000000"
+    uint8_t  pairMode = GAPBOND_PAIRING_MODE_WAIT_FOR_REQ;
+    uint8_t  mitm = FALSE;
+    uint8_t  ioCap = GAPBOND_IO_CAP_DISPLAY_ONLY;
+    uint8_t  bonding = TRUE;
+    GAPBondMgr_SetParameter(GAPBOND_PERI_DEFAULT_PASSCODE, sizeof(uint32_t), &passkey);
+    GAPBondMgr_SetParameter(GAPBOND_PERI_PAIRING_MODE, sizeof(uint8_t), &pairMode);
+    GAPBondMgr_SetParameter(GAPBOND_PERI_MITM_PROTECTION, sizeof(uint8_t), &mitm);
+    GAPBondMgr_SetParameter(GAPBOND_PERI_IO_CAPABILITIES, sizeof(uint8_t), &ioCap);
+    GAPBondMgr_SetParameter(GAPBOND_PERI_BONDING_ENABLED, sizeof(uint8_t), &bonding);
+  }
 
-    // Setup the Heart Rate Characteristic Values
-    {
-        uint8_t sensLoc = HEARTRATE_SENS_LOC_CHEST;
-        HeartRate_SetParameter(HEARTRATE_SENS_LOC, sizeof(uint8_t), &sensLoc);
-    }
+  // Setup the Heart Rate Characteristic Values
+  {
+    uint8_t sensLoc = HEARTRATE_SENS_LOC_CHEST;
+    HeartRate_SetParameter(HEARTRATE_SENS_LOC, sizeof(uint8_t), &sensLoc);
+  }
 
-    // Initialize GATT attributes
-    GGS_AddService(GATT_ALL_SERVICES);         // GAP
-    GATTServApp_AddService(GATT_ALL_SERVICES); // GATT attributes
-    HeartRate_AddService(GATT_ALL_SERVICES);
-    DevInfo_AddService();
+  // Initialize GATT attributes
+  GGS_AddService(GATT_ALL_SERVICES);         // GAP
+  GATTServApp_AddService(GATT_ALL_SERVICES); // GATT attributes
+  HeartRate_AddService(GATT_ALL_SERVICES);
 
-    // Register for Heart Rate service callback
-    HeartRate_Register(heartRateCB);
+  // Register for Heart Rate service callback
+  HeartRate_Register(heartRateCB);
 
-    // Setup a delayed profile startup
-    tmos_set_event(heartRate_TaskID, START_DEVICE_EVT);
+  // Setup a delayed profile startup
+  tmos_set_event(heartRate_TaskID, START_DEVICE_EVT);
 }
 
 /*********************************************************************
@@ -257,55 +241,45 @@ void HeartRate_Init()
  *
  * @return  events not processed
  */
-uint16_t HeartRate_ProcessEvent(uint8_t task_id, uint16_t events)
-{
-    if(events & SYS_EVENT_MSG)
-    {
-        uint8_t *pMsg;
+uint16_t HeartRate_ProcessEvent(uint8_t task_id, uint16_t events) {
+  if (events & SYS_EVENT_MSG) {
+    uint8_t *pMsg;
 
-        if((pMsg = tmos_msg_receive(heartRate_TaskID)) != NULL)
-        {
-            heartRate_ProcessTMOSMsg((tmos_event_hdr_t *)pMsg);
+    if ((pMsg = tmos_msg_receive(heartRate_TaskID)) != NULL) {
+      heartRate_ProcessTMOSMsg((tmos_event_hdr_t *)pMsg);
 
-            // Release the TMOS message
-            tmos_msg_deallocate(pMsg);
-        }
-
-        // return unprocessed events
-        return (events ^ SYS_EVENT_MSG);
+      // Release the TMOS message
+      tmos_msg_deallocate(pMsg);
     }
 
-    if(events & START_DEVICE_EVT)
-    {
-        // Start the Device
-        GAPRole_PeripheralStartDevice(heartRate_TaskID, &heartRateBondCB, &heartRatePeripheralCB);
+    // return unprocessed events
+    return (events ^ SYS_EVENT_MSG);
+  }
 
-        return (events ^ START_DEVICE_EVT);
-    }
+  if (events & START_DEVICE_EVT) {
+      // Start the Device
+      GAPRole_PeripheralStartDevice(heartRate_TaskID, &heartRateBondCB, &heartRatePeripheralCB);
+      return (events ^ START_DEVICE_EVT);
+  }
 
-    if(events & HEART_PERIODIC_EVT)
-    {
-        // Perform periodic heart rate task
-        heartRatePeriodicTask();
+  if (events & HEART_PERIODIC_EVT) {
+      // Perform periodic heart rate task
+      heartRatePeriodicTask();
+      return (events ^ HEART_PERIODIC_EVT);
+  }
 
-        return (events ^ HEART_PERIODIC_EVT);
-    }
-
-    if(events & HEART_CONN_PARAM_UPDATE_EVT)
-    {
-        // Send param update.
-        GAPRole_PeripheralConnParamUpdateReq(gapConnHandle,
-                                             DEFAULT_DESIRED_MIN_CONN_INTERVAL,
-                                             DEFAULT_DESIRED_MAX_CONN_INTERVAL,
-                                             DEFAULT_DESIRED_SLAVE_LATENCY,
-                                             DEFAULT_DESIRED_CONN_TIMEOUT,
-                                             heartRate_TaskID);
-
-        return (events ^ HEART_CONN_PARAM_UPDATE_EVT);
-    }
-
-    // Discard unknown events
-    return 0;
+  if (events & HEART_CONN_PARAM_UPDATE_EVT) {
+      // Send param update.
+      GAPRole_PeripheralConnParamUpdateReq(gapConnHandle,
+                                           DEFAULT_DESIRED_MIN_CONN_INTERVAL,
+                                           DEFAULT_DESIRED_MAX_CONN_INTERVAL,
+                                           DEFAULT_DESIRED_SLAVE_LATENCY,
+                                           DEFAULT_DESIRED_CONN_TIMEOUT,
+                                           heartRate_TaskID);
+      return (events ^ HEART_CONN_PARAM_UPDATE_EVT);
+  }
+  // Discard unknown events
+  return 0;
 }
 
 /*********************************************************************
@@ -317,14 +291,11 @@ uint16_t HeartRate_ProcessEvent(uint8_t task_id, uint16_t events)
  *
  * @return  none
  */
-static void heartRate_ProcessTMOSMsg(tmos_event_hdr_t *pMsg)
-{
-    switch(pMsg->event)
-    {
-        default:
-
-            break;
-    }
+static void heartRate_ProcessTMOSMsg(tmos_event_hdr_t *pMsg) {
+  switch(pMsg->event) {
+    default:
+      break;
+  }
 }
 
 /*********************************************************************
@@ -334,48 +305,41 @@ static void heartRate_ProcessTMOSMsg(tmos_event_hdr_t *pMsg)
  *
  * @return  none
  */
-static void heartRateMeasNotify(void)
-{
-    heartRateMeas.pValue = GATT_bm_alloc(gapConnHandle, ATT_HANDLE_VALUE_NOTI, HEARTRATE_MEAS_LEN, NULL, 0);
+static void heartRateMeasNotify(void) {
+  heartRateMeas.pValue = GATT_bm_alloc(gapConnHandle, ATT_HANDLE_VALUE_NOTI, HEARTRATE_MEAS_LEN, NULL, 0);
 
-    if(heartRateMeas.pValue != NULL)
-    {
-        uint8_t *p = heartRateMeas.pValue;
-        uint8_t  flags = heartRateFlags[heartRateFlagsIdx];
+  if (heartRateMeas.pValue != NULL) {
+    uint8_t *p = heartRateMeas.pValue;
+    uint8_t  flags = heartRateFlags[heartRateFlagsIdx];
 
-        // build heart rate measurement structure from simulated values
-        *p++ = flags;
-        *p++ = heartRateBpm;
-        if(flags & HEARTRATE_FLAGS_FORMAT_UINT16)
-        {
-            // additional byte for 16 bit format
-            *p++ = 0;
-        }
-        if(flags & HEARTRATE_FLAGS_ENERGY_EXP)
-        {
-            *p++ = LO_UINT16(heartRateEnergy);
-            *p++ = HI_UINT16(heartRateEnergy);
-        }
-        if(flags & HEARTRATE_FLAGS_RR)
-        {
-            *p++ = LO_UINT16(heartRateRrInterval1);
-            *p++ = HI_UINT16(heartRateRrInterval1);
-            *p++ = LO_UINT16(heartRateRrInterval2);
-            *p++ = HI_UINT16(heartRateRrInterval2);
-        }
-        heartRateMeas.len = (uint8_t)(p - heartRateMeas.pValue);
-        if(HeartRate_MeasNotify(gapConnHandle, &heartRateMeas) != SUCCESS)
-        {
-            GATT_bm_free((gattMsg_t *)&heartRateMeas, ATT_HANDLE_VALUE_NOTI);
-        }
-        // update simulated values
-        heartRateEnergy += ENERGY_INCREMENT;
-        if(++heartRateBpm == BPM_MAX)
-        {
-            heartRateBpm = BPM_DEFAULT;
-        }
-        heartRateRrInterval1 = heartRateRrInterval2 = HEARTRATE_BPM_TO_RR(heartRateBpm);
+    // build heart rate measurement structure from simulated values
+    *p++ = flags;
+    *p++ = heartRateBpm;
+    if (flags & HEARTRATE_FLAGS_FORMAT_UINT16) {
+        // additional byte for 16 bit format
+        *p++ = 0;
     }
+    if (flags & HEARTRATE_FLAGS_ENERGY_EXP) {
+        *p++ = LO_UINT16(heartRateEnergy);
+        *p++ = HI_UINT16(heartRateEnergy);
+    }
+    if (flags & HEARTRATE_FLAGS_RR) {
+        *p++ = LO_UINT16(heartRateRrInterval1);
+        *p++ = HI_UINT16(heartRateRrInterval1);
+        *p++ = LO_UINT16(heartRateRrInterval2);
+        *p++ = HI_UINT16(heartRateRrInterval2);
+    }
+    heartRateMeas.len = (uint8_t)(p - heartRateMeas.pValue);
+    if (HeartRate_MeasNotify(gapConnHandle, &heartRateMeas) != SUCCESS) {
+        GATT_bm_free((gattMsg_t *)&heartRateMeas, ATT_HANDLE_VALUE_NOTI);
+    }
+    // update simulated values
+    heartRateEnergy += ENERGY_INCREMENT;
+    if (++heartRateBpm == BPM_MAX) {
+        heartRateBpm = BPM_DEFAULT;
+    }
+    heartRateRrInterval1 = heartRateRrInterval2 = HEARTRATE_BPM_TO_RR(heartRateBpm);
+  }
 }
 
 /*********************************************************************
@@ -387,80 +351,53 @@ static void heartRateMeasNotify(void)
  *
  * @return  none
  */
-static void HeartRateGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEvent)
-{
-    // if connected
-    if(newState == GAPROLE_CONNECTED)
-    {
-        if(pEvent->gap.opcode == GAP_LINK_ESTABLISHED_EVENT)
-        {
-            // Get connection handle
-            gapConnHandle = pEvent->linkCmpl.connectionHandle;
+static void HeartRateGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEvent) {
+  // if connected
+  if (newState == GAPROLE_CONNECTED) {
+      if (pEvent->gap.opcode == GAP_LINK_ESTABLISHED_EVENT) {
+        // Get connection handle
+        gapConnHandle = pEvent->linkCmpl.connectionHandle;
 
-            // Set timer to update connection parameters
-            tmos_start_task(heartRate_TaskID, HEART_CONN_PARAM_UPDATE_EVT, DEFAULT_CONN_PARAM_UPDATE_DELAY);
-        }
+        // Set timer to update connection parameters
+        tmos_start_task(heartRate_TaskID, HEART_CONN_PARAM_UPDATE_EVT, DEFAULT_CONN_PARAM_UPDATE_DELAY);
+      }
+  }
+  // if disconnected
+  else if (gapProfileState == GAPROLE_CONNECTED && newState != GAPROLE_CONNECTED) {
+    uint8_t advState = TRUE;
+
+    // stop periodic measurement
+    tmos_stop_task(heartRate_TaskID, HEART_PERIODIC_EVT);
+
+    // reset client characteristic configuration descriptors
+    HeartRate_HandleConnStatusCB(gapConnHandle, LINKDB_STATUS_UPDATE_REMOVED);
+
+    // link loss -- use fast advertising
+    GAP_SetParamValue(TGAP_DISC_ADV_INT_MIN, DEFAULT_FAST_ADV_INTERVAL);
+    GAP_SetParamValue(TGAP_DISC_ADV_INT_MAX, DEFAULT_FAST_ADV_INTERVAL);
+    GAP_SetParamValue(TGAP_GEN_DISC_ADV_MIN, DEFAULT_FAST_ADV_DURATION);
+
+    // Enable advertising
+    GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &advState);
+  }
+  // if advertising stopped
+  else if (gapProfileState == GAPROLE_ADVERTISING && newState == GAPROLE_WAITING) {
+    // if advertising stopped by user
+    if (heartRateAdvCancelled) {
+        heartRateAdvCancelled = FALSE;
     }
-    // if disconnected
-    else if(gapProfileState == GAPROLE_CONNECTED &&
-            newState != GAPROLE_CONNECTED)
-    {
+    // if fast advertising switch to slow
+    else if (GAP_GetParamValue(TGAP_DISC_ADV_INT_MIN) == DEFAULT_FAST_ADV_INTERVAL) {
         uint8_t advState = TRUE;
 
-        // stop periodic measurement
-        tmos_stop_task(heartRate_TaskID, HEART_PERIODIC_EVT);
-
-        // reset client characteristic configuration descriptors
-        HeartRate_HandleConnStatusCB(gapConnHandle, LINKDB_STATUS_UPDATE_REMOVED);
-
-        // link loss -- use fast advertising
-        GAP_SetParamValue(TGAP_DISC_ADV_INT_MIN, DEFAULT_FAST_ADV_INTERVAL);
-        GAP_SetParamValue(TGAP_DISC_ADV_INT_MAX, DEFAULT_FAST_ADV_INTERVAL);
-        GAP_SetParamValue(TGAP_GEN_DISC_ADV_MIN, DEFAULT_FAST_ADV_DURATION);
-
-        // Enable advertising
+        GAP_SetParamValue(TGAP_DISC_ADV_INT_MIN, DEFAULT_SLOW_ADV_INTERVAL);
+        GAP_SetParamValue(TGAP_DISC_ADV_INT_MAX, DEFAULT_SLOW_ADV_INTERVAL);
+        GAP_SetParamValue(TGAP_GEN_DISC_ADV_MIN, DEFAULT_SLOW_ADV_DURATION);
         GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &advState);
     }
-    // if advertising stopped
-    else if(gapProfileState == GAPROLE_ADVERTISING &&
-            newState == GAPROLE_WAITING)
-    {
-        // if advertising stopped by user
-        if(heartRateAdvCancelled)
-        {
-            heartRateAdvCancelled = FALSE;
-        }
-        // if fast advertising switch to slow
-        else if(GAP_GetParamValue(TGAP_DISC_ADV_INT_MIN) == DEFAULT_FAST_ADV_INTERVAL)
-        {
-            uint8_t advState = TRUE;
+  }
 
-            GAP_SetParamValue(TGAP_DISC_ADV_INT_MIN, DEFAULT_SLOW_ADV_INTERVAL);
-            GAP_SetParamValue(TGAP_DISC_ADV_INT_MAX, DEFAULT_SLOW_ADV_INTERVAL);
-            GAP_SetParamValue(TGAP_GEN_DISC_ADV_MIN, DEFAULT_SLOW_ADV_DURATION);
-            GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &advState);
-        }
-    }
-    // if started
-    else if(newState == GAPROLE_STARTED)
-    {
-        // Set the system ID from the bd addr
-        uint8_t systemId[DEVINFO_SYSTEM_ID_LEN];
-        GAPRole_GetParameter(GAPROLE_BD_ADDR, systemId);
-
-        // shift three bytes up
-        systemId[7] = systemId[5];
-        systemId[6] = systemId[4];
-        systemId[5] = systemId[3];
-
-        // set middle bytes to zero
-        systemId[4] = 0;
-        systemId[3] = 0;
-
-        DevInfo_SetParameter(DEVINFO_SYSTEM_ID, DEVINFO_SYSTEM_ID_LEN, systemId);
-    }
-
-    gapProfileState = newState;
+  gapProfileState = newState;
 }
 
 /*********************************************************************
@@ -472,26 +409,21 @@ static void HeartRateGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEven
  *
  * @return  none
  */
-static void heartRateCB(uint8_t event)
-{
-    if(event == HEARTRATE_MEAS_NOTI_ENABLED)
-    {
-        // if connected start periodic measurement
-        if(gapProfileState == GAPROLE_CONNECTED)
-        {
-            tmos_start_task(heartRate_TaskID, HEART_PERIODIC_EVT, DEFAULT_HEARTRATE_PERIOD);
-        }
+static void heartRateCB(uint8_t event) {
+  if (event == HEARTRATE_MEAS_NOTI_ENABLED) {
+    // if connected start periodic measurement
+    if (gapProfileState == GAPROLE_CONNECTED) {
+      tmos_start_task(heartRate_TaskID, HEART_PERIODIC_EVT, DEFAULT_HEARTRATE_PERIOD);
     }
-    else if(event == HEARTRATE_MEAS_NOTI_DISABLED)
-    {
-        // stop periodic measurement
-        tmos_stop_task(heartRate_TaskID, HEART_PERIODIC_EVT);
-    }
-    else if(event == HEARTRATE_COMMAND_SET)
-    {
-        // reset energy expended
-        heartRateEnergy = 0;
-    }
+  }
+  else if (event == HEARTRATE_MEAS_NOTI_DISABLED) {
+    // stop periodic measurement
+    tmos_stop_task(heartRate_TaskID, HEART_PERIODIC_EVT);
+  }
+  else if (event == HEARTRATE_COMMAND_SET) {
+      // reset energy expended
+    heartRateEnergy = 0;
+  }
 }
 
 /*********************************************************************
@@ -503,16 +435,14 @@ static void heartRateCB(uint8_t event)
  *
  * @return  none
  */
-static void heartRatePeriodicTask(void)
-{
-    if(gapProfileState == GAPROLE_CONNECTED)
-    {
-        // send heart rate measurement notification
-        heartRateMeasNotify();
+static void heartRatePeriodicTask(void) {
+  if (gapProfileState == GAPROLE_CONNECTED) {
+    // send heart rate measurement notification
+    heartRateMeasNotify();
 
-        // Restart timer
-        tmos_start_task(heartRate_TaskID, HEART_PERIODIC_EVT, DEFAULT_HEARTRATE_PERIOD);
-    }
+    // Restart timer
+    tmos_start_task(heartRate_TaskID, HEART_PERIODIC_EVT, DEFAULT_HEARTRATE_PERIOD);
+  }
 }
 
 /*********************************************************************
