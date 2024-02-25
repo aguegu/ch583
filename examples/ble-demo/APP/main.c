@@ -34,12 +34,10 @@ const uint8_t MacAddr[6] = {0x84, 0xC2, 0xE4, 0x03, 0x02, 0x02};
  */
 __HIGH_CODE
 __attribute__((noinline))
-void Main_Circulation()
-{
-    while(1)
-    {
-        TMOS_SystemProcess();
-    }
+void Main_Circulation() {
+  while(1) {
+    TMOS_SystemProcess(); // in BLE_LIB
+  }
 }
 
 /*********************************************************************
@@ -49,27 +47,31 @@ void Main_Circulation()
  *
  * @return  none
  */
-int main(void)
-{
+int main(void) {
 #if(defined(DCDC_ENABLE)) && (DCDC_ENABLE == TRUE)
-    PWR_DCDCCfg(ENABLE);
+  PWR_DCDCCfg(ENABLE);
 #endif
-    SetSysClock(CLK_SOURCE_PLL_60MHz);
+  SetSysClock(CLK_SOURCE_PLL_60MHz);
 #if(defined(HAL_SLEEP)) && (HAL_SLEEP == TRUE)
-    GPIOA_ModeCfg(GPIO_Pin_All, GPIO_ModeIN_PU);
-    GPIOB_ModeCfg(GPIO_Pin_All, GPIO_ModeIN_PU);
+  GPIOA_ModeCfg(GPIO_Pin_All, GPIO_ModeIN_PU);
+  GPIOB_ModeCfg(GPIO_Pin_All, GPIO_ModeIN_PU);
 #endif
 #ifdef DEBUG
-    GPIOA_SetBits(bTXD1);
-    GPIOA_ModeCfg(bTXD1, GPIO_ModeOut_PP_5mA);
-    UART1_DefInit();
+  GPIOA_SetBits(bTXD1);
+  GPIOA_ModeCfg(bTXD1, GPIO_ModeOut_PP_5mA);
+  UART1_DefInit();
 #endif
-    PRINT("%s\n", VER_LIB);
-    CH58X_BLEInit();  // in HAL/MCU.c
-    HAL_Init();       // in HAL/MCU.c
-    GAPRole_PeripheralInit(); // BLE_LIB
-    HeartRate_Init(); // in 
-    Main_Circulation();
+
+  GPIOB_ModeCfg(GPIO_Pin_18, GPIO_ModeOut_PP_5mA);
+  GPIOB_ModeCfg(GPIO_Pin_19, GPIO_ModeOut_PP_5mA);  
+  GPIOB_ResetBits(GPIO_Pin_18 | GPIO_Pin_19);
+
+  PRINT("%s\n", VER_LIB);
+  CH58X_BLEInit();  // in HAL/MCU.c
+  HAL_Init();       // in HAL/MCU.c
+  GAPRole_PeripheralInit(); // BLE_LIB
+  HeartRate_Init();
+  Main_Circulation();
 }
 
 /******************************** endfile @ main ******************************/
