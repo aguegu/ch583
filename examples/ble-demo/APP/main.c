@@ -65,10 +65,10 @@ int main(void)
     UART1_DefInit();
 #endif
     PRINT("%s\n", VER_LIB);
-    CH58X_BLEInit();
-    HAL_Init();
-    GAPRole_PeripheralInit();
-    HeartRate_Init();
+    CH58X_BLEInit();  // in HAL/MCU.c
+    HAL_Init();       // in HAL/MCU.c
+    GAPRole_PeripheralInit(); // BLE_LIB
+    HeartRate_Init(); // in 
     Main_Circulation();
 }
 
