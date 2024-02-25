@@ -301,6 +301,7 @@ static void heartRate_ProcessTMOSMsg(tmos_event_hdr_t *pMsg) {
 static void heartRateMeasNotify(void) {
   heartRateMeas.pValue = GATT_bm_alloc(gapConnHandle, ATT_HANDLE_VALUE_NOTI, HEARTRATE_MEAS_LEN, NULL, 0);
 
+  // https://github.com/oesmith/gatt-xml/blob/master/org.bluetooth.characteristic.heart_rate_measurement.xml
   if (heartRateMeas.pValue != NULL) {
     uint8_t *p = heartRateMeas.pValue;
     uint8_t flags = heartRateFlags[heartRateFlagsIdx];
