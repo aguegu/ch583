@@ -69,7 +69,7 @@ static heartRateServiceCB_t heartRateServiceCB;
  */
 
 // Heart Rate Service attribute
-static const gattAttrType_t heartRateService = {ATT_BT_UUID_SIZE, heartRateServUUID};
+static const gattAttrType_t heartRateService = { ATT_BT_UUID_SIZE, heartRateServUUID };
 
 // Heart Rate Measurement Characteristic
 // Note characteristic value is not stored here
@@ -90,62 +90,69 @@ static uint8_t heartRateCommand = 0;
  */
 
 static gattAttribute_t heartRateAttrTbl[] = {
-    // Heart Rate Service
-    {
-        {ATT_BT_UUID_SIZE, primaryServiceUUID}, /* type */
-        GATT_PERMIT_READ,                       /* permissions */
-        0,                                      /* handle */
-        (uint8_t *)&heartRateService            /* pValue */
-    },
+  // Heart Rate Service
+  {
+    { ATT_BT_UUID_SIZE, primaryServiceUUID }, /* gattAttrType_t */
+    GATT_PERMIT_READ,                       /* permissions */
+    0,                                      /* handle */
+    (uint8_t *)&heartRateService            /* pValue */
+  },
 
-    // Heart Rate Measurement Declaration
-    {
-        {ATT_BT_UUID_SIZE, characterUUID},
-        GATT_PERMIT_READ,
-        0,
-        &heartRateMeasProps},
+  // Heart Rate Measurement Declaration
+  {
+    { ATT_BT_UUID_SIZE, characterUUID },
+    GATT_PERMIT_READ,
+    0,
+    &heartRateMeasProps
+  },
 
-    // Heart Rate Measurement Value
-    {
-        {ATT_BT_UUID_SIZE, heartRateMeasUUID},
-        0,
-        0,
-        &heartRateMeas},
+  // Heart Rate Measurement Value
+  {
+    { ATT_BT_UUID_SIZE, heartRateMeasUUID },
+    0,
+    0,
+    &heartRateMeas
+  },
 
-    // Heart Rate Measurement Client Characteristic Configuration
-    {
-        {ATT_BT_UUID_SIZE, clientCharCfgUUID},
-        GATT_PERMIT_READ | GATT_PERMIT_WRITE,
-        0,
-        (uint8_t *)&heartRateMeasClientCharCfg},
+  // Heart Rate Measurement Client Characteristic Configuration
+  {
+    { ATT_BT_UUID_SIZE, clientCharCfgUUID },
+    GATT_PERMIT_READ | GATT_PERMIT_WRITE,
+    0,
+    (uint8_t *)&heartRateMeasClientCharCfg
+  },
 
-    // Sensor Location Declaration
-    {
-        {ATT_BT_UUID_SIZE, characterUUID},
-        GATT_PERMIT_READ,
-        0,
-        &heartRateSensLocProps},
+  // Sensor Location Declaration
+  {
+    { ATT_BT_UUID_SIZE, characterUUID },
+    GATT_PERMIT_READ,
+    0,
+    &heartRateSensLocProps
+  },
 
-    // Sensor Location Value
-    {
-        {ATT_BT_UUID_SIZE, heartRateSensLocUUID},
-        GATT_PERMIT_READ,
-        0,
-        &heartRateSensLoc},
+  // Sensor Location Value
+  {
+    { ATT_BT_UUID_SIZE, heartRateSensLocUUID },
+    GATT_PERMIT_READ,
+    0,
+    &heartRateSensLoc
+  },
 
-    // Command Declaration
-    {
-        {ATT_BT_UUID_SIZE, characterUUID},
-        GATT_PERMIT_READ,
-        0,
-        &heartRateCommandProps},
+  // Command Declaration
+  {
+    { ATT_BT_UUID_SIZE, characterUUID },
+    GATT_PERMIT_READ,
+    0,
+    &heartRateCommandProps
+  },
 
-    // Command Value
-    {
-        {ATT_BT_UUID_SIZE, heartRateCommandUUID},
-        GATT_PERMIT_WRITE,
-        0,
-        &heartRateCommand}
+  // Command Value
+  {
+    { ATT_BT_UUID_SIZE, heartRateCommandUUID },
+    GATT_PERMIT_WRITE,
+    0,
+    &heartRateCommand
+  }
 };
 
 /*********************************************************************
@@ -163,9 +170,9 @@ static bStatus_t heartRate_WriteAttrCB(uint16_t connHandle, gattAttribute_t *pAt
  */
 // Heart Rate Service Callbacks
 gattServiceCBs_t heartRateCBs = {
-    heartRate_ReadAttrCB,  // Read callback function pointer
-    heartRate_WriteAttrCB, // Write callback function pointer
-    NULL                   // Authorization callback function pointer
+  heartRate_ReadAttrCB,  // Read callback function pointer
+  heartRate_WriteAttrCB, // Write callback function pointer
+  NULL                   // Authorization callback function pointer
 };
 
 /*********************************************************************
@@ -183,23 +190,21 @@ gattServiceCBs_t heartRateCBs = {
  *
  * @return  Success or Failure
  */
-bStatus_t HeartRate_AddService(uint32_t services)
-{
-    uint8_t status = SUCCESS;
+bStatus_t HeartRate_AddService(uint32_t services) {
+  uint8_t status = SUCCESS;
 
-    // Initialize Client Characteristic Configuration attributes
-    GATTServApp_InitCharCfg(INVALID_CONNHANDLE, heartRateMeasClientCharCfg);
+  // Initialize Client Characteristic Configuration attributes
+  GATTServApp_InitCharCfg(INVALID_CONNHANDLE, heartRateMeasClientCharCfg);
 
-    if(services & HEARTRATE_SERVICE)
-    {
-        // Register GATT attribute list and CBs with GATT Server App
-        status = GATTServApp_RegisterService(heartRateAttrTbl,
-                                             GATT_NUM_ATTRS(heartRateAttrTbl),
-                                             GATT_MAX_ENCRYPT_KEY_SIZE,
-                                             &heartRateCBs);
-    }
+  if (services & HEARTRATE_SERVICE) {
+    // Register GATT attribute list and CBs with GATT Server App
+    status = GATTServApp_RegisterService(heartRateAttrTbl,
+                                         GATT_NUM_ATTRS(heartRateAttrTbl),
+                                         GATT_MAX_ENCRYPT_KEY_SIZE,
+                                         &heartRateCBs);
+  }
 
-    return (status);
+  return (status);
 }
 
 /*********************************************************************
@@ -211,9 +216,8 @@ bStatus_t HeartRate_AddService(uint32_t services)
  *
  * @return  None.
  */
-extern void HeartRate_Register(heartRateServiceCB_t pfnServiceCB)
-{
-    heartRateServiceCB = pfnServiceCB;
+extern void HeartRate_Register(heartRateServiceCB_t pfnServiceCB) {
+  heartRateServiceCB = pfnServiceCB;
 }
 
 /*********************************************************************
@@ -230,26 +234,24 @@ extern void HeartRate_Register(heartRateServiceCB_t pfnServiceCB)
  *
  * @return  bStatus_t
  */
-bStatus_t HeartRate_SetParameter(uint8_t param, uint8_t len, void *value)
-{
-    bStatus_t ret = SUCCESS;
-    switch(param)
-    {
-        case HEARTRATE_MEAS_CHAR_CFG:
-            // Need connection handle
-            //heartRateMeasClientCharCfg.value = *((uint16_t*)value);
-            break;
+bStatus_t HeartRate_SetParameter(uint8_t param, uint8_t len, void *value) {
+  bStatus_t ret = SUCCESS;
+  switch(param) {
+    case HEARTRATE_MEAS_CHAR_CFG:
+      // Need connection handle
+      // heartRateMeasClientCharCfg.value = *((uint16_t*)value);
+      break;
 
-        case HEARTRATE_SENS_LOC:
-            heartRateSensLoc = *((uint8_t *)value);
-            break;
+    case HEARTRATE_SENS_LOC:
+      heartRateSensLoc = *((uint8_t *)value);
+      break;
 
-        default:
-            ret = INVALIDPARAMETER;
-            break;
-    }
+    default:
+      ret = INVALIDPARAMETER;
+      break;
+  }
 
-    return (ret);
+  return (ret);
 }
 
 /*********************************************************************
@@ -265,30 +267,27 @@ bStatus_t HeartRate_SetParameter(uint8_t param, uint8_t len, void *value)
  *
  * @return  bStatus_t
  */
-bStatus_t HeartRate_GetParameter(uint8_t param, void *value)
-{
-    bStatus_t ret = SUCCESS;
-    switch(param)
-    {
-        case HEARTRATE_MEAS_CHAR_CFG:
-            // Need connection handle
-            //*((uint16_t*)value) = heartRateMeasClientCharCfg.value;
-            break;
+bStatus_t HeartRate_GetParameter(uint8_t param, void *value) {
+  bStatus_t ret = SUCCESS;
+  switch(param) {
+    case HEARTRATE_MEAS_CHAR_CFG:
+      // Need connection handle
+      //*((uint16_t*)value) = heartRateMeasClientCharCfg.value;
+      break;
 
-        case HEARTRATE_SENS_LOC:
-            *((uint8_t *)value) = heartRateSensLoc;
-            break;
+    case HEARTRATE_SENS_LOC:
+      *((uint8_t *)value) = heartRateSensLoc;
+      break;
 
-        case HEARTRATE_COMMAND:
-            *((uint8_t *)value) = heartRateCommand;
-            break;
+    case HEARTRATE_COMMAND:
+      *((uint8_t *)value) = heartRateCommand;
+      break;
 
-        default:
-            ret = INVALIDPARAMETER;
-            break;
-    }
-
-    return (ret);
+    default:
+      ret = INVALIDPARAMETER;
+      break;
+  }
+  return (ret);
 }
 
 /*********************************************************************
@@ -302,21 +301,19 @@ bStatus_t HeartRate_GetParameter(uint8_t param, void *value)
  *
  * @return      Success or Failure
  */
-bStatus_t HeartRate_MeasNotify(uint16_t connHandle, attHandleValueNoti_t *pNoti)
-{
-    uint16_t value = GATTServApp_ReadCharCfg(connHandle, heartRateMeasClientCharCfg);
+bStatus_t HeartRate_MeasNotify(uint16_t connHandle, attHandleValueNoti_t *pNoti) {
+  uint16_t value = GATTServApp_ReadCharCfg(connHandle, heartRateMeasClientCharCfg);
 
-    // If notifications enabled
-    if(value & GATT_CLIENT_CFG_NOTIFY)
-    {
-        // Set the handle
-        pNoti->handle = heartRateAttrTbl[HEARTRATE_MEAS_VALUE_POS].handle;
+  // If notifications enabled
+  if (value & GATT_CLIENT_CFG_NOTIFY) {
+    // Set the handle
+    pNoti->handle = heartRateAttrTbl[HEARTRATE_MEAS_VALUE_POS].handle;
 
-        // Send the notification
-        return GATT_Notification(connHandle, pNoti, FALSE);
-    }
+    // Send the notification
+    return GATT_Notification(connHandle, pNoti, FALSE);
+  }
 
-    return bleIncorrectMode;
+  return bleIncorrectMode;
 }
 
 /*********************************************************************
@@ -335,29 +332,24 @@ bStatus_t HeartRate_MeasNotify(uint16_t connHandle, attHandleValueNoti_t *pNoti)
  */
 static uint8_t heartRate_ReadAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
                                     uint8_t *pValue, uint16_t *pLen, uint16_t offset,
-                                    uint16_t maxLen, uint8_t method)
-{
-    bStatus_t status = SUCCESS;
+                                    uint16_t maxLen, uint8_t method) {
+  bStatus_t status = SUCCESS;
 
-    uint16_t uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
+  uint16_t uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
+  PRINT("ReadAttrCB: uuid: 0x%04x, offset: %d\n", uuid, offset);
+  // Make sure it's not a blob operation (no attributes in the profile are long)
+  if (offset > 0) {
+    return (ATT_ERR_ATTR_NOT_LONG);
+  }
 
-    // Make sure it's not a blob operation (no attributes in the profile are long)
-    if(offset > 0)
-    {
-        return (ATT_ERR_ATTR_NOT_LONG);
-    }
+  if (uuid == BODY_SENSOR_LOC_UUID) {
+    *pLen = 1;
+    pValue[0] = *pAttr->pValue;
+  } else {
+    status = ATT_ERR_ATTR_NOT_FOUND;
+  }
 
-    if(uuid == BODY_SENSOR_LOC_UUID)
-    {
-        *pLen = 1;
-        pValue[0] = *pAttr->pValue;
-    }
-    else
-    {
-        status = ATT_ERR_ATTR_NOT_FOUND;
-    }
-
-    return (status);
+  return (status);
 }
 
 /*********************************************************************
@@ -375,51 +367,36 @@ static uint8_t heartRate_ReadAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
  */
 static bStatus_t heartRate_WriteAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
                                        uint8_t *pValue, uint16_t len, uint16_t offset,
-                                       uint8_t method)
-{
-    bStatus_t status = SUCCESS;
-
-    uint16_t uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
-    switch(uuid)
-    {
-        case HEARTRATE_CTRL_PT_UUID:
-            if(offset > 0)
-            {
-                status = ATT_ERR_ATTR_NOT_LONG;
-            }
-            else if(len != 1)
-            {
-                status = ATT_ERR_INVALID_VALUE_SIZE;
-            }
-            else if(*pValue != HEARTRATE_COMMAND_ENERGY_EXP)
-            {
-                status = HEARTRATE_ERR_NOT_SUP;
-            }
-            else
-            {
-                *(pAttr->pValue) = pValue[0];
-
-                (*heartRateServiceCB)(HEARTRATE_COMMAND_SET);
-            }
-            break;
-
-        case GATT_CLIENT_CHAR_CFG_UUID:
-            status = GATTServApp_ProcessCCCWriteReq(connHandle, pAttr, pValue, len,
-                                                    offset, GATT_CLIENT_CFG_NOTIFY);
-            if(status == SUCCESS)
-            {
-                uint16_t charCfg = BUILD_UINT16(pValue[0], pValue[1]);
-
-                (*heartRateServiceCB)((charCfg == GATT_CFG_NO_OPERATION) ? HEARTRATE_MEAS_NOTI_DISABLED : HEARTRATE_MEAS_NOTI_ENABLED);
-            }
-            break;
-
-        default:
-            status = ATT_ERR_ATTR_NOT_FOUND;
-            break;
-    }
-
-    return (status);
+                                       uint8_t method) {
+  bStatus_t status = SUCCESS;
+  uint16_t uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
+  PRINT("WriteAttrCB: uuid: 0x%04x, *pValue: %d, offset: %d, len: %d\n", uuid, *pValue, offset, len);
+  switch(uuid) {
+    case HEARTRATE_CTRL_PT_UUID:  // 0x2A39
+      if (offset > 0) {
+        status = ATT_ERR_ATTR_NOT_LONG;
+      } else if (len != 1) {
+        status = ATT_ERR_INVALID_VALUE_SIZE;
+      } else if (*pValue != HEARTRATE_COMMAND_ENERGY_EXP) { // 0x01
+        status = HEARTRATE_ERR_NOT_SUP;
+      } else {
+        *(pAttr->pValue) = pValue[0];
+        (*heartRateServiceCB)(HEARTRATE_COMMAND_SET);
+      }
+      break;
+    case GATT_CLIENT_CHAR_CFG_UUID: // 0x2902
+      status = GATTServApp_ProcessCCCWriteReq(connHandle, pAttr, pValue, len,
+                                                offset, GATT_CLIENT_CFG_NOTIFY);
+      if (status == SUCCESS) {
+        uint16_t charCfg = BUILD_UINT16(pValue[0], pValue[1]);
+        (*heartRateServiceCB)((charCfg == GATT_CFG_NO_OPERATION) ? HEARTRATE_MEAS_NOTI_DISABLED : HEARTRATE_MEAS_NOTI_ENABLED);
+      }
+      break;
+    default:
+      status = ATT_ERR_ATTR_NOT_FOUND;
+      break;
+  }
+  return (status);
 }
 
 /*********************************************************************
@@ -432,19 +409,16 @@ static bStatus_t heartRate_WriteAttrCB(uint16_t connHandle, gattAttribute_t *pAt
  *
  * @return      none
  */
-void HeartRate_HandleConnStatusCB(uint16_t connHandle, uint8_t changeType)
-{
-    // Make sure this is not loopback connection
-    if(connHandle != LOOPBACK_CONNHANDLE)
-    {
-        // Reset Client Char Config if connection has dropped
-        if((changeType == LINKDB_STATUS_UPDATE_REMOVED) ||
-           ((changeType == LINKDB_STATUS_UPDATE_STATEFLAGS) &&
-            (!linkDB_Up(connHandle))))
-        {
-            GATTServApp_InitCharCfg(connHandle, heartRateMeasClientCharCfg);
-        }
+void HeartRate_HandleConnStatusCB(uint16_t connHandle, uint8_t changeType) {
+  // Make sure this is not loopback connection
+  if (connHandle != LOOPBACK_CONNHANDLE) {
+    // Reset Client Char Config if connection has dropped
+    if ((changeType == LINKDB_STATUS_UPDATE_REMOVED) ||
+       ((changeType == LINKDB_STATUS_UPDATE_STATEFLAGS) &&
+        (!linkDB_Up(connHandle)))) {
+      GATTServApp_InitCharCfg(connHandle, heartRateMeasClientCharCfg);
     }
+  }
 }
 
 /*********************************************************************
