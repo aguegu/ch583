@@ -372,7 +372,7 @@ static bStatus_t heartRate_WriteAttrCB(uint16_t connHandle, gattAttribute_t *pAt
   uint16_t uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
   PRINT("WriteAttrCB: uuid: 0x%04x, *pValue: %d, offset: %d, len: %d\n", uuid, *pValue, offset, len);
   switch(uuid) {
-    case HEARTRATE_CTRL_PT_UUID:  // 0x2A39
+    case HEARTRATE_CTRL_PT_UUID:  // 0x2A39, https://github.com/oesmith/gatt-xml/blob/master/org.bluetooth.characteristic.heart_rate_control_point.xml
       if (offset > 0) {
         status = ATT_ERR_ATTR_NOT_LONG;
       } else if (len != 1) {
