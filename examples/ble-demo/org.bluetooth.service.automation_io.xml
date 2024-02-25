@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright 2015 Bluetooth SIG, Inc. All rights reserved. -->
-<Service
-  xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/service.xsd"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  name="Automation IO"
-  type="org.bluetooth.service.automation_io"
-  uuid="1815"
-  last-modified="2015-07-14"
-  approved="Yes">
+<Service xsi:noNamespaceSchemaLocation="http://schemas.bluetooth.org/Documents/service.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Automation IO" type="org.bluetooth.service.automation_io" uuid="1815" last-modified="2015-07-14" approved="Yes">
   <InformativeText>
     <Abstract>The Automation IO service is used to expose the analog inputs/outputs and digital input/outputs of a generic IO module (IOM).</Abstract>
   </InformativeText>
@@ -19,8 +12,7 @@
     <Requirement subProcedure="Write Without Response">C2: Mandatory if the ?write without response? characteristic property is supported for either the Digital or Analog characteristics (if any available).</Requirement>
     <Requirement subProcedure="Indications">C3: Mandatory if the ?indicate? or ?notify? characteristic property respectively is supported for either the Digital, Analog or Aggregate characteristic.</Requirement>
     <Requirement subProcedure="Notifications">C3:Mandatory if the ?indicate? or ?notify? characteristic property respectively is supported for either the Digital, Analog or Aggregate characteristic.</Requirement>
-    <Requirement subProcedure="Write Characteristic Descriptors">
-      C4: Mandatory if indications or notification is supported or if writable characteristics descriptors are supported for at least one supported characteristics.</Requirement>
+    <Requirement subProcedure="Write Characteristic Descriptors">C4: Mandatory if indications or notification is supported or if writable characteristics descriptors are supported for at least one supported characteristics.</Requirement>
     <Requirement subProcedure="Read Characteristic Descriptors">C5: Mandatory if a Digital characteristic is present.</Requirement>
   </GATTRequirements>
   <Transports>
