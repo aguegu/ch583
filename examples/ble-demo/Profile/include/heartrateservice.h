@@ -6,7 +6,7 @@
  * Description        :
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -43,16 +43,16 @@ extern "C" {
 #define HEARTRATE_FLAGS_RR                 0x10
 
 // Values for sensor location
-#define HEARTRATE_SENS_LOC_OTHER           0x00
-#define HEARTRATE_SENS_LOC_CHEST           0x01
-#define HEARTRATE_SENS_LOC_WRIST           0x02
-#define HEARTRATE_SENS_LOC_FINGER          0x03
-#define HEARTRATE_SENS_LOC_HAND            0x04
-#define HEARTRATE_SENS_LOC_EARLOBE         0x05
-#define HEARTRATE_SENS_LOC_FOOT            0x06
+// #define HEARTRATE_SENS_LOC_OTHER           0x00
+// #define HEARTRATE_SENS_LOC_CHEST           0x01
+// #define HEARTRATE_SENS_LOC_WRIST           0x02
+// #define HEARTRATE_SENS_LOC_FINGER          0x03
+// #define HEARTRATE_SENS_LOC_HAND            0x04
+// #define HEARTRATE_SENS_LOC_EARLOBE         0x05
+// #define HEARTRATE_SENS_LOC_FOOT            0x06
 
 // Value for command characteristic
-#define HEARTRATE_COMMAND_ENERGY_EXP       0x01
+// #define HEARTRATE_COMMAND_ENERGY_EXP       0x01
 
 // ATT Error code
 // Control point value not supported
@@ -64,7 +64,7 @@ extern "C" {
 // Callback events
 #define HEARTRATE_MEAS_NOTI_ENABLED        1
 #define HEARTRATE_MEAS_NOTI_DISABLED       2
-#define HEARTRATE_COMMAND_SET              3
+// #define HEARTRATE_COMMAND_SET              3
 
 /*********************************************************************
  * TYPEDEFS

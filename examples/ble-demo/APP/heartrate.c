@@ -210,11 +210,11 @@ void HeartRate_Init() {
     GAPBondMgr_SetParameter(GAPBOND_PERI_BONDING_ENABLED, sizeof(uint8_t), &bonding);
   }
 
-  // Setup the Heart Rate Characteristic Values
-  {
-    uint8_t sensLoc = HEARTRATE_SENS_LOC_CHEST;
-    HeartRate_SetParameter(HEARTRATE_SENS_LOC, sizeof(uint8_t), &sensLoc);
-  }
+  // // Setup the Heart Rate Characteristic Values
+  // {
+  //   uint8_t sensLoc = HEARTRATE_SENS_LOC_CHEST;
+  //   HeartRate_SetParameter(HEARTRATE_SENS_LOC, sizeof(uint8_t), &sensLoc);
+  // }
 
   // Initialize GATT attributes
   GGS_AddService(GATT_ALL_SERVICES);         // GAP
@@ -405,10 +405,11 @@ static void heartRateCB(uint8_t event) {
   } else if (event == HEARTRATE_MEAS_NOTI_DISABLED) { // 2
     // stop periodic measurement
     tmos_stop_task(heartRate_TaskID, HEART_PERIODIC_EVT);
-  } else if (event == HEARTRATE_COMMAND_SET) {  // 3
-    heartRateEnergy = 0; // reset energy expended
-    GPIOB_InverseBits(GPIO_Pin_18); // executed only when write 0x01
   }
+  // else if (event == HEARTRATE_COMMAND_SET) {  // 3
+  //   heartRateEnergy = 0; // reset energy expended
+  //   GPIOB_InverseBits(GPIO_Pin_18); // executed only when write 0x01
+  // }
 }
 
 /*********************************************************************
