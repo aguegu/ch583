@@ -1,5 +1,6 @@
 #include "config.h"
 #include "iom.h"
+#include "iomservice.h"
 
 // Delay of start connect paramter update
 #define DEFAULT_CONN_PARAM_UPDATE_DELAY      1600
@@ -12,7 +13,6 @@
 // Duration of slow advertising duration in (625us) (set to 0 for continuous advertising)
 #define DEFAULT_SLOW_ADV_DURATION            0
 
-#define IOM_SERV_UUID 0x1815
 
 static uint8_t iom_TaskID; // Task ID for internal task/event processing
 static gapRole_States_t gapProfileState = GAPROLE_INIT;
@@ -25,15 +25,12 @@ static uint8_t scanRspData[] = {
   'I', 'O', 'M'
 };
 
-// Device name attribute value
-static uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "IOM0";
-
 static uint8_t advertData[] = {
   // flags
   0x02,
   GAP_ADTYPE_FLAGS,
   GAP_ADTYPE_FLAGS_GENERAL | GAP_ADTYPE_FLAGS_BREDR_NOT_SUPPORTED,
-  // service UUIDs, , to notify central devices what services are included
+  // service UUIDs to notify central devices what services are included
   0x03,       // length of this data
   GAP_ADTYPE_16BIT_MORE,
   LO_UINT16(IOM_SERV_UUID),
@@ -69,7 +66,10 @@ void IOM_Init() {
   }
 
   // Set the GAP Characteristics
-  GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName);  // 0x2A00
+  {
+    uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "IOM0";
+    GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName);  // 0x2A00
+  }
 
   // Setup the GAP Bond Manager
   {
