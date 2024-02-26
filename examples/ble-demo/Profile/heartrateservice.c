@@ -77,13 +77,13 @@ static uint8_t       heartRateMeasProps = GATT_PROP_NOTIFY;
 static uint8_t       heartRateMeas = 0;
 static gattCharCfg_t heartRateMeasClientCharCfg[GATT_MAX_NUM_CONN];
 
-// Sensor Location Characteristic
-static uint8_t heartRateSensLocProps = GATT_PROP_READ;
-static uint8_t heartRateSensLoc = 0;
-
-// Command Characteristic
-static uint8_t heartRateCommandProps = GATT_PROP_WRITE;
-static uint8_t heartRateCommand = 0;
+// // Sensor Location Characteristic
+// static uint8_t heartRateSensLocProps = GATT_PROP_READ;
+// static uint8_t heartRateSensLoc = 0;
+//
+// // Command Characteristic
+// static uint8_t heartRateCommandProps = GATT_PROP_WRITE;
+// static uint8_t heartRateCommand = 0;
 
 /*********************************************************************
  * Profile Attributes - Table
@@ -122,37 +122,37 @@ static gattAttribute_t heartRateAttrTbl[] = {
     (uint8_t *)&heartRateMeasClientCharCfg
   },
 
-  // Sensor Location Declaration
-  {
-    { ATT_BT_UUID_SIZE, characterUUID },
-    GATT_PERMIT_READ,
-    0,
-    &heartRateSensLocProps
-  },
+  // // Sensor Location Declaration
+  // {
+  //   { ATT_BT_UUID_SIZE, characterUUID },
+  //   GATT_PERMIT_READ,
+  //   0,
+  //   &heartRateSensLocProps
+  // },
+  //
+  // // Sensor Location Value
+  // {
+  //   { ATT_BT_UUID_SIZE, heartRateSensLocUUID },
+  //   GATT_PERMIT_READ,
+  //   0,
+  //   &heartRateSensLoc
+  // },
 
-  // Sensor Location Value
-  {
-    { ATT_BT_UUID_SIZE, heartRateSensLocUUID },
-    GATT_PERMIT_READ,
-    0,
-    &heartRateSensLoc
-  },
-
-  // Command Declaration
-  {
-    { ATT_BT_UUID_SIZE, characterUUID },
-    GATT_PERMIT_READ,
-    0,
-    &heartRateCommandProps
-  },
-
-  // Command Value
-  {
-    { ATT_BT_UUID_SIZE, heartRateCommandUUID },
-    GATT_PERMIT_WRITE,
-    0,
-    &heartRateCommand
-  }
+  // // Command Declaration
+  // {
+  //   { ATT_BT_UUID_SIZE, characterUUID },
+  //   GATT_PERMIT_READ,
+  //   0,
+  //   &heartRateCommandProps
+  // },
+  //
+  // // Command Value
+  // {
+  //   { ATT_BT_UUID_SIZE, heartRateCommandUUID },
+  //   GATT_PERMIT_WRITE,
+  //   0,
+  //   &heartRateCommand
+  // }
 };
 
 /*********************************************************************
@@ -242,9 +242,9 @@ bStatus_t HeartRate_SetParameter(uint8_t param, uint8_t len, void *value) {
       // heartRateMeasClientCharCfg.value = *((uint16_t*)value);
       break;
 
-    case HEARTRATE_SENS_LOC:
-      heartRateSensLoc = *((uint8_t *)value);
-      break;
+    // case HEARTRATE_SENS_LOC:
+    //   heartRateSensLoc = *((uint8_t *)value);
+    //   break;
 
     default:
       ret = INVALIDPARAMETER;
@@ -275,13 +275,13 @@ bStatus_t HeartRate_GetParameter(uint8_t param, void *value) {
       //*((uint16_t*)value) = heartRateMeasClientCharCfg.value;
       break;
 
-    case HEARTRATE_SENS_LOC:
-      *((uint8_t *)value) = heartRateSensLoc;
-      break;
-
-    case HEARTRATE_COMMAND:
-      *((uint8_t *)value) = heartRateCommand;
-      break;
+    // case HEARTRATE_SENS_LOC:
+    //   *((uint8_t *)value) = heartRateSensLoc;
+    //   break;
+    //
+    // case HEARTRATE_COMMAND:
+    //   *((uint8_t *)value) = heartRateCommand;
+    //   break;
 
     default:
       ret = INVALIDPARAMETER;
@@ -342,12 +342,12 @@ static uint8_t heartRate_ReadAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
     return (ATT_ERR_ATTR_NOT_LONG);
   }
 
-  if (uuid == BODY_SENSOR_LOC_UUID) {
-    *pLen = 1;
-    pValue[0] = *pAttr->pValue;
-  } else {
+  // if (uuid == BODY_SENSOR_LOC_UUID) {
+  //   *pLen = 1;
+  //   pValue[0] = *pAttr->pValue;
+  // } else {
     status = ATT_ERR_ATTR_NOT_FOUND;
-  }
+  // }
 
   return (status);
 }
@@ -372,18 +372,18 @@ static bStatus_t heartRate_WriteAttrCB(uint16_t connHandle, gattAttribute_t *pAt
   uint16_t uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
   PRINT("WriteAttrCB: uuid: 0x%04x, *pValue: %d, offset: %d, len: %d\n", uuid, *pValue, offset, len);
   switch(uuid) {
-    case HEARTRATE_CTRL_PT_UUID:  // 0x2A39, https://github.com/oesmith/gatt-xml/blob/master/org.bluetooth.characteristic.heart_rate_control_point.xml
-      if (offset > 0) {
-        status = ATT_ERR_ATTR_NOT_LONG;
-      } else if (len != 1) {
-        status = ATT_ERR_INVALID_VALUE_SIZE;
-      } else if (*pValue != HEARTRATE_COMMAND_ENERGY_EXP) { // 0x01
-        status = HEARTRATE_ERR_NOT_SUP;
-      } else {
-        *(pAttr->pValue) = pValue[0];
-        (*heartRateServiceCB)(HEARTRATE_COMMAND_SET);
-      }
-      break;
+    // case HEARTRATE_CTRL_PT_UUID:  // 0x2A39, https://github.com/oesmith/gatt-xml/blob/master/org.bluetooth.characteristic.heart_rate_control_point.xml
+    //   if (offset > 0) {
+    //     status = ATT_ERR_ATTR_NOT_LONG;
+    //   } else if (len != 1) {
+    //     status = ATT_ERR_INVALID_VALUE_SIZE;
+    //   } else if (*pValue != HEARTRATE_COMMAND_ENERGY_EXP) { // 0x01
+    //     status = HEARTRATE_ERR_NOT_SUP;
+    //   } else {
+    //     *(pAttr->pValue) = pValue[0];
+    //     (*heartRateServiceCB)(HEARTRATE_COMMAND_SET);
+    //   }
+    //   break;
     case GATT_CLIENT_CHAR_CFG_UUID: // 0x2902
       status = GATTServApp_ProcessCCCWriteReq(connHandle, pAttr, pValue, len,
                                                 offset, GATT_CLIENT_CFG_NOTIFY);
