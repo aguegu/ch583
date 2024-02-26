@@ -371,7 +371,7 @@ static bStatus_t heartRate_WriteAttrCB(uint16_t connHandle, gattAttribute_t *pAt
   bStatus_t status = SUCCESS;
   uint16_t uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
   PRINT("WriteAttrCB: uuid: 0x%04x, *pValue: %d, offset: %d, len: %d\n", uuid, *pValue, offset, len);
-  switch(uuid) {
+  switch (uuid) {
     // case HEARTRATE_CTRL_PT_UUID:  // 0x2A39, https://github.com/oesmith/gatt-xml/blob/master/org.bluetooth.characteristic.heart_rate_control_point.xml
     //   if (offset > 0) {
     //     status = ATT_ERR_ATTR_NOT_LONG;
@@ -384,14 +384,14 @@ static bStatus_t heartRate_WriteAttrCB(uint16_t connHandle, gattAttribute_t *pAt
     //     (*heartRateServiceCB)(HEARTRATE_COMMAND_SET);
     //   }
     //   break;
-    case GATT_CLIENT_CHAR_CFG_UUID: // 0x2902
-      status = GATTServApp_ProcessCCCWriteReq(connHandle, pAttr, pValue, len,
-                                                offset, GATT_CLIENT_CFG_NOTIFY);
-      if (status == SUCCESS) {
-        uint16_t charCfg = BUILD_UINT16(pValue[0], pValue[1]);
-        (*heartRateServiceCB)((charCfg == GATT_CFG_NO_OPERATION) ? HEARTRATE_MEAS_NOTI_DISABLED : HEARTRATE_MEAS_NOTI_ENABLED);
-      }
-      break;
+    // case GATT_CLIENT_CHAR_CFG_UUID: // 0x2902
+    //   status = GATTServApp_ProcessCCCWriteReq(connHandle, pAttr, pValue, len,
+    //                                             offset, GATT_CLIENT_CFG_NOTIFY);
+    //   if (status == SUCCESS) {
+    //     uint16_t charCfg = BUILD_UINT16(pValue[0], pValue[1]);
+    //     (*heartRateServiceCB)((charCfg == GATT_CFG_NO_OPERATION) ? HEARTRATE_MEAS_NOTI_DISABLED : HEARTRATE_MEAS_NOTI_ENABLED);
+    //   }
+    //   break;
     default:
       status = ATT_ERR_ATTR_NOT_FOUND;
       break;
