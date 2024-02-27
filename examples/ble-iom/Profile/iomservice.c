@@ -17,10 +17,25 @@
 
 // Heart rate service
 const uint8_t iomServUUID[ATT_BT_UUID_SIZE] = {
-    LO_UINT16(IOM_SERV_UUID), HI_UINT16(IOM_SERV_UUID)};
+    LO_UINT16(UUID_ORG_BLUETOOTH_SERVICE_AUTOMATIONIO), HI_UINT16(UUID_ORG_BLUETOOTH_SERVICE_AUTOMATIONIO)};
+
+const uint8_t iomCharacteristicDigitalUUID[ATT_BT_UUID_SIZE] = {
+    LO_UINT16(UUID_ORG_BLUETOOTH_CHARACTERISTIC_DIGITAL), HI_UINT16(UUID_ORG_BLUETOOTH_CHARACTERISTIC_DIGITAL)};
+
+const uint8_t iomCharacteristicFormatUUID[ATT_BT_UUID_SIZE] = {
+  LO_UINT16(GATT_CHAR_FORMAT_UUID), HI_UINT16(GATT_CHAR_FORMAT_UUID)};
+
+const uint8_t iomNumberOfDigitalsUUID[ATT_BT_UUID_SIZE] = {
+  LO_UINT16(UUID_ORG_BLUETOOTH_DESCRIPTOR_NUMBEROFDIGITALS), HI_UINT16(UUID_ORG_BLUETOOTH_DESCRIPTOR_NUMBEROFDIGITALS)};
+
 
 // Heart Rate Service attribute
 static const gattAttrType_t iomService = { ATT_BT_UUID_SIZE, iomServUUID };
+
+static uint8_t iomDigitalsProps = GATT_PROP_READ | GATT_PROP_WRITE;
+static uint8_t digitals = 0;
+static uint8_t digitalsFormat[] = {1, 0, 0x00, 0x27, 1, 0, 0};
+static uint8_t numberOfDigitals = 2;
 
 static gattAttribute_t iomAttrTbl[] = {
   // Heart Rate Service
@@ -30,6 +45,30 @@ static gattAttribute_t iomAttrTbl[] = {
     0,                                      /* handle */
     (uint8_t *)&iomService            /* pValue */
   },
+  {
+    { ATT_BT_UUID_SIZE, characterUUID },
+    GATT_PERMIT_READ,
+    0,
+    &iomDigitalsProps
+  },
+  {
+    { ATT_BT_UUID_SIZE, iomCharacteristicDigitalUUID },
+    GATT_PERMIT_READ | GATT_PERMIT_WRITE,
+    0,
+    &digitals
+  },
+  {
+    { ATT_BT_UUID_SIZE, iomCharacteristicFormatUUID },
+    GATT_PERMIT_READ,
+    0,
+    digitalsFormat
+  },
+  {
+    { ATT_BT_UUID_SIZE, iomNumberOfDigitalsUUID },
+    GATT_PERMIT_READ,
+    0,
+    &numberOfDigitals
+  }
 };
 
 static uint8_t   iom_ReadAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
@@ -69,18 +108,21 @@ static uint8_t iom_ReadAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
   bStatus_t status = SUCCESS;
 
   uint16_t uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
-  PRINT("ReadAttrCB: uuid: 0x%04x, offset: %d\n", uuid, offset);
+  PRINT("ReadAttrCB: uuid: 0x%04x, offset: %d *pAttr->pValue: %02x\n", uuid, offset, *pAttr->pValue);
   // Make sure it's not a blob operation (no attributes in the profile are long)
   if (offset > 0) {
     return (ATT_ERR_ATTR_NOT_LONG);
   }
 
-  // if (uuid == BODY_SENSOR_LOC_UUID) {
-  //   *pLen = 1;
-  //   pValue[0] = *pAttr->pValue;
-  // } else {
+  if (uuid == UUID_ORG_BLUETOOTH_CHARACTERISTIC_DIGITAL) {
+    *pLen = 1;
+    pValue[0] = *pAttr->pValue;
+  } else if (uuid == UUID_ORG_BLUETOOTH_DESCRIPTOR_NUMBEROFDIGITALS) {
+    *pLen = 1;    
+    tmos_memcpy(pValue, pAttr->pValue, *pLen);
+  } else {
     status = ATT_ERR_ATTR_NOT_FOUND;
-  // }
+  }
 
   return (status);
 }
@@ -92,6 +134,13 @@ static bStatus_t iom_WriteAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
   uint16_t uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
   PRINT("WriteAttrCB: uuid: 0x%04x, *pValue: %d, offset: %d, len: %d\n", uuid, *pValue, offset, len);
   switch (uuid) {
+    case UUID_ORG_BLUETOOTH_CHARACTERISTIC_DIGITAL:
+      if (len != 1) {
+        status = ATT_ERR_INVALID_VALUE_SIZE;
+      } else {
+        *(pAttr->pValue) = pValue[0];
+      }
+      break;
     // case HEARTRATE_CTRL_PT_UUID:  // 0x2A39, https://github.com/oesmith/gatt-xml/blob/master/org.bluetooth.characteristic.heart_rate_control_point.xml
     //   if (offset > 0) {
     //     status = ATT_ERR_ATTR_NOT_LONG;
@@ -117,4 +166,16 @@ static bStatus_t iom_WriteAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
       break;
   }
   return (status);
+}
+
+void IOM_HandleConnStatusCB(uint16_t connHandle, uint8_t changeType) {
+  // Make sure this is not loopback connection
+  if (connHandle != LOOPBACK_CONNHANDLE) {
+    // Reset Client Char Config if connection has dropped
+    if ((changeType == LINKDB_STATUS_UPDATE_REMOVED) ||
+       ((changeType == LINKDB_STATUS_UPDATE_STATEFLAGS) &&
+        (!linkDB_Up(connHandle)))) {
+      // GATTServApp_InitCharCfg(connHandle, heartRateMeasClientCharCfg);
+    }
+  }
 }
