@@ -33,8 +33,8 @@ static uint8_t advertData[] = {
   // service UUIDs to notify central devices what services are included
   0x03,       // length of this data
   GAP_ADTYPE_16BIT_MORE,
-  LO_UINT16(IOM_SERV_UUID),
-  HI_UINT16(IOM_SERV_UUID),
+  LO_UINT16(UUID_ORG_BLUETOOTH_SERVICE_AUTOMATIONIO),
+  HI_UINT16(UUID_ORG_BLUETOOTH_SERVICE_AUTOMATIONIO),
 };
 
 static void iom_ProcessTMOSMsg(tmos_event_hdr_t *pMsg);
@@ -67,8 +67,10 @@ void IOM_Init() {
 
   // Set the GAP Characteristics
   {
-    uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "IOM0";
+    uint8_t attDeviceName[GAP_DEVICE_NAME_LEN] = "ble-iom";
     GGS_SetParameter(GGS_DEVICE_NAME_ATT, GAP_DEVICE_NAME_LEN, attDeviceName);  // 0x2A00
+    uint16_t attAppearance = 0x0086;  // wearable computer
+    GGS_SetParameter(GGS_APPEARANCE_ATT, 2, &attAppearance);  // 0x2A00
   }
 
   // Setup the GAP Bond Manager
@@ -87,6 +89,8 @@ void IOM_Init() {
 
   GGS_AddService(GATT_ALL_SERVICES);         // GAP
   GATTServApp_AddService(GATT_ALL_SERVICES); // GATT attributes
+
+  IOM_AddService(GATT_ALL_SERVICES);
 
   tmos_set_event(iom_TaskID, START_DEVICE_EVT);
 }
@@ -126,7 +130,7 @@ static void IOMGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEvent) {
     // tmos_stop_task(iom_TaskID, HEART_PERIODIC_EVT);
 
     // reset client characteristic configuration descriptors
-    // HeartRate_HandleConnStatusCB(gapConnHandle, LINKDB_STATUS_UPDATE_REMOVED);
+    IOM_HandleConnStatusCB(gapConnHandle, LINKDB_STATUS_UPDATE_REMOVED);
 
     // link loss -- use fast advertising
     GAP_SetParamValue(TGAP_DISC_ADV_INT_MIN, DEFAULT_FAST_ADV_INTERVAL);
