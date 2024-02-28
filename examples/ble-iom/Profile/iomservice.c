@@ -70,12 +70,12 @@ static gattAttribute_t iomAttrTbl[] = {
     0,
     (uint8_t *)&iomDigitalsClientCharCfg
   },
-  {
-    { ATT_BT_UUID_SIZE, iomCharacteristicFormatUUID },
-    GATT_PERMIT_READ,
-    0,
-    digitalsFormat
-  },
+  // {
+  //   { ATT_BT_UUID_SIZE, iomCharacteristicFormatUUID },
+  //   GATT_PERMIT_READ,
+  //   0,
+  //   digitalsFormat
+  // },
   {
     { ATT_BT_UUID_SIZE, iomNumberOfDigitalsUUID },
     GATT_PERMIT_READ,

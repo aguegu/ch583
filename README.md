@@ -20,6 +20,8 @@ tar xJf riscv-embedded-gcc.tar.xz`
 *isp/WCHISPTool_CMD* folder comes from [WCHISPTool_CMD_ZIP](https://www.wch.cn/downloads/WCHISPTool_CMD_ZIP.html) (Linux x64)
 *isp/config.ini* is exported from [WCHISPTool on Windows](https://www.wch.cn/downloads/WCHISPTool_Setup_exe.html)
 
+It requires `linux-headers` of current kernel to build
+
 ```
 cd isp/driver
 sudo make install
