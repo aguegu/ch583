@@ -1,7 +1,7 @@
 #include "config.h"
 #include "iomservice.h"
 
-// static gattCharCfg_t iomMeasClientCharCfg[GATT_MAX_NUM_CONN];
+
 
 // void IOM_HandleConnStatusCB(uint16_t connHandle, uint8_t changeType) {
 //   // Make sure this is not loopback connection
@@ -14,6 +14,8 @@
 //     }
 //   }
 // }
+
+#define IOM_DIGITALS_VALUE_POS    2
 
 // Heart rate service
 const uint8_t iomServUUID[ATT_BT_UUID_SIZE] = {
@@ -28,12 +30,17 @@ const uint8_t iomCharacteristicFormatUUID[ATT_BT_UUID_SIZE] = {
 const uint8_t iomNumberOfDigitalsUUID[ATT_BT_UUID_SIZE] = {
   LO_UINT16(UUID_ORG_BLUETOOTH_DESCRIPTOR_NUMBEROFDIGITALS), HI_UINT16(UUID_ORG_BLUETOOTH_DESCRIPTOR_NUMBEROFDIGITALS)};
 
+static iomServiceCB_t iomServiceCB;
 
 // Heart Rate Service attribute
 static const gattAttrType_t iomService = { ATT_BT_UUID_SIZE, iomServUUID };
 
-static uint8_t iomDigitalsProps = GATT_PROP_READ | GATT_PROP_WRITE;
+static uint8_t iomDigitalsProps = GATT_PROP_READ | GATT_PROP_WRITE_NO_RSP | GATT_PROP_NOTIFY;
+
 static uint8_t digitals = 0;
+
+static gattCharCfg_t iomDigitalsClientCharCfg[GATT_MAX_NUM_CONN];
+
 static uint8_t digitalsFormat[] = {1, 0, 0x00, 0x27, 1, 0, 0};
 static uint8_t numberOfDigitals = 2;
 
@@ -56,6 +63,12 @@ static gattAttribute_t iomAttrTbl[] = {
     GATT_PERMIT_READ | GATT_PERMIT_WRITE,
     0,
     &digitals
+  },
+  {
+    { ATT_BT_UUID_SIZE, clientCharCfgUUID },
+    GATT_PERMIT_READ | GATT_PERMIT_WRITE,
+    0,
+    (uint8_t *)&iomDigitalsClientCharCfg
   },
   {
     { ATT_BT_UUID_SIZE, iomCharacteristicFormatUUID },
@@ -89,7 +102,7 @@ bStatus_t IOM_AddService(uint32_t services) {
   uint8_t status = SUCCESS;
 
   // Initialize Client Characteristic Configuration attributes
-  // GATTServApp_InitCharCfg(INVALID_CONNHANDLE, iomMeasClientCharCfg);
+  GATTServApp_InitCharCfg(INVALID_CONNHANDLE, iomDigitalsClientCharCfg);
 
   if (services & IOM_SERVICE) {
     // Register GATT attribute list and CBs with GATT Server App
@@ -98,8 +111,35 @@ bStatus_t IOM_AddService(uint32_t services) {
                                          GATT_MAX_ENCRYPT_KEY_SIZE,
                                          &iomCBs);
   }
-
   return (status);
+}
+
+extern void IOM_Register(iomServiceCB_t pfnServiceCB) {
+    iomServiceCB = pfnServiceCB;
+}
+
+bStatus_t IOM_GetParameter(uint8_t param, void *value) {
+  bStatus_t ret = SUCCESS;
+  switch (param) {
+      case IOM_DIGITALS_PARAM:
+          *((uint8_t*)value) = *iomAttrTbl[IOM_DIGITALS_VALUE_POS].pValue;
+          break;
+      default:
+          ret = INVALIDPARAMETER;
+          break;
+  }
+
+  return (ret);
+}
+
+bStatus_t IOM_DigitalsNotify(uint16_t connHandle, attHandleValueNoti_t *pNoti) {
+  uint16_t value = GATTServApp_ReadCharCfg(connHandle, iomDigitalsClientCharCfg);
+  if (value & GATT_CLIENT_CFG_NOTIFY) { // If notifications enabled
+    // Set the handle
+    pNoti->handle = iomAttrTbl[IOM_DIGITALS_VALUE_POS].handle;
+    return GATT_Notification(connHandle, pNoti, FALSE);
+  }
+  return bleIncorrectMode;
 }
 
 static uint8_t iom_ReadAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
@@ -118,7 +158,7 @@ static uint8_t iom_ReadAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
     *pLen = 1;
     pValue[0] = *pAttr->pValue;
   } else if (uuid == UUID_ORG_BLUETOOTH_DESCRIPTOR_NUMBEROFDIGITALS) {
-    *pLen = 1;    
+    *pLen = 1;
     tmos_memcpy(pValue, pAttr->pValue, *pLen);
   } else {
     status = ATT_ERR_ATTR_NOT_FOUND;
@@ -132,35 +172,25 @@ static bStatus_t iom_WriteAttrCB(uint16_t connHandle, gattAttribute_t *pAttr,
                                        uint8_t method) {
   bStatus_t status = SUCCESS;
   uint16_t uuid = BUILD_UINT16(pAttr->type.uuid[0], pAttr->type.uuid[1]);
-  PRINT("WriteAttrCB: uuid: 0x%04x, *pValue: %d, offset: %d, len: %d\n", uuid, *pValue, offset, len);
+  PRINT("WriteAttrCB: uuid: 0x%04x, *pValue: %d, offset: %d, len: %d\r\n", uuid, *pValue, offset, len);
   switch (uuid) {
     case UUID_ORG_BLUETOOTH_CHARACTERISTIC_DIGITAL:
       if (len != 1) {
         status = ATT_ERR_INVALID_VALUE_SIZE;
       } else {
         *(pAttr->pValue) = pValue[0];
+        (*iomServiceCB)(IOM_DIGITALS_SET);
       }
       break;
-    // case HEARTRATE_CTRL_PT_UUID:  // 0x2A39, https://github.com/oesmith/gatt-xml/blob/master/org.bluetooth.characteristic.heart_rate_control_point.xml
-    //   if (offset > 0) {
-    //     status = ATT_ERR_ATTR_NOT_LONG;
-    //   } else if (len != 1) {
-    //     status = ATT_ERR_INVALID_VALUE_SIZE;
-    //   } else if (*pValue != HEARTRATE_COMMAND_ENERGY_EXP) { // 0x01
-    //     status = HEARTRATE_ERR_NOT_SUP;
-    //   } else {
-    //     *(pAttr->pValue) = pValue[0];
-    //     (*heartRateServiceCB)(HEARTRATE_COMMAND_SET);
-    //   }
-    //   break;
-    // case GATT_CLIENT_CHAR_CFG_UUID: // 0x2902
-    //   status = GATTServApp_ProcessCCCWriteReq(connHandle, pAttr, pValue, len,
-    //                                             offset, GATT_CLIENT_CFG_NOTIFY);
-    //   if (status == SUCCESS) {
-    //     uint16_t charCfg = BUILD_UINT16(pValue[0], pValue[1]);
-    //     (*heartRateServiceCB)((charCfg == GATT_CFG_NO_OPERATION) ? HEARTRATE_MEAS_NOTI_DISABLED : HEARTRATE_MEAS_NOTI_ENABLED);
-    //   }
-    //   break;
+    case GATT_CLIENT_CHAR_CFG_UUID: // 0x2902
+      status = GATTServApp_ProcessCCCWriteReq(connHandle, pAttr, pValue, len,
+                                                offset, GATT_CLIENT_CFG_NOTIFY);
+      if (status == SUCCESS) {
+        uint16_t charCfg = BUILD_UINT16(pValue[0], pValue[1]);
+        PRINT("charCfg: %04x\r\n", charCfg);
+        (*iomServiceCB)((charCfg == GATT_CFG_NO_OPERATION) ? IOM_DIGITALS_NOTI_DISABLED : IOM_DIGITALS_NOTI_ENABLED);
+      }
+      break;
     default:
       status = ATT_ERR_ATTR_NOT_FOUND;
       break;
@@ -175,7 +205,7 @@ void IOM_HandleConnStatusCB(uint16_t connHandle, uint8_t changeType) {
     if ((changeType == LINKDB_STATUS_UPDATE_REMOVED) ||
        ((changeType == LINKDB_STATUS_UPDATE_STATEFLAGS) &&
         (!linkDB_Up(connHandle)))) {
-      // GATTServApp_InitCharCfg(connHandle, heartRateMeasClientCharCfg);
+      GATTServApp_InitCharCfg(connHandle, iomDigitalsClientCharCfg);
     }
   }
 }

@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
-#define START_DEVICE_EVT      0x0001
-#define IOM_PARAM_UPDATE_EVT  0x0002
+#define START_DEVICE_EVT           0x0001
+#define IOM_CONN_PARAM_UPDATE_EVT  0x0002
 
 extern void IOM_Init(void);
 

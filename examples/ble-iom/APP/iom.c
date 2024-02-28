@@ -13,11 +13,23 @@
 // Duration of slow advertising duration in (625us) (set to 0 for continuous advertising)
 #define DEFAULT_SLOW_ADV_DURATION            0
 
+// Minimum connection interval (units of 1.25ms)
+#define DEFAULT_DESIRED_MIN_CONN_INTERVAL    20
+// Maximum connection interval (units of 1.25ms)
+#define DEFAULT_DESIRED_MAX_CONN_INTERVAL    160
+// Slave latency to use if parameter update request
+#define DEFAULT_DESIRED_SLAVE_LATENCY        1
+// Supervision timeout value (units of 10ms)
+#define DEFAULT_DESIRED_CONN_TIMEOUT         1000
 
 static uint8_t iom_TaskID; // Task ID for internal task/event processing
 static gapRole_States_t gapProfileState = GAPROLE_INIT;
 
 static uint16_t gapConnHandle;
+// Heart rate measurement value stored in this structure
+static attHandleValueNoti_t iomDigitals;
+
+static BOOL isDigitalsNotifyOn = FALSE;
 
 static uint8_t scanRspData[] = {
   4, // length of this data
@@ -39,6 +51,8 @@ static uint8_t advertData[] = {
 
 static void iom_ProcessTMOSMsg(tmos_event_hdr_t *pMsg);
 static void IOMGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEvent);
+static void iomDigitalsNotify(void);
+static void iomCB(uint8_t event);
 
 // Bond Manager Callbacks
 static gapBondCBs_t iomBondCB = {
@@ -91,11 +105,13 @@ void IOM_Init() {
   GATTServApp_AddService(GATT_ALL_SERVICES); // GATT attributes
 
   IOM_AddService(GATT_ALL_SERVICES);
+  IOM_Register(iomCB);
 
   tmos_set_event(iom_TaskID, START_DEVICE_EVT);
 }
 
 uint16_t IOM_ProcessEvent(uint8_t task_id, uint16_t events) {
+  PRINT("in IOM_ProcessEvent, events: %04x\r\n", events);
   if (events & SYS_EVENT_MSG) {   // 0x8000
     uint8_t *pMsg;
 
@@ -111,7 +127,33 @@ uint16_t IOM_ProcessEvent(uint8_t task_id, uint16_t events) {
     return (events ^ START_DEVICE_EVT);
   }
 
+  if (events & IOM_CONN_PARAM_UPDATE_EVT) {
+    // Send param update.
+    GAPRole_PeripheralConnParamUpdateReq(gapConnHandle,
+                                         DEFAULT_DESIRED_MIN_CONN_INTERVAL,
+                                         DEFAULT_DESIRED_MAX_CONN_INTERVAL,
+                                         DEFAULT_DESIRED_SLAVE_LATENCY,
+                                         DEFAULT_DESIRED_CONN_TIMEOUT,
+                                         iom_TaskID);
+
+    return (events ^ IOM_CONN_PARAM_UPDATE_EVT);
+  }
+
   return 0;
+}
+
+
+
+static void iomDigitalsNotify(void) {
+  iomDigitals.pValue = GATT_bm_alloc(gapConnHandle, ATT_HANDLE_VALUE_NOTI, 1, NULL, 0);
+
+  if (iomDigitals.pValue != NULL) {
+    IOM_GetParameter(IOM_DIGITALS_PARAM, iomDigitals.pValue);
+    iomDigitals.len = 1;
+    if (IOM_DigitalsNotify(gapConnHandle, &iomDigitals) != SUCCESS) {
+      GATT_bm_free((gattMsg_t *)&iomDigitals, ATT_HANDLE_VALUE_NOTI);
+    }
+  }
 }
 
 static void IOMGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEvent) {
@@ -121,13 +163,10 @@ static void IOMGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEvent) {
       gapConnHandle = pEvent->linkCmpl.connectionHandle;
 
       // Set timer to update connection parameters
-      tmos_start_task(iom_TaskID, IOM_PARAM_UPDATE_EVT, DEFAULT_CONN_PARAM_UPDATE_DELAY);
+      tmos_start_task(iom_TaskID, IOM_CONN_PARAM_UPDATE_EVT, DEFAULT_CONN_PARAM_UPDATE_DELAY);
     }
   } else if (gapProfileState == GAPROLE_CONNECTED && newState != GAPROLE_CONNECTED) { // if disconnected
     uint8_t advState = TRUE;
-
-    // // stop periodic measurement
-    // tmos_stop_task(iom_TaskID, HEART_PERIODIC_EVT);
 
     // reset client characteristic configuration descriptors
     IOM_HandleConnStatusCB(gapConnHandle, LINKDB_STATUS_UPDATE_REMOVED);
@@ -152,6 +191,18 @@ static void IOMGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEvent) {
   }
 
   gapProfileState = newState;
+}
+
+static void iomCB(uint8_t event) {
+  PRINT("iomCB: event: %02x\r\n", event);
+  if (event == IOM_DIGITALS_NOTI_ENABLED) {
+    isDigitalsNotifyOn = TRUE;
+  } else if (event == IOM_DIGITALS_NOTI_DISABLED) {
+    isDigitalsNotifyOn = FALSE;
+  } else if (event == IOM_DIGITALS_SET) {
+    PRINT("call iomDigitalsNotify\r\n");
+    iomDigitalsNotify();
+  }
 }
 
 // static void iom_ProcessTMOSMsg(tmos_event_hdr_t *pMsg) {
