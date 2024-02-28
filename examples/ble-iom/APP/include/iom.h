@@ -9,7 +9,6 @@ extern "C" {
 #define IOM_CONN_PARAM_UPDATE_EVT  0x0002
 
 extern void IOM_Init(void);
-
 extern uint16_t IOM_ProcessEvent(uint8_t task_id, uint16_t events);
 
 #ifdef __cplusplus
