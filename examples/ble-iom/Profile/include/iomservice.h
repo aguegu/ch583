@@ -20,8 +20,6 @@ extern "C" {
 
 typedef void (*iomServiceCB_t)(uint8_t event);
 
-// extern void IOM_HandleConnStatusCB(uint16_t connHandle, uint8_t changeType);
-
 extern bStatus_t IOM_AddService(uint32_t services);
 
 extern void IOM_Register(iomServiceCB_t pfnServiceCB);

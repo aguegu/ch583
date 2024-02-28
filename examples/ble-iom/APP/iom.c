@@ -159,10 +159,7 @@ static void iomDigitalsNotify(void) {
 static void IOMGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEvent) {
   if (newState == GAPROLE_CONNECTED) { // if connected
     if (pEvent->gap.opcode == GAP_LINK_ESTABLISHED_EVENT) {
-      // Get connection handle
-      gapConnHandle = pEvent->linkCmpl.connectionHandle;
-
-      // Set timer to update connection parameters
+      gapConnHandle = pEvent->linkCmpl.connectionHandle;  // Get connection handle
       tmos_start_task(iom_TaskID, IOM_CONN_PARAM_UPDATE_EVT, DEFAULT_CONN_PARAM_UPDATE_DELAY);
     }
   } else if (gapProfileState == GAPROLE_CONNECTED && newState != GAPROLE_CONNECTED) { // if disconnected
@@ -176,13 +173,10 @@ static void IOMGapStateCB(gapRole_States_t newState, gapRoleEvent_t *pEvent) {
     GAP_SetParamValue(TGAP_DISC_ADV_INT_MAX, DEFAULT_FAST_ADV_INTERVAL);
     GAP_SetParamValue(TGAP_GEN_DISC_ADV_MIN, DEFAULT_FAST_ADV_DURATION);
 
-    // Enable advertising
-    GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &advState);
+    GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8_t), &advState); // Enable advertising
   } else if (gapProfileState == GAPROLE_ADVERTISING && newState == GAPROLE_WAITING) { // if advertising stopped
-
     if (GAP_GetParamValue(TGAP_DISC_ADV_INT_MIN) == DEFAULT_FAST_ADV_INTERVAL) { // if fast advertising switch to slow
       uint8_t advState = TRUE;
-
       GAP_SetParamValue(TGAP_DISC_ADV_INT_MIN, DEFAULT_SLOW_ADV_INTERVAL);
       GAP_SetParamValue(TGAP_DISC_ADV_INT_MAX, DEFAULT_SLOW_ADV_INTERVAL);
       GAP_SetParamValue(TGAP_GEN_DISC_ADV_MIN, DEFAULT_SLOW_ADV_DURATION);
