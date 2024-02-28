@@ -70,12 +70,12 @@ static gattAttribute_t iomAttrTbl[] = {
     0,
     (uint8_t *)&iomDigitalsClientCharCfg
   },
-  // {
-  //   { ATT_BT_UUID_SIZE, iomCharacteristicFormatUUID },
-  //   GATT_PERMIT_READ,
-  //   0,
-  //   digitalsFormat
-  // },
+  {
+    { ATT_BT_UUID_SIZE, iomCharacteristicFormatUUID },
+    GATT_PERMIT_READ,
+    0,
+    digitalsFormat
+  },
   {
     { ATT_BT_UUID_SIZE, iomNumberOfDigitalsUUID },
     GATT_PERMIT_READ,
@@ -97,7 +97,6 @@ gattServiceCBs_t iomCBs = {
   NULL                   // Authorization callback function pointer
 };
 
-
 bStatus_t IOM_AddService(uint32_t services) {
   uint8_t status = SUCCESS;
 
@@ -115,7 +114,7 @@ bStatus_t IOM_AddService(uint32_t services) {
 }
 
 extern void IOM_Register(iomServiceCB_t pfnServiceCB) {
-    iomServiceCB = pfnServiceCB;
+  iomServiceCB = pfnServiceCB;
 }
 
 bStatus_t IOM_GetParameter(uint8_t param, void *value) {
@@ -134,6 +133,7 @@ bStatus_t IOM_GetParameter(uint8_t param, void *value) {
 
 bStatus_t IOM_DigitalsNotify(uint16_t connHandle, attHandleValueNoti_t *pNoti) {
   uint16_t value = GATTServApp_ReadCharCfg(connHandle, iomDigitalsClientCharCfg);
+  PRINT("in IOM_DigitalsNotify, value: %04x\r\n", value);
   if (value & GATT_CLIENT_CFG_NOTIFY) { // If notifications enabled
     // Set the handle
     pNoti->handle = iomAttrTbl[IOM_DIGITALS_VALUE_POS].handle;
