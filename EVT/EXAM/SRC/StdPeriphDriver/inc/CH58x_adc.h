@@ -6,7 +6,7 @@
  * Description
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
+ * Attention: This software (modified or not) and binary are used for 
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -24,23 +24,23 @@ extern "C" {
  */
 typedef enum
 {
-    CH_EXTIN_0 = 0,   // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 0
-    CH_EXTIN_1,       // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 1
-    CH_EXTIN_2,       // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 2
-    CH_EXTIN_3,       // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 3
-    CH_EXTIN_4,       // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 4
-    CH_EXTIN_5,       // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 5
-    CH_EXTIN_6,       // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 6
-    CH_EXTIN_7,       // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 7
-    CH_EXTIN_8,       // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 8
-    CH_EXTIN_9,       // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 9
-    CH_EXTIN_10,      // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 10
-    CH_EXTIN_11,      // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 11
-    CH_EXTIN_12,      // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 12
-    CH_EXTIN_13,      // ADC å¤–éƒ¨æ¨¡æ‹Ÿé€šé“ 13
+    CH_EXTIN_0 = 0,   // ADC Íâ²¿Ä£ÄâÍ¨µÀ 0
+    CH_EXTIN_1,       // ADC Íâ²¿Ä£ÄâÍ¨µÀ 1
+    CH_EXTIN_2,       // ADC Íâ²¿Ä£ÄâÍ¨µÀ 2
+    CH_EXTIN_3,       // ADC Íâ²¿Ä£ÄâÍ¨µÀ 3
+    CH_EXTIN_4,       // ADC Íâ²¿Ä£ÄâÍ¨µÀ 4
+    CH_EXTIN_5,       // ADC Íâ²¿Ä£ÄâÍ¨µÀ 5
+    CH_EXTIN_6,       // ADC Íâ²¿Ä£ÄâÍ¨µÀ 6
+    CH_EXTIN_7,       // ADC Íâ²¿Ä£ÄâÍ¨µÀ 7
+    CH_EXTIN_8,       // ADC Íâ²¿Ä£ÄâÍ¨µÀ 8
+    CH_EXTIN_9,       // ADC Íâ²¿Ä£ÄâÍ¨µÀ 9
+    CH_EXTIN_10,      // ADC Íâ²¿Ä£ÄâÍ¨µÀ 10
+    CH_EXTIN_11,      // ADC Íâ²¿Ä£ÄâÍ¨µÀ 11
+    CH_EXTIN_12,      // ADC Íâ²¿Ä£ÄâÍ¨µÀ 12
+    CH_EXTIN_13,      // ADC Íâ²¿Ä£ÄâÍ¨µÀ 13
 
-    CH_INTE_VBAT = 14,  // ADC å†…éƒ¨ç”µæ± æ£€æµ‹é€šé“
-    CH_INTE_VTEMP = 15, // ADC å†…éƒ¨æ¸©åº¦ä¼ æ„Ÿå™¨æ£€æµ‹é€šé“
+    CH_INTE_VBAT = 14,  // ADC ÄÚ²¿µç³Ø¼ì²âÍ¨µÀ
+    CH_INTE_VTEMP = 15, // ADC ÄÚ²¿ÎÂ¶È´«¸ĞÆ÷¼ì²âÍ¨µÀ
 
 } ADC_SingleChannelTypeDef;
 
@@ -49,8 +49,8 @@ typedef enum
  */
 typedef enum
 {
-    CH_DIFF_0_2 = 0, // ADC å·®åˆ†é€šé“ #0-#2
-    CH_DIFF_1_3,     // ADC å·®åˆ†é€šé“ #1-#3
+    CH_DIFF_0_2 = 0, // ADC ²î·ÖÍ¨µÀ #0-#2
+    CH_DIFF_1_3,     // ADC ²î·ÖÍ¨µÀ #1-#3
 
 } ADC_DiffChannelTypeDef;
 
@@ -59,10 +59,10 @@ typedef enum
  */
 typedef enum
 {
-    SampleFreq_3_2 = 0, // 3.2M é‡‡æ ·é¢‘ç‡
-    SampleFreq_8,       // 8M é‡‡æ ·é¢‘ç‡
-    SampleFreq_5_33,    // 5.33M é‡‡æ ·é¢‘ç‡
-    SampleFreq_4,       // 4M é‡‡æ ·é¢‘ç‡
+    SampleFreq_3_2 = 0, // 3.2M ²ÉÑùÆµÂÊ
+    SampleFreq_8,       // 8M ²ÉÑùÆµÂÊ
+    SampleFreq_5_33,    // 5.33M ²ÉÑùÆµÂÊ
+    SampleFreq_4,       // 4M ²ÉÑùÆµÂÊ
 } ADC_SampClkTypeDef;
 
 /**
@@ -70,10 +70,10 @@ typedef enum
  */
 typedef enum
 {
-    ADC_PGA_1_4 = 0, // -12dB, 1/4å€
-    ADC_PGA_1_2,     // -6dB, 1/2å€
-    ADC_PGA_0,       // 0dB, 1å€ï¼Œæ— å¢ç›Š
-    ADC_PGA_2,       // 6dB, 2å€
+    ADC_PGA_1_4 = 0, // -12dB, 1/4±¶
+    ADC_PGA_1_2,     // -6dB, 1/2±¶
+    ADC_PGA_0,       // 0dB, 1±¶£¬ÎŞÔöÒæ
+    ADC_PGA_2,       // 6dB, 2±¶
 } ADC_SignalPGATypeDef;
 
 /**
@@ -81,41 +81,41 @@ typedef enum
  */
 typedef enum
 {
-    ADC_Mode_Single = 0, // å•æ¬¡æ¨¡å¼
-    ADC_Mode_LOOP,       // å¾ªç¯æ¨¡å¼
+    ADC_Mode_Single = 0, // µ¥´ÎÄ£Ê½
+    ADC_Mode_LOOP,       // Ñ­»·Ä£Ê½
 } ADC_DMAModeTypeDef;
 
 
 /**
- * @brief   è®¾ç½® ADC é‡‡æ ·é€šé“
+ * @brief   ÉèÖÃ ADC ²ÉÑùÍ¨µÀ
  *
  * @param   d   - refer to ADC_SingleChannelTypeDef
  */
 #define ADC_ChannelCfg(d)      (R8_ADC_CHANNEL = d)
 
 /**
- * @brief   è®¾ç½® ADC é‡‡æ ·æ—¶é’Ÿ
+ * @brief   ÉèÖÃ ADC ²ÉÑùÊ±ÖÓ
  *
  * @param   d   - refer to ADC_SampClkTypeDef
  */
 #define ADC_SampClkCfg(d)      (R8_ADC_CFG = R8_ADC_CFG & (~RB_ADC_CLK_DIV) | (d << 6))
 
 /**
- * @brief   è®¾ç½® ADC ä¿¡å·å¢ç›Š
+ * @brief   ÉèÖÃ ADC ĞÅºÅÔöÒæ
  *
  * @param   d   - refer to ADC_SignalPGATypeDef
  */
 #define ADC_PGACfg(d)          (R8_ADC_CFG = R8_ADC_CFG & (~RB_ADC_PGA_GAIN) | (d << 4))
 
 /**
- * @brief   è®¾ç½®å†…éƒ¨æ¸©åº¦ä¼ æ„Ÿå™¨æ ¡å‡†å€¼
+ * @brief   ÉèÖÃÄÚ²¿ÎÂ¶È´«¸ĞÆ÷Ğ£×¼Öµ
  *
- * @param   d   - æ ¡å‡†å€¼
+ * @param   d   - Ğ£×¼Öµ
  */
 #define ADC_TempCalibCfg(d)    (R8_TEM_SENSOR = R8_TEM_SENSOR & (~RB_TEM_SEN_CALIB) | d)
 
 /**
- * @brief   å¤–éƒ¨ä¿¡å·å•é€šé“é‡‡æ ·åˆå§‹åŒ–
+ * @brief   Íâ²¿ĞÅºÅµ¥Í¨µÀ²ÉÑù³õÊ¼»¯
  *
  * @param   sp  - refer to ADC_SampClkTypeDef
  * @param   ga  - refer to ADC_SignalPGATypeDef
@@ -123,7 +123,7 @@ typedef enum
 void ADC_ExtSingleChSampInit(ADC_SampClkTypeDef sp, ADC_SignalPGATypeDef ga);
 
 /**
- * @brief   å¤–éƒ¨ä¿¡å·å·®åˆ†é€šé“é‡‡æ ·åˆå§‹åŒ–
+ * @brief   Íâ²¿ĞÅºÅ²î·ÖÍ¨µÀ²ÉÑù³õÊ¼»¯
  *
  * @param   sp  - refer to ADC_SampClkTypeDef
  * @param   ga  - refer to ADC_SignalPGATypeDef
@@ -131,68 +131,68 @@ void ADC_ExtSingleChSampInit(ADC_SampClkTypeDef sp, ADC_SignalPGATypeDef ga);
 void ADC_ExtDiffChSampInit(ADC_SampClkTypeDef sp, ADC_SignalPGATypeDef ga);
 
 /**
- * @brief   è§¦æ‘¸æŒ‰é”®é€šé“é‡‡æ ·åˆå§‹åŒ–
+ * @brief   ´¥Ãş°´¼üÍ¨µÀ²ÉÑù³õÊ¼»¯
  */
 void TouchKey_ChSampInit(void);
 
 /**
- * @brief   å…³é—­TouchKeyç”µæº
+ * @brief   ¹Ø±ÕTouchKeyµçÔ´
  */
 #define TouchKey_DisableTSPower()    (R8_TKEY_CFG &= ~RB_TKEY_PWR_ON)
 
 /**
- * @brief   å†…ç½®æ¸©åº¦ä¼ æ„Ÿå™¨é‡‡æ ·åˆå§‹åŒ–
+ * @brief   ÄÚÖÃÎÂ¶È´«¸ĞÆ÷²ÉÑù³õÊ¼»¯
  */
 void ADC_InterTSSampInit(void);
 
 /**
- * @brief   å…³é—­æ¸©åº¦ä¼ æ„Ÿå™¨ç”µæº
+ * @brief   ¹Ø±ÕÎÂ¶È´«¸ĞÆ÷µçÔ´
  */
 #define ADC_DisableTSPower()    (R8_TEM_SENSOR = 0)
 
 /**
- * @brief   å†…ç½®ç”µæ± ç”µå‹é‡‡æ ·åˆå§‹åŒ–
+ * @brief   ÄÚÖÃµç³ØµçÑ¹²ÉÑù³õÊ¼»¯
  */
 void ADC_InterBATSampInit(void);
 
 /**
- * @brief   ADCæ‰§è¡Œå•æ¬¡è½¬æ¢
+ * @brief   ADCÖ´ĞĞµ¥´Î×ª»»
  *
- * @return  ADCè½¬æ¢åçš„æ•°æ®
+ * @return  ADC×ª»»ºóµÄÊı¾İ
  */
 uint16_t ADC_ExcutSingleConver(void);
 
 /**
- * @brief   é‡‡æ ·æ•°æ®ç²—è°ƒ,è·å–åå·®å€¼,å¿…é¡»å…ˆé…ç½®ADCåè°ƒç”¨æ­¤å‡½æ•°è·å–æ ¡å‡†å€¼
+ * @brief   ²ÉÑùÊı¾İ´Öµ÷,»ñÈ¡Æ«²îÖµ,±ØĞëÏÈÅäÖÃADCºóµ÷ÓÃ´Ëº¯Êı»ñÈ¡Ğ£×¼Öµ
  *
- * @return  åå·®
+ * @return  Æ«²î
  */
 signed short ADC_DataCalib_Rough(void);
 
 /**
- * @brief   TouchKeyè½¬æ¢åæ•°æ®
+ * @brief   TouchKey×ª»»ºóÊı¾İ
  *
- * @param   charg   - Touchkeyå……ç”µæ—¶é—´,5bitsæœ‰æ•ˆ, t=charg*Tadc
- * @param   disch   - Touchkeyæ”¾ç”µæ—¶é—´,3bitsæœ‰æ•ˆ, t=disch*Tadc
+ * @param   charg   - Touchkey³äµçÊ±¼ä,5bitsÓĞĞ§, t=charg*Tadc
+ * @param   disch   - Touchkey·ÅµçÊ±¼ä,3bitsÓĞĞ§, t=disch*Tadc
  *
- * @return  å½“å‰TouchKeyç­‰æ•ˆæ•°æ®
+ * @return  µ±Ç°TouchKeyµÈĞ§Êı¾İ
  */
 uint16_t TouchKey_ExcutSingleConver(uint8_t charg, uint8_t disch);
 
 /**
- * @brief   è®¾ç½®è¿ç»­ ADCçš„å‘¨æœŸ
+ * @brief   ÉèÖÃÁ¬Ğø ADCµÄÖÜÆÚ
  *
- * @param   cycle   - å•ä½ä¸º 16ä¸ªç³»ç»Ÿæ—¶é’Ÿ
+ * @param   cycle   - µ¥Î»Îª 16¸öÏµÍ³Ê±ÖÓ
  */
 void ADC_AutoConverCycle(uint8_t cycle);
 
 /**
- * @brief   é…ç½®DMAåŠŸèƒ½
+ * @brief   ÅäÖÃDMA¹¦ÄÜ
  *
- * @param   s           - æ˜¯å¦æ‰“å¼€DMAåŠŸèƒ½
- * @param   startAddr   - DMA èµ·å§‹åœ°å€
- * @param   endAddr     - DMA ç»“æŸåœ°å€
- * @param   m           - é…ç½®DMAæ¨¡å¼
+ * @param   s           - ÊÇ·ñ´ò¿ªDMA¹¦ÄÜ
+ * @param   startAddr   - DMA ÆğÊ¼µØÖ·
+ * @param   endAddr     - DMA ½áÊøµØÖ·
+ * @param   m           - ÅäÖÃDMAÄ£Ê½
  */
 void ADC_DMACfg(uint8_t s, uint16_t startAddr, uint16_t endAddr, ADC_DMAModeTypeDef m);
 
@@ -206,57 +206,71 @@ void ADC_DMACfg(uint8_t s, uint16_t startAddr, uint16_t endAddr, ADC_DMAModeType
 int adc_to_temperature_celsius(uint16_t adc_val);
 
 /**
- * @brief   è·å–ADCè½¬æ¢å€¼
+ * @brief   »ñÈ¡ADC×ª»»Öµ
  *
- * @return  ADCè½¬æ¢å€¼
+ * @return  ADC×ª»»Öµ
  */
 #define ADC_ReadConverValue()     (R16_ADC_DATA)
 
 /**
- * @brief   ADCæ‰§è¡Œå•æ¬¡è½¬æ¢
+ * @brief   ADCÖ´ĞĞµ¥´Î×ª»»
  */
 #define ADC_StartUp()             (R8_ADC_CONVERT = RB_ADC_START)
 
 /**
- * @brief   è·å–ADCä¸­æ–­çŠ¶æ€
+ * @brief   »ñÈ¡ADCÖĞ¶Ï×´Ì¬
  */
 #define ADC_GetITStatus()         (R8_ADC_INT_FLAG & RB_ADC_IF_EOC)
 
 /**
- * @brief   æ¸…é™¤ADCä¸­æ–­æ ‡å¿—
+ * @brief   Çå³ıADCÖĞ¶Ï±êÖ¾
  */
 #define ADC_ClearITFlag()         (R8_ADC_CONVERT = 0)
 
 /**
- * @brief   è·å–ADC DMAå®ŒæˆçŠ¶æ€
+ * @brief   »ñÈ¡ADC DMAÍê³É×´Ì¬
  */
 #define ADC_GetDMAStatus()        (R8_ADC_DMA_IF & RB_ADC_IF_DMA_END)
 
 /**
- * @brief   æ¸…é™¤ADC DMAå®Œæˆæ ‡å¿—
+ * @brief   Çå³ıADC DMAÍê³É±êÖ¾
  */
 #define ADC_ClearDMAFlag()        (R8_ADC_DMA_IF |= RB_ADC_IF_DMA_END)
 
 /**
- * @brief   å¼€å¯è‡ªåŠ¨è¿ç»­ ADC
+ * @brief   ¿ªÆô×Ô¶¯Á¬Ğø ADC
  */
 #define ADC_StartDMA()            (R8_ADC_CTRL_DMA |= RB_ADC_AUTO_EN)
 
 /**
- * @brief   åœæ­¢è‡ªåŠ¨è¿ç»­ ADC
+ * @brief   Í£Ö¹×Ô¶¯Á¬Ğø ADC
  */
 #define ADC_StopDMA()            (R8_ADC_CTRL_DMA &= ~RB_ADC_AUTO_EN)
 
 /**
- * @brief   è·å–TouchKeyä¸­æ–­çŠ¶æ€
+ * @brief   ¿ªÆôÁ¬Ğø×ª»» ADC
+ */
+#define ADC_StartContDMA()        (R8_ADC_CTRL_DMA |= RB_ADC_CONT_EN)
+
+/**
+ * @brief   Í£Ö¹Á¬Ğø×ª»» ADC
+ */
+#define ADC_StopContDMA()         (R8_ADC_CTRL_DMA &= ~RB_ADC_CONT_EN)
+
+/**
+ * @brief   »ñÈ¡TouchKeyÖĞ¶Ï×´Ì¬
  */
 #define TouchKey_GetITStatus()    (R8_ADC_INT_FLAG & RB_ADC_IF_EOC)
 
 /**
- * @brief   æ¸…é™¤TouchKeyä¸­æ–­æ ‡å¿—
+ * @brief   Çå³ıTouchKeyÖĞ¶Ï±êÖ¾
  */
 #define TouchKey_ClearITFlag()    (R8_TKEY_CTRL |= RB_TKEY_PWR_ON)
 
+/**
+ * @brief   ¹Ø±ÕADCµçÔ´
+ */
+#define ADC_DisablePower()        (R8_ADC_CFG &= ~RB_ADC_POWER_ON)
 
 #ifdef __cplusplus
 }

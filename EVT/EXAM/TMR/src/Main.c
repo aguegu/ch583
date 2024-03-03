@@ -3,10 +3,10 @@
  * Author             : WCH
  * Version            : V1.0
  * Date               : 2020/08/06
- * Description        : å®šæ—¶å™¨ä¾‹å­
+ * Description        : ¶¨Ê±Æ÷Àı×Ó
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
+ * Attention: This software (modified or not) and binary are used for 
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -20,7 +20,7 @@ volatile uint8_t capFlag = 0;
 /*********************************************************************
  * @fn      DebugInit
  *
- * @brief   è°ƒè¯•åˆå§‹åŒ–
+ * @brief   µ÷ÊÔ³õÊ¼»¯
  *
  * @return  none
  */
@@ -35,7 +35,7 @@ void DebugInit(void)
 /*********************************************************************
  * @fn      main
  *
- * @brief   ä¸»å‡½æ•°
+ * @brief   Ö÷º¯Êı
  *
  * @return  none
  */
@@ -45,81 +45,81 @@ int main()
 
     SetSysClock(CLK_SOURCE_PLL_60MHz);
 
-    /* é…ç½®ä¸²å£è°ƒè¯• */
+    /* ÅäÖÃ´®¿Úµ÷ÊÔ */
     DebugInit();
     PRINT("Start @ChipID=%02X\n", R8_CHIP_ID);
 
-#if 1 /* å®šæ—¶å™¨0ï¼Œè®¾å®š100mså®šæ—¶å™¨è¿›è¡ŒIOå£é—ªç¯ï¼Œ PB15-LED */
+#if 1 /* ¶¨Ê±Æ÷0£¬Éè¶¨100ms¶¨Ê±Æ÷½øĞĞIO¿ÚÉÁµÆ£¬ PB15-LED */
 
     GPIOB_SetBits(GPIO_Pin_15);
     GPIOB_ModeCfg(GPIO_Pin_15, GPIO_ModeOut_PP_5mA);
 
-    TMR0_TimerInit(FREQ_SYS / 10);         // è®¾ç½®å®šæ—¶æ—¶é—´ 100ms
-    TMR0_ITCfg(ENABLE, TMR0_3_IT_CYC_END); // å¼€å¯ä¸­æ–­
+    TMR0_TimerInit(FREQ_SYS / 10);         // ÉèÖÃ¶¨Ê±Ê±¼ä 100ms
+    TMR0_ITCfg(ENABLE, TMR0_3_IT_CYC_END); // ¿ªÆôÖĞ¶Ï
     PFIC_EnableIRQ(TMR0_IRQn);
 #endif
 
-#if 1 /* å®šæ—¶å™¨3ï¼ŒPWMè¾“å‡º */
+#if 1 /* ¶¨Ê±Æ÷3£¬PWMÊä³ö */
 
-    GPIOB_ResetBits(GPIO_Pin_22); // é…ç½®PWMå£ PB22
+    GPIOB_ResetBits(GPIO_Pin_22); // ÅäÖÃPWM¿Ú PB22
     GPIOB_ModeCfg(GPIO_Pin_22, GPIO_ModeOut_PP_5mA);
 
     TMR3_PWMInit(High_Level, PWM_Times_1);
-    TMR3_PWMCycleCfg(6000); // å‘¨æœŸ 100us
-    TMR3_Disable();
-    TMR3_PWMActDataWidth(3000); // å ç©ºæ¯” 50%, ä¿®æ”¹å ç©ºæ¯”å¿…é¡»æš‚æ—¶å…³é—­å®šæ—¶å™¨
+    TMR3_PWMCycleCfg(60 * 100); // ÖÜÆÚ 100us  ×î´ó67108864
+    TMR3_PWMActDataWidth(3000); // Õ¼¿Õ±È 50%, ĞŞ¸ÄÕ¼¿Õ±È±ØĞëÔİÊ±¹Ø±Õ¶¨Ê±Æ÷
+    TMR3_PWMEnable();
     TMR3_Enable();
 
 #endif
 
-#if 1                                      /* å®šæ—¶å™¨1ï¼ŒCAPæ•æ‰ï¼Œ */
-    PWR_UnitModCfg(DISABLE, UNIT_SYS_LSE); // æ³¨æ„æ­¤å¼•è„šæ˜¯LSEæ™¶æŒ¯å¼•è„šï¼Œè¦ä¿è¯å…³é—­æ‰èƒ½ä½¿ç”¨å…¶ä»–åŠŸèƒ½
-    GPIOA_ResetBits(GPIO_Pin_10);          // é…ç½®PWMå£ PA10
+#if 1                                      /* ¶¨Ê±Æ÷1£¬CAP²¶×½£¬ */
+    PWR_UnitModCfg(DISABLE, UNIT_SYS_LSE); // ×¢Òâ´ËÒı½ÅÊÇLSE¾§ÕñÒı½Å£¬Òª±£Ö¤¹Ø±Õ²ÅÄÜÊ¹ÓÃÆäËû¹¦ÄÜ
+    GPIOA_ResetBits(GPIO_Pin_10);          // ÅäÖÃPWM¿Ú PA10
     GPIOA_ModeCfg(GPIO_Pin_10, GPIO_ModeIN_PU);
 
     TMR1_CapInit(Edge_To_Edge);
-    TMR1_CAPTimeoutCfg(0xFFFFFFFF); // è®¾ç½®æ•æ‰è¶…æ—¶æ—¶é—´
+    TMR1_CAPTimeoutCfg(0xFFFFFFFF); // ÉèÖÃ²¶×½³¬Ê±Ê±¼ä
     TMR1_DMACfg(ENABLE, (uint16_t)(uint32_t)&CapBuf[0], (uint16_t)(uint32_t)&CapBuf[100], Mode_Single);
-    TMR1_ITCfg(ENABLE, TMR1_2_IT_DMA_END); // å¼€å¯DMAå®Œæˆä¸­æ–­
+    TMR1_ITCfg(ENABLE, TMR1_2_IT_DMA_END); // ¿ªÆôDMAÍê³ÉÖĞ¶Ï
     PFIC_EnableIRQ(TMR1_IRQn);
 
     while(capFlag == 0);
     capFlag = 0;
     for(i = 0; i < 100; i++)
     {
-        PRINT("%08ld ", CapBuf[i] & 0x1ffffff); // 26bit, æœ€é«˜ä½è¡¨ç¤º é«˜ç”µå¹³è¿˜æ˜¯ä½ç”µå¹³
+        PRINT("%08ld ", CapBuf[i] & 0x1ffffff); // 26bit, ×î¸ßÎ»±íÊ¾ ¸ßµçÆ½»¹ÊÇµÍµçÆ½
     }
     PRINT("\n");
 
 #endif
 
-#if 1 /* å®šæ—¶å™¨2ï¼Œè®¡æ•°å™¨ï¼Œ */
+#if 1 /* ¶¨Ê±Æ÷2£¬¼ÆÊıÆ÷£¬ */
     GPIOB_ModeCfg(GPIO_Pin_11, GPIO_ModeIN_PD);
     GPIOPinRemap(ENABLE, RB_PIN_TMR2);
 
     TMR2_EXTSingleCounterInit(FallEdge_To_FallEdge);
-    TMR2_CountOverflowCfg(1000); // è®¾ç½®è®¡æ•°ä¸Šé™1000
+    TMR2_CountOverflowCfg(1000); // ÉèÖÃ¼ÆÊıÉÏÏŞ1000
 
-    /* å¼€å¯è®¡æ•°æº¢å‡ºä¸­æ–­ï¼Œè®¡æ…¢1000ä¸ªå‘¨æœŸè¿›å…¥ä¸­æ–­ */
+    /* ¿ªÆô¼ÆÊıÒç³öÖĞ¶Ï£¬¼ÆÂı1000¸öÖÜÆÚ½øÈëÖĞ¶Ï */
     TMR2_ClearITFlag(TMR0_3_IT_CYC_END);
     PFIC_EnableIRQ(TMR2_IRQn);
     TMR2_ITCfg(ENABLE, TMR0_3_IT_CYC_END);
 
     do
     {
-        /* 1sæ‰“å°ä¸€æ¬¡å½“å‰è®¡æ•°å€¼ï¼Œå¦‚æœé€å…¥è„‰å†²é¢‘ç‡è¾ƒé«˜ï¼Œå¯èƒ½å¾ˆå¿«è®¡æ•°æº¢å‡ºï¼Œéœ€è¦æŒ‰å®é™…æƒ…å†µä¿®æ”¹ */
+        /* 1s´òÓ¡Ò»´Îµ±Ç°¼ÆÊıÖµ£¬Èç¹ûËÍÈëÂö³åÆµÂÊ½Ï¸ß£¬¿ÉÄÜºÜ¿ì¼ÆÊıÒç³ö£¬ĞèÒª°´Êµ¼ÊÇé¿öĞŞ¸Ä */
         mDelaymS(1000);
         PRINT("=%ld \n", TMR2_GetCurrentCount());
     } while(1);
 
 #endif
 
-#if 1 /* å®šæ—¶å™¨2,DMA PWM.*/
+#if 1 /* ¶¨Ê±Æ÷2,DMA PWM.*/
     GPIOB_ModeCfg(GPIO_Pin_11, GPIO_ModeOut_PP_5mA);
     GPIOPinRemap(ENABLE, RB_PIN_TMR2);
 
     PRINT("TMR2 DMA PWM\n");
-    TMR2_PWMCycleCfg(120000); // å‘¨æœŸ 2000us
+    TMR2_PWMCycleCfg(60 * 2000); // ÖÜÆÚ 2000us  Ö÷ÆµÊÇ60Mhz Ã¿ÃëÕğµ´60M´Î Õğµ´60´ÎÎª1Î¢Ãë
     for(i=0; i<50; i++)
     {
       PwmBuf[i]=2400*i;
@@ -128,12 +128,15 @@ int main()
     {
       PwmBuf[i]=2400*(100-i);
     }
-    TMR2_DMACfg(ENABLE, (uint16_t)(uint32_t)&PwmBuf[0], (uint16_t)(uint32_t)&PwmBuf[100], Mode_LOOP);
+
     TMR2_PWMInit(Low_Level, PWM_Times_16);
-    /* å¼€å¯è®¡æ•°æº¢å‡ºä¸­æ–­ï¼Œè®¡æ»¡1000ä¸ªå‘¨æœŸè¿›å…¥ä¸­æ–­ */
+    TMR2_DMACfg(ENABLE, (uint16_t)(uint32_t)&PwmBuf[0], (uint16_t)(uint32_t)&PwmBuf[100], Mode_LOOP);
+    TMR2_PWMEnable();
+    TMR2_Enable();
+    /* ¿ªÆô¼ÆÊıÒç³öÖĞ¶Ï£¬¼ÆÂú100¸öÖÜÆÚ½øÈëÖĞ¶Ï */
     TMR2_ClearITFlag(TMR1_2_IT_DMA_END);
-    PFIC_EnableIRQ(TMR2_IRQn);
     TMR2_ITCfg(ENABLE, TMR1_2_IT_DMA_END);
+    PFIC_EnableIRQ(TMR2_IRQn);
 
 #endif
 
@@ -143,17 +146,17 @@ int main()
 /*********************************************************************
  * @fn      TMR0_IRQHandler
  *
- * @brief   TMR0ä¸­æ–­å‡½æ•°
+ * @brief   TMR0ÖĞ¶Ïº¯Êı
  *
  * @return  none
  */
 __INTERRUPT
 __HIGH_CODE
-void TMR0_IRQHandler(void) // TMR0 å®šæ—¶ä¸­æ–­
+void TMR0_IRQHandler(void) // TMR0 ¶¨Ê±ÖĞ¶Ï
 {
     if(TMR0_GetITFlag(TMR0_3_IT_CYC_END))
     {
-        TMR0_ClearITFlag(TMR0_3_IT_CYC_END); // æ¸…é™¤ä¸­æ–­æ ‡å¿—
+        TMR0_ClearITFlag(TMR0_3_IT_CYC_END); // Çå³ıÖĞ¶Ï±êÖ¾
         GPIOB_InverseBits(GPIO_Pin_15);
     }
 }
@@ -161,18 +164,18 @@ void TMR0_IRQHandler(void) // TMR0 å®šæ—¶ä¸­æ–­
 /*********************************************************************
  * @fn      TMR1_IRQHandler
  *
- * @brief   TMR1ä¸­æ–­å‡½æ•°
+ * @brief   TMR1ÖĞ¶Ïº¯Êı
  *
  * @return  none
  */
 __INTERRUPT
 __HIGH_CODE
-void TMR1_IRQHandler(void) // TMR1 å®šæ—¶ä¸­æ–­
+void TMR1_IRQHandler(void) // TMR1 ¶¨Ê±ÖĞ¶Ï
 {
     if(TMR1_GetITFlag(TMR1_2_IT_DMA_END))
     {
-        TMR1_ITCfg(DISABLE, TMR1_2_IT_DMA_END); // ä½¿ç”¨å•æ¬¡DMAåŠŸèƒ½+ä¸­æ–­ï¼Œæ³¨æ„å®Œæˆåå…³é—­æ­¤ä¸­æ–­ä½¿èƒ½ï¼Œå¦åˆ™ä¼šä¸€ç›´ä¸ŠæŠ¥ä¸­æ–­ã€‚
-        TMR1_ClearITFlag(TMR1_2_IT_DMA_END);    // æ¸…é™¤ä¸­æ–­æ ‡å¿—
+        TMR1_ITCfg(DISABLE, TMR1_2_IT_DMA_END); // Ê¹ÓÃµ¥´ÎDMA¹¦ÄÜ+ÖĞ¶Ï£¬×¢ÒâÍê³Éºó¹Ø±Õ´ËÖĞ¶ÏÊ¹ÄÜ£¬·ñÔò»áÒ»Ö±ÉÏ±¨ÖĞ¶Ï¡£
+        TMR1_ClearITFlag(TMR1_2_IT_DMA_END);    // Çå³ıÖĞ¶Ï±êÖ¾
         capFlag = 1;
     }
 }
@@ -180,7 +183,7 @@ void TMR1_IRQHandler(void) // TMR1 å®šæ—¶ä¸­æ–­
 /*********************************************************************
  * @fn      TMR2_IRQHandler
  *
- * @brief   TMR2ä¸­æ–­å‡½æ•°
+ * @brief   TMR2ÖĞ¶Ïº¯Êı
  *
  * @return  none
  */
@@ -191,14 +194,14 @@ void TMR2_IRQHandler(void)
     if(TMR2_GetITFlag(TMR0_3_IT_CYC_END))
     {
         TMR2_ClearITFlag(TMR0_3_IT_CYC_END);
-        /* è®¡æ•°å™¨è®¡æ»¡ï¼Œç¡¬ä»¶è‡ªåŠ¨æ¸…é›¶ï¼Œé‡æ–°å¼€å§‹è®¡æ•° */
-        /* ç”¨æˆ·å¯è‡ªè¡Œæ·»åŠ éœ€è¦çš„å¤„ç† */
+        /* ¼ÆÊıÆ÷¼ÆÂú£¬Ó²¼ş×Ô¶¯ÇåÁã£¬ÖØĞÂ¿ªÊ¼¼ÆÊı */
+        /* ÓÃ»§¿É×ÔĞĞÌí¼ÓĞèÒªµÄ´¦Àí */
     }
     if(TMR2_GetITFlag(TMR1_2_IT_DMA_END))
     {
         TMR2_ClearITFlag(TMR1_2_IT_DMA_END);
         PRINT("DMA end\n");
-        /* DMA ç»“æŸ */
-        /* ç”¨æˆ·å¯è‡ªè¡Œæ·»åŠ éœ€è¦çš„å¤„ç† */
+        /* DMA ½áÊø */
+        /* ÓÃ»§¿É×ÔĞĞÌí¼ÓĞèÒªµÄ´¦Àí */
     }
 }

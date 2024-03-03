@@ -3,10 +3,10 @@
  * Author             : WCH
  * Version            : V1.0
  * Date               : 2020/08/06
- * Description        : 自定义USB设备（CH372设备），提供8个非0通道(上传+下传)，实现数据先下传，然后数据内容取反上传
+ * Description        : �Զ���USB�豸��CH372�豸�����ṩ8����0ͨ��(�ϴ�+�´�)��ʵ���������´���Ȼ����������ȡ���ϴ�
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
+ * Attention: This software (modified or not) and binary are used for 
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -21,20 +21,20 @@
 #define USB_CDC_MODE      0
 #define USB_VENDOR_MODE   1
 
-/* USB工作模式 */
+/* USB����ģʽ */
 UINT8 usb_work_mode = USB_CDC_MODE; //USB_VENDOR_MODE;
 
 #if (PRINTF_EN)
-UINT8 usb_work_change = 1;  //测试
+UINT8 usb_work_change = 1;  //����
 #endif
 
-/* USB数据上传使能--需要的话再启用该参数 */
-UINT8 usb_cdc_mode_trans_en = 0;   //cdc模式下数据上传使能
-UINT8 usb_ven_mode_trans_en = 0;   //厂商模式下数据上传使能
+/* USB�����ϴ�ʹ��--��Ҫ�Ļ������øò��� */
+UINT8 usb_cdc_mode_trans_en = 0;   //cdcģʽ�������ϴ�ʹ��
+UINT8 usb_ven_mode_trans_en = 0;   //����ģʽ�������ϴ�ʹ��
 
 
-/* CDC相关参数 */
-/* 设备描述符 */
+/* CDC��ز��� */
+/* �豸������ */
 const UINT8 TAB_USB_CDC_DEV_DES[18] =
 {
   0x12,
@@ -48,19 +48,19 @@ const UINT8 TAB_USB_CDC_DEV_DES[18] =
   0x86, 0x1a,
   0x40, 0x80,
   0x00, 0x30,
-  0x01,                 //制造者的字符串描述符的索引值
-  0x02,                 //产品的字符串描述符的索引值
-  0x03,                 //序号的字符串描述符的索引值
-  0x01                  //可能配置的数目
+  0x01,                 //�����ߵ��ַ���������������ֵ
+  0x02,                 //��Ʒ���ַ���������������ֵ
+  0x03,                 //��ŵ��ַ���������������ֵ
+  0x01                  //�������õ���Ŀ
 };
 
 
-/* 配置描述符 */
+/* ���������� */
 const UINT8 TAB_USB_CDC_CFG_DES[ ] =
 {
   0x09,0x02,0x43,0x00,0x02,0x01,0x00,0x80,0x30,
 
-  //以下为接口0（CDC接口）描述符
+  //����Ϊ�ӿ�0��CDC�ӿڣ�������
   0x09, 0x04,0x00,0x00,0x01,0x02,0x02,0x01,0x00,
 
   0x05,0x24,0x00,0x10,0x01,
@@ -68,16 +68,16 @@ const UINT8 TAB_USB_CDC_CFG_DES[ ] =
   0x05,0x24,0x06,0x00,0x01,
   0x05,0x24,0x01,0x01,0x00,
 
-  0x07,0x05,0x84,0x03,0x08,0x00,0x01,                       //中断上传端点描述符
+  0x07,0x05,0x84,0x03,0x08,0x00,0x01,                       //�ж��ϴ��˵�������
 
-  //以下为接口1（数据接口）描述符
+  //����Ϊ�ӿ�1�����ݽӿڣ�������
   0x09,0x04,0x01,0x00,0x02,0x0a,0x00,0x00,0x00,
 
-  0x07,0x05,0x01,0x02,0x40,0x00,0x00,                       //端点描述符
-  0x07,0x05,0x81,0x02,0x40,0x00,0x00,                       //端点描述符
+  0x07,0x05,0x01,0x02,0x40,0x00,0x00,                       //�˵�������
+  0x07,0x05,0x81,0x02,0x40,0x00,0x00,                       //�˵�������
 };
 
-/* 设备限定描述符 */
+/* �豸�޶������� */
 const UINT8 My_QueDescr[ ] = { 0x0A, 0x06, 0x00, 0x02, 0xFF, 0x00, 0xFF, 0x40, 0x01, 0x00 };
 
 UINT8 TAB_CDC_LINE_CODING[ ]  =
@@ -94,7 +94,7 @@ UINT8 TAB_CDC_LINE_CODING[ ]  =
 
 #define DEF_IC_PRG_VER                 0x31
 /* 7523 */
-/* 设备描述符 *///0x00, DEF_IC_PRG_VER, //BCD 设备版本号
+/* �豸������ *///0x00, DEF_IC_PRG_VER, //BCD �豸�汾��
 const UINT8 TAB_USB_VEN_DEV_DES[] =
 {
   0x12,
@@ -104,25 +104,25 @@ const UINT8 TAB_USB_VEN_DEV_DES[] =
   0x86, 0x1a, 0x23, 0x75,
   0x00, DEF_IC_PRG_VER,
 
-  0x01,                 //制造者的字符串描述符的索引值
-  0x02,                 //产品的字符串描述符的索引值
-  0x03,                 //序号的字符串描述符的索引值
+  0x01,                 //�����ߵ��ַ���������������ֵ
+  0x02,                 //��Ʒ���ַ���������������ֵ
+  0x03,                 //��ŵ��ַ���������������ֵ
 
   0x01
 };
 
 const UINT8 TAB_USB_VEN_CFG_DES[39] =
 {
-  0x09, 0x02, 0x27, 0x00, 0x01, 0x01, 0x00, 0x80, 0x30,   //配置描述符
-  0x09, 0x04, 0x00, 0x00, 0x03, 0xff, 0x01, 0x02, 0x00,   //接口
-  0x07, 0x05, 0x82, 0x02, 0x20, 0x00, 0x00,               //端点 IN2   批量
-  0x07, 0x05, 0x02, 0x02, 0x20, 0x00, 0x00,               //端点 OUT2  批量
-  0x07, 0x05, 0x81, 0x03, 0x08, 0x00, 0x01        //端点 IN1   中断
+  0x09, 0x02, 0x27, 0x00, 0x01, 0x01, 0x00, 0x80, 0x30,   //����������
+  0x09, 0x04, 0x00, 0x00, 0x03, 0xff, 0x01, 0x02, 0x00,   //�ӿ�
+  0x07, 0x05, 0x82, 0x02, 0x20, 0x00, 0x00,               //�˵� IN2   ����
+  0x07, 0x05, 0x02, 0x02, 0x20, 0x00, 0x00,               //�˵� OUT2  ����
+  0x07, 0x05, 0x81, 0x03, 0x08, 0x00, 0x01        //�˵� IN1   �ж�
 };
 
-// 语言描述符
+// ����������
 const UINT8 TAB_USB_LID_STR_DES[ ] = { 0x04, 0x03, 0x09, 0x04 };
-// 厂家信息
+// ������Ϣ
 const UINT8 TAB_USB_VEN_STR_DES[ ] = { 0x0E, 0x03, 'w', 0, 'c', 0, 'h', 0, '.', 0, 'c', 0, 'n', 0 };
 const UINT8 TAB_USB_PRD_STR_DES[ ] = {
   0x1e,0x03,0x55,0x00,0x53,0x00,0x42,0x00,0x20,0x00,0x43,0x00,0x44,0x00,0x43,0x00,
@@ -140,36 +140,36 @@ const UINT8 USB_DEV_PARA_VEN_MANUFACTURE_STR[]= "wch.cn";
 
 typedef struct DevInfo
 {
-  UINT8 UsbConfig;      // USB配置标志
-  UINT8 UsbAddress;     // USB设备地址
-  UINT8 gSetupReq;        /* USB控制传输命令码 */
-  UINT8 gSetupLen;          /* USB控制传输传输长度 */
-  UINT8 gUsbInterCfg;       /* USB设备接口配置 */
-  UINT8 gUsbFlag;       /* USB设备各种操作标志,位0=总线复位,位1=获取设备描述符,位2=设置地址,位3=获取配置描述符,位4=设置配置 */
+  UINT8 UsbConfig;      // USB���ñ�־
+  UINT8 UsbAddress;     // USB�豸��ַ
+  UINT8 gSetupReq;        /* USB���ƴ��������� */
+  UINT8 gSetupLen;          /* USB���ƴ��䴫�䳤�� */
+  UINT8 gUsbInterCfg;       /* USB�豸�ӿ����� */
+  UINT8 gUsbFlag;       /* USB�豸���ֲ�����־,λ0=���߸�λ,λ1=��ȡ�豸������,λ2=���õ�ַ,λ3=��ȡ����������,λ4=�������� */
 }DevInfo_Parm;
 
-/* 设备信息 */
+/* �豸��Ϣ */
 DevInfo_Parm  devinf;
 UINT8 SetupReqCode, SetupLen;
 
-/* 端点硬件和软件操作的缓存区 */
-__aligned(4) UINT8  Ep0Buffer[MAX_PACKET_SIZE];     //端点0 收发共用  端点4 OUT & IN
+/* �˵�Ӳ�������������Ļ����� */
+__aligned(4) UINT8  Ep0Buffer[MAX_PACKET_SIZE];     //�˵�0 �շ�����  �˵�4 OUT & IN
 
-//端点4的上传地址
+//�˵�4���ϴ���ַ
 __aligned(4) UINT8  Ep1Buffer[MAX_PACKET_SIZE];     //IN
 __aligned(4) UINT8  Ep2Buffer[2*MAX_PACKET_SIZE];   //OUT & IN
 __aligned(4) UINT8  Ep3Buffer[2*MAX_PACKET_SIZE];   //OUT & IN
 
-//Line Code结构
+//Line Code�ṹ
  typedef struct __PACKED _LINE_CODE
 {
-  UINT32  BaudRate;   /* 波特率 */
-  UINT8 StopBits;   /* 停止位计数，0：1停止位，1：1.5停止位，2：2停止位 */
-  UINT8 ParityType;   /* 校验位，0：None，1：Odd，2：Even，3：Mark，4：Space */
-  UINT8 DataBits;   /* 数据位计数：5，6，7，8，16 */
+  UINT32  BaudRate;   /* ������ */
+  UINT8 StopBits;   /* ֹͣλ������0��1ֹͣλ��1��1.5ֹͣλ��2��2ֹͣλ */
+  UINT8 ParityType;   /* У��λ��0��None��1��Odd��2��Even��3��Mark��4��Space */
+  UINT8 DataBits;   /* ����λ������5��6��7��8��16 */
 }LINE_CODE, *PLINE_CODE;
 
-/* 两个串口相关数据 */
+/* ��������������� */
 LINE_CODE Uart0Para;
 
 #define CH341_REG_NUM     10
@@ -177,16 +177,16 @@ UINT8 CH341_Reg_Add[CH341_REG_NUM];
 UINT8 CH341_Reg_val[CH341_REG_NUM];
 
 
-/* 厂商模式下串口参数变化 */
+/* ����ģʽ�´��ڲ����仯 */
 UINT8 VENSer0ParaChange = 0;
 
-/* 厂商模式下串口发送数据标志 */
+/* ����ģʽ�´��ڷ������ݱ�־ */
 UINT8 VENSer0SendFlag = 0;
 
-/* 厂商模式下modem信号检测 */
-UINT8 UART0_RTS_Val = 0; //输出 表示DTE请求DCE发送数据
-UINT8 UART0_DTR_Val = 0; //输出 数据终端就绪
-UINT8 UART0_OUT_Val = 0; //自定义modem信号（CH340手册）
+/* ����ģʽ��modem�źż�� */
+UINT8 UART0_RTS_Val = 0; //��� ��ʾDTE����DCE��������
+UINT8 UART0_DTR_Val = 0; //��� �����ն˾���
+UINT8 UART0_OUT_Val = 0; //�Զ���modem�źţ�CH340�ֲᣩ
 
 UINT8 UART0_DCD_Val = 0;
 UINT8 UART0_DCD_Change = 0;
@@ -200,7 +200,7 @@ UINT8 UART0_DSR_Change = 0;
 UINT8 UART0_CTS_Val = 0;
 UINT8 UART0_CTS_Change = 0;
 
-/* CDC设置的串口 */
+/* CDC���õĴ��� */
 UINT8 CDCSetSerIdx = 0;
 UINT8 CDCSer0ParaChange = 0;
 
@@ -217,24 +217,24 @@ typedef struct _USB_SETUP_REQ_ {
 
 #define UsbSetupBuf     ((USB_SETUP_REQ_t *)Ep0Buffer) //USB_SETUP_REQ_t USB_SETUP_REQ_t
 
-/* USB缓存定义，所有端点全部定义 */
-/* 端点1 -- IN状态 */
+/* USB���涨�壬���ж˵�ȫ������ */
+/* �˵�1 -- IN״̬ */
 UINT8 Ep1DataINFlag = 0;
 
-/* 端点1下传数据 */
+/* �˵�1�´����� */
 UINT8 Ep1DataOUTFlag = 0;
 UINT8 Ep1DataOUTLen = 0;
 __aligned(4) UINT8 Ep1OUTDataBuf[MAX_PACKET_SIZE];
 
-/* 端点2 -- IN状态 */
+/* �˵�2 -- IN״̬ */
 UINT8 Ep2DataINFlag = 0;
 
-/* 端点2下传数据 */
+/* �˵�2�´����� */
 UINT8 Ep2DataOUTFlag = 0;
 UINT8 Ep2DataOUTLen = 0;
 __aligned(4) UINT8 Ep2OUTDataBuf[MAX_PACKET_SIZE];
 
-/* 保存USB中断的状态 ->改成几组的操作方式 */
+/* ����USB�жϵ�״̬ ->�ĳɼ���Ĳ�����ʽ */
 #define USB_IRQ_FLAG_NUM     4
 
 UINT8 usb_irq_w_idx = 0;
@@ -247,7 +247,7 @@ volatile UINT8 usb_irq_flag[USB_IRQ_FLAG_NUM];
 UINT8 cdc_uart_sta_trans_step = 0;
 UINT8 ven_ep1_trans_step = 0;
 
-/* 端点0枚举上传帧处理 */
+/* �˵�0ö���ϴ�֡���� */
 UINT8 ep0_send_buf[256];
 
 /**********************************************************/
@@ -267,21 +267,21 @@ const UINT8 *pDescr;
 #define HAL_UART_TWO_STOP_BITS               2
 
 /* Parity settings */
-#define HAL_UART_NO_PARITY                   0x00                              //无校验
-#define HAL_UART_ODD_PARITY                  0x01                              //奇校验
-#define HAL_UART_EVEN_PARITY                 0x02                              //偶校验
-#define HAL_UART_MARK_PARITY                 0x03                              //置1 mark
-#define HAL_UART_SPACE_PARITY                0x04                              //空白位 space
+#define HAL_UART_NO_PARITY                   0x00                              //��У��
+#define HAL_UART_ODD_PARITY                  0x01                              //��У��
+#define HAL_UART_EVEN_PARITY                 0x02                              //żУ��
+#define HAL_UART_MARK_PARITY                 0x03                              //��1 mark
+#define HAL_UART_SPACE_PARITY                0x04                              //�հ�λ space
 
 
-/* 端点状态设置函数 */
+/* �˵�״̬���ú��� */
 void USBDevEPnINSetStatus(UINT8 ep_num, UINT8 type, UINT8 sta);
 
 /*******************************************************************************
 * Function Name  : CH341RegWrite
-* Description    : 写入 CH341的寄存器
-* Input          : reg_add：写入寄存器地址
-                   reg_val：写入寄存器的值
+* Description    : д�� CH341�ļĴ���
+* Input          : reg_add��д��Ĵ�����ַ
+                   reg_val��д��Ĵ�����ֵ
 * Output         : None
 * Return         : None
 *******************************************************************************/
@@ -321,7 +321,7 @@ void CH341RegWrite(UINT8 reg_add,UINT8 reg_val)
   {
     case 0x06:break; //IO
     case 0x07:break; //IO
-    case 0x18: //SFR_UART_CTRL -->串口的参数寄存器
+    case 0x18: //SFR_UART_CTRL -->���ڵĲ����Ĵ���
     {
       UINT8 reg_uart_ctrl;
       UINT8 data_bit_val;
@@ -330,7 +330,7 @@ void CH341RegWrite(UINT8 reg_add,UINT8 reg_val)
       UINT8 break_en;
 
       reg_uart_ctrl = reg_val;
-      /* break位 */
+      /* breakλ */
       break_en = (reg_uart_ctrl & 0x40)?(0):(1);
 //      SetUART0BreakENStatus(break_en);
 
@@ -358,7 +358,7 @@ void CH341RegWrite(UINT8 reg_add,UINT8 reg_val)
 
       dg_log("CH341 set para:%d %d %d break:%02x\r\n",data_bit_val,(int)stop_bit_val,parity_val,break_en);
 
-      //直接设置寄存器
+      //ֱ�����üĴ���
       VENSer0ParaChange = 1;
       break;
     }
@@ -374,11 +374,11 @@ void CH341RegWrite(UINT8 reg_add,UINT8 reg_val)
 
 /*******************************************************************************
 * Function Name  : CH341RegRead
-* Description    : 读取 CH341的寄存器
-* Input          : reg_add：读取的寄存器地址
-                   reg_val：读取的寄存器的值存放指针
+* Description    : ��ȡ CH341�ļĴ���
+* Input          : reg_add����ȡ�ļĴ�����ַ
+                   reg_val����ȡ�ļĴ�����ֵ���ָ��
 * Output         : None
-* Return         : 寄存器存在
+* Return         : �Ĵ�������
 *******************************************************************************/
 UINT8 CH341RegRead(UINT8 reg_add,UINT8 *reg_val)
 {
@@ -389,13 +389,13 @@ UINT8 CH341RegRead(UINT8 reg_add,UINT8 *reg_val)
   *reg_val = 0;
   for(i=0; i<CH341_REG_NUM; i++)
   {
-    if(CH341_Reg_Add[i] == reg_add)   //找到相同地址的寄存器
+    if(CH341_Reg_Add[i] == reg_add)   //�ҵ���ͬ��ַ�ļĴ���
     {
       find_flag = 1;
       *reg_val = CH341_Reg_val[i];
       break;
     }
-    if(CH341_Reg_Add[i] == 0xff)      //找到当前第一个空
+    if(CH341_Reg_Add[i] == 0xff)      //�ҵ���ǰ��һ����
     {
       find_flag = 0;
       *reg_val = 0x00;
@@ -417,13 +417,13 @@ UINT8 CH341RegRead(UINT8 reg_add,UINT8 *reg_val)
       *reg_val = reg_pc_val;
       break;
     }
-    case 0x18:   //SFR_UART_CTRL -->串口的参数寄存器
+    case 0x18:   //SFR_UART_CTRL -->���ڵĲ����Ĵ���
     {
       UINT8  reg_uart_ctrl_val;
       UINT8  ram_uart_ctrl_val;
 
       reg_uart_ctrl_val = R8_UART0_LCR;
-      //保留break位
+      //����breakλ
       ram_uart_ctrl_val = *reg_val;
       reg_uart_ctrl_val |= (ram_uart_ctrl_val & 0x40);
       *reg_val = reg_uart_ctrl_val;
@@ -447,7 +447,7 @@ UINT8 CH341RegRead(UINT8 reg_add,UINT8 *reg_val)
 #define ENDP_TYPE_IN                    0x00                                    /* ENDP is IN Type */
 #define ENDP_TYPE_OUT                   0x01                                    /* ENDP is OUT Type */
 
-/* 端点应答状态定义 */
+/* �˵�Ӧ��״̬���� */
 /* OUT */
 #define OUT_ACK                         0
 #define OUT_TIMOUT                      1
@@ -459,17 +459,17 @@ UINT8 CH341RegRead(UINT8 reg_add,UINT8 *reg_val)
 #define IN_NAK                          2
 #define IN_STALL                        3
 
-/* USB设备各种标志位定义 */
-#define DEF_BIT_USB_RESET               0x01                                    /* 总线复位标志 */
-#define DEF_BIT_USB_DEV_DESC            0x02                                    /* 获取过设备描述符标志 */
-#define DEF_BIT_USB_ADDRESS             0x04                                    /* 设置过地址标志 */
-#define DEF_BIT_USB_CFG_DESC            0x08                                    /* 获取过配置描述符标志 */
-#define DEF_BIT_USB_SET_CFG             0x10                                    /* 设置过配置值标志 */
-#define DEF_BIT_USB_WAKE                0x20                                    /* USB唤醒标志 */
-#define DEF_BIT_USB_SUPD                0x40                                    /* USB总线挂起标志 */
-#define DEF_BIT_USB_HS                  0x80                                    /* USB高速、全速标志 */
+/* USB�豸���ֱ�־λ���� */
+#define DEF_BIT_USB_RESET               0x01                                    /* ���߸�λ��־ */
+#define DEF_BIT_USB_DEV_DESC            0x02                                    /* ��ȡ���豸��������־ */
+#define DEF_BIT_USB_ADDRESS             0x04                                    /* ���ù���ַ��־ */
+#define DEF_BIT_USB_CFG_DESC            0x08                                    /* ��ȡ��������������־ */
+#define DEF_BIT_USB_SET_CFG             0x10                                    /* ���ù�����ֵ��־ */
+#define DEF_BIT_USB_WAKE                0x20                                    /* USB���ѱ�־ */
+#define DEF_BIT_USB_SUPD                0x40                                    /* USB���߹����־ */
+#define DEF_BIT_USB_HS                  0x80                                    /* USB���١�ȫ�ٱ�־ */
 
-/* 中断处理函数 */
+/* �жϴ������� */
 __attribute__((interrupt("WCH-Interrupt-fast")))
 __attribute__((section(".highcode")))
 void USB_IRQHandler(void)
@@ -479,44 +479,44 @@ void USB_IRQHandler(void)
 
   if(R8_USB_INT_FG & RB_UIF_TRANSFER)
   {
-    /* 除setup包处理 */
-    if((R8_USB_INT_ST & MASK_UIS_TOKEN) != MASK_UIS_TOKEN){     // 非空闲
-      /* 直接写入 */
+    /* ��setup������ */
+    if((R8_USB_INT_ST & MASK_UIS_TOKEN) != MASK_UIS_TOKEN){     // �ǿ���
+      /* ֱ��д�� */
       usb_irq_flag[usb_irq_w_idx] = 1;
       usb_irq_pid[usb_irq_w_idx]  = R8_USB_INT_ST;  //& 0x3f;//(0x30 | 0x0F);
       usb_irq_len[usb_irq_w_idx]  = R8_USB_RX_LEN;
 
-      switch(usb_irq_pid[usb_irq_w_idx]& 0x3f){   //分析当前的端点
+      switch(usb_irq_pid[usb_irq_w_idx]& 0x3f){   //������ǰ�Ķ˵�
         case UIS_TOKEN_OUT | 2:{
-          if( R8_USB_INT_FG & RB_U_TOG_OK ){   //不同步的数据包将丢弃
+          if( R8_USB_INT_FG & RB_U_TOG_OK ){   //��ͬ�������ݰ�������
             R8_UEP2_CTRL ^=  RB_UEP_R_TOG;
             R8_UEP2_CTRL = (R8_UEP2_CTRL & 0xf3) | 0x08; //OUT_NAK
-            /* 保存数据 */
+            /* �������� */
             for(j=0; j<(MAX_PACKET_SIZE/4); j++)
               ((UINT32 *)Ep2OUTDataBuf)[j] = ((UINT32 *)Ep2Buffer)[j];
           }
           else usb_irq_flag[usb_irq_w_idx] = 0;
         }break;
-        case UIS_TOKEN_IN | 2:{ //endpoint 2# 批量端点上传完成
+        case UIS_TOKEN_IN | 2:{ //endpoint 2# �����˵��ϴ����
           R8_UEP2_CTRL ^=  RB_UEP_T_TOG;
           R8_UEP2_CTRL = (R8_UEP2_CTRL & 0xfc) | IN_NAK; //IN_NAK
         }break;
         case UIS_TOKEN_OUT | 1:{
-          if( R8_USB_INT_FG & RB_U_TOG_OK ){   //不同步的数据包将丢弃
+          if( R8_USB_INT_FG & RB_U_TOG_OK ){   //��ͬ�������ݰ�������
             R8_UEP1_CTRL ^=  RB_UEP_R_TOG;
             R8_UEP1_CTRL = (R8_UEP1_CTRL & 0xf3) | 0x08; //OUT_NAK
-            /* 保存数据 */
+            /* �������� */
             for(j=0; j<(MAX_PACKET_SIZE/4); j++)
               ((UINT32 *)Ep1OUTDataBuf)[j] = ((UINT32 *)Ep1Buffer)[j];
           }
           else usb_irq_flag[usb_irq_w_idx] = 0;
         }break;
-        case UIS_TOKEN_IN | 1:{  //endpoint 1# 批量端点上传完成
+        case UIS_TOKEN_IN | 1:{  //endpoint 1# �����˵��ϴ����
           R8_UEP1_CTRL ^=  RB_UEP_T_TOG;
           R8_UEP1_CTRL = (R8_UEP1_CTRL & 0xfc) | IN_NAK; //IN_NAK
         }break;
         case UIS_TOKEN_OUT | 0:{    // endpoint 0
-          if( R8_USB_INT_FG & RB_U_TOG_OK )   //不同步的数据包将丢弃
+          if( R8_USB_INT_FG & RB_U_TOG_OK )   //��ͬ�������ݰ�������
             R8_UEP0_CTRL = (R8_UEP0_CTRL & 0xf3) | 0x08; //OUT_NAK
           else usb_irq_flag[usb_irq_w_idx] = 0;
         }break;
@@ -525,7 +525,7 @@ void USB_IRQHandler(void)
         }break;
       }
 
-      /* 切到下一个写地址 */
+      /* �е���һ��д��ַ */
       if(usb_irq_flag[usb_irq_w_idx]){
         usb_irq_w_idx++;
         if(usb_irq_w_idx >= USB_IRQ_FLAG_NUM) usb_irq_w_idx = 0;
@@ -534,14 +534,14 @@ void USB_IRQHandler(void)
       R8_USB_INT_FG = RB_UIF_TRANSFER;
     }
 
-    /* setup包处理 */
+    /* setup������ */
     if(R8_USB_INT_ST & RB_UIS_SETUP_ACT){
-      /* 与之前的处理接轨 -- UIS_TOKEN_SETUP */
-      /* 直接写入 */
+      /* ��֮ǰ�Ĵ����ӹ� -- UIS_TOKEN_SETUP */
+      /* ֱ��д�� */
       usb_irq_flag[usb_irq_w_idx] = 1;
-      usb_irq_pid[usb_irq_w_idx]  = UIS_TOKEN_SETUP | 0;  //保留之前的标志
+      usb_irq_pid[usb_irq_w_idx]  = UIS_TOKEN_SETUP | 0;  //����֮ǰ�ı�־
       usb_irq_len[usb_irq_w_idx]  = 8;
-      /* 切到下一个写地址 */
+      /* �е���һ��д��ַ */
       usb_irq_w_idx++;
       if(usb_irq_w_idx >= USB_IRQ_FLAG_NUM) usb_irq_w_idx = 0;
 
@@ -559,17 +559,17 @@ UINT8 Ep1DataOUTFlag ;
 UINT8 Ep3DataOUTFlag = 0;
 UINT8 Ep4DataOUTFlag = 0;
 
-/* CH341相关的命令帧 */
-#define DEF_VEN_DEBUG_READ              0X95         /* 读两组寄存器 */
-#define DEF_VEN_DEBUG_WRITE             0X9A         /* 写两组寄存器 */
-#define DEF_VEN_UART_INIT             0XA1         /* 初始化串口 */
-#define DEF_VEN_UART_M_OUT              0XA4         /* 设置MODEM信号输出 */
-#define DEF_VEN_BUF_CLEAR             0XB2         /* 清除未完成的数据 */
-#define DEF_VEN_I2C_CMD_X             0X54         /* 发出I2C接口的命令,立即执行 */
-#define DEF_VEN_DELAY_MS              0X5E         /* 以亳秒为单位延时指定时间 */
-#define DEF_VEN_GET_VER                 0X5F         /* 获取芯片版本 */
+/* CH341��ص�����֡ */
+#define DEF_VEN_DEBUG_READ              0X95         /* ������Ĵ��� */
+#define DEF_VEN_DEBUG_WRITE             0X9A         /* д����Ĵ��� */
+#define DEF_VEN_UART_INIT             0XA1         /* ��ʼ������ */
+#define DEF_VEN_UART_M_OUT              0XA4         /* ����MODEM�ź���� */
+#define DEF_VEN_BUF_CLEAR             0XB2         /* ���δ��ɵ����� */
+#define DEF_VEN_I2C_CMD_X             0X54         /* ����I2C�ӿڵ�����,����ִ�� */
+#define DEF_VEN_DELAY_MS              0X5E         /* ������Ϊ��λ��ʱָ��ʱ�� */
+#define DEF_VEN_GET_VER                 0X5F         /* ��ȡоƬ�汾 */
 
-/* 类请求 */
+/* ������ */
 //  3.1 Requests---Abstract Control Model
 #define DEF_SEND_ENCAPSULATED_COMMAND  0x00
 #define DEF_GET_ENCAPSULATED_RESPONSE  0x01
@@ -588,14 +588,14 @@ UINT8 Ep4DataOUTFlag = 0;
 #define DEF_SERIAL_STATE               0x20
 
 
-void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
+void USB_IRQProcessHandler( void )   /* USB�жϷ������ */
 {
   static  PUINT8  pDescr;
   static  UINT8 irq_idx = 0;
   UINT8 len;
   UINT32  bps;
   UINT8   buf[8];
-  UINT8   data_dir = 0;   //数据方向
+  UINT8   data_dir = 0;   //���ݷ���
   UINT8   ep_idx, ep_pid;
   UINT8   i;
   UINT8   ep_sta;
@@ -609,19 +609,19 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
       usb_irq_r_idx++;
       if(usb_irq_r_idx >= USB_IRQ_FLAG_NUM) usb_irq_r_idx = 0;
 
-      switch ( usb_irq_pid[i] & 0x3f )   // 分析操作令牌和端点号
+      switch ( usb_irq_pid[i] & 0x3f )   // �����������ƺͶ˵��
       {
-        case UIS_TOKEN_IN | 4:  //endpoint 4# 批量端点上传完成
+        case UIS_TOKEN_IN | 4:  //endpoint 4# �����˵��ϴ����
         {
           Ep4DataINFlag = ~0;
           break;
         }
-        case UIS_TOKEN_IN | 3:  //endpoint 3# 批量端点上传完成
+        case UIS_TOKEN_IN | 3:  //endpoint 3# �����˵��ϴ����
         {
           Ep3DataINFlag = ~0;
           break;
         }
-        case UIS_TOKEN_OUT | 2:    // endpoint 2# 批量端点下传完成
+        case UIS_TOKEN_OUT | 2:    // endpoint 2# �����˵��´����
         {
           dg_log("usb_rec\n");
           len = usb_irq_len[i];
@@ -631,7 +631,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
             dg_log("%02x  ",Ep2OUTDataBuf[i]);
             dg_log("\n");
 
-            //CH341的数据下发
+            //CH341�������·�
             Ep2DataOUTFlag = 1;
             Ep2DataOUTLen = len;
             VENSer0SendFlag = 1;
@@ -641,12 +641,12 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
           }
           break;
         }
-        case UIS_TOKEN_IN | 2:  //endpoint 2# 批量端点上传完成
+        case UIS_TOKEN_IN | 2:  //endpoint 2# �����˵��ϴ����
         {
           Ep2DataINFlag = 1;
           break;
         }
-        case UIS_TOKEN_OUT | 1:    // endpoint 1# 批量端点下传完成
+        case UIS_TOKEN_OUT | 1:    // endpoint 1# �����˵��´����
         {
           dg_log("usb_rec\n");
           len = usb_irq_len[i];
@@ -655,7 +655,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
           dg_log("%02x  ",Ep1OUTDataBuf[i]);
           dg_log("\n");
 
-          //CH341的数据下发
+          //CH341�������·�
           Ep1DataOUTFlag = 1;
           Ep1DataOUTLen = len;
           VENSer0SendFlag = 1;
@@ -664,7 +664,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
           PFIC_EnableIRQ(USB_IRQn);
           break;
         }
-        case UIS_TOKEN_IN | 1:   // endpoint 1# 中断端点上传完成
+        case UIS_TOKEN_IN | 1:   // endpoint 1# �ж϶˵��ϴ����
         {
           Ep1DataINFlag = 1;
           break;
@@ -677,19 +677,19 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
             SetupLen = UsbSetupBuf->wLengthL;
             if(UsbSetupBuf->wLengthH) SetupLen = 0xff;
 
-            len = 0;                                                 // 默认为成功并且上传0长度
+            len = 0;                                                 // Ĭ��Ϊ�ɹ������ϴ�0����
             SetupReqCode = UsbSetupBuf->bRequest;
 
-            /* 数据方向 */
+            /* ���ݷ��� */
             data_dir = USB_REQ_TYP_OUT;
             if(UsbSetupBuf->bRequestType & USB_REQ_TYP_IN) data_dir = USB_REQ_TYP_IN;
 
-            /* 厂商请求 */
+            /* �������� */
             if( ( UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_VENDOR )
             {
               switch(SetupReqCode)
               {
-                case DEF_VEN_DEBUG_WRITE:  //写两组 0X9A
+                case DEF_VEN_DEBUG_WRITE:  //д���� 0X9A
                 {
                   UINT32 bps = 0;
                   UINT8 write_reg_add1;
@@ -704,10 +704,10 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                   write_reg_val1 = Ep0Buffer[4];
                   write_reg_val2 = Ep0Buffer[5];
 
-                  /* 该组是设置波特率的寄存器 */
+                  /* ���������ò����ʵļĴ��� */
                   if((write_reg_add1 == 0x12)&&(write_reg_add2 == 0x13))
                   {
-                    /* 波特率处理采用计算值 */
+                    /* �����ʴ������ü���ֵ */
                     if((UsbSetupBuf->wIndexL==0x87)&&(UsbSetupBuf->wIndexH==0xf3))
                     {
                       bps = 921600;  //13 * 921600 = 11980800
@@ -717,7 +717,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                       bps = 307200;  //39 * 307200 = 11980800
                     }
 
-                    //系统主频： 36923077
+                    //ϵͳ��Ƶ�� 36923077
                     else if( UsbSetupBuf->wIndexL == 0x88 )
                     {
                       UINT32 CalClock;
@@ -736,7 +736,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                       CalDiv = 0 - UsbSetupBuf->wIndexH;
                       bps = CalClock / CalDiv;
                     }
-                    //系统主频：  32000000
+                    //ϵͳ��Ƶ��  32000000
                     else if( UsbSetupBuf->wIndexL == 0x8A )
                     {
                       UINT32 CalClock;
@@ -775,13 +775,13 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                       }
                       else if((UsbSetupBuf->wIndexL & 0x7f) == 1)
                       {
-                        CalClock = 93750; //64 分频
+                        CalClock = 93750; //64 ��Ƶ
                         CalDiv = 0 - UsbSetupBuf->wIndexH;
                         bps = CalClock / CalDiv;
                       }
                       else if((UsbSetupBuf->wIndexL & 0x7f) == 0)
                       {
-                        CalClock = 11719;  //约512
+                        CalClock = 11719;  //Լ512
                         CalDiv = 0 - UsbSetupBuf->wIndexH;
                         bps = CalClock / CalDiv;
                       }
@@ -802,7 +802,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
 
                   break;
                 }
-                case DEF_VEN_DEBUG_READ:   //需要回传数据 0X95  /* 读两组寄存器 */
+                case DEF_VEN_DEBUG_READ:   //��Ҫ�ش����� 0X95  /* ������Ĵ��� */
                 {
                   UINT8 read_reg_add1;
                   UINT8 read_reg_add2;
@@ -824,8 +824,8 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
 
                   break;
                 }
-                //A1命令也是要初始化串口的
-                case DEF_VEN_UART_INIT:  //初始化串口 0XA1
+                //A1����Ҳ��Ҫ��ʼ�����ڵ�
+                case DEF_VEN_UART_INIT:  //��ʼ������ 0XA1
                 {
                   UINT8 reg_uart_ctrl;
                   UINT8  parity_val;
@@ -863,14 +863,14 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                     Uart0Para.ParityType = parity_val;
                     Uart0Para.DataBits = data_bit_val;
 
-                    //直接设置寄存器
+                    //ֱ�����üĴ���
                    // UART0ParaSet(data_bit_val, stop_bit_val,parity_val);
 
                     uart_set_m = 0;
                     uart_reg1_val = UsbSetupBuf->wIndexL;
                     uart_reg2_val = UsbSetupBuf->wIndexH;
 
-                    if(uart_reg1_val & (1<<6))  //判断第六位
+                    if(uart_reg1_val & (1<<6))  //�жϵ���λ
                     {
                       uart_set_m = 1;
                     }
@@ -882,7 +882,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
 
                     if(uart_set_m)
                     {
-                      /* 波特率处理采用计算值 */
+                      /* �����ʴ������ü���ֵ */
                       if((uart_reg1_val == 0x87)&&(uart_reg2_val == 0xf3))
                       {
                         bps = 921600;  //13 * 921600 = 11980800
@@ -892,7 +892,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                         bps = 307200;  //39 * 307200 = 11980800
                       }
 
-                      //系统主频： 36923077
+                      //ϵͳ��Ƶ�� 36923077
                       else if( uart_reg1_val == 0xC8 )
                       {
                         UINT32 CalClock;
@@ -911,7 +911,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                         CalDiv = 0 - uart_reg2_val;
                         bps = CalClock / CalDiv;
                       }
-                      //系统主频：  32000000
+                      //ϵͳ��Ƶ��  32000000
                       else if( uart_reg1_val == 0xCA )
                       {
                         UINT32 CalClock;
@@ -950,13 +950,13 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                         }
                         else if((uart_reg1_val & 0x7f) == 1)
                         {
-                          CalClock = 93750; //64 分频
+                          CalClock = 93750; //64 ��Ƶ
                           CalDiv = 0 - uart_reg2_val;
                           bps = CalClock / CalDiv;
                         }
                         else if((uart_reg1_val & 0x7f) == 0)
                         {
-                          CalClock = 11719;  //约512
+                          CalClock = 11719;  //Լ512
                           CalDiv = 0 - uart_reg2_val;
                           bps = CalClock / CalDiv;
                         }
@@ -972,7 +972,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                   }
                   break;
                 }
-                case DEF_VEN_UART_M_OUT:  //设置MODEM信号输出 0XA4
+                case DEF_VEN_UART_M_OUT:  //����MODEM�ź���� 0XA4
                 {
                   UINT8 reg_pb_out;
 
@@ -982,25 +982,25 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                   else UART0_OUT_Val = 0;
                   break;
                 }
-                case DEF_VEN_BUF_CLEAR: //0XB2  /* 清除未完成的数据 */
+                case DEF_VEN_BUF_CLEAR: //0XB2  /* ���δ��ɵ����� */
                 {
                   len = 0;
 
-                  //可以重新初始化
-                  VENSer0ParaChange = 1; // 重新初始化即可清除所有的数据
+                  //�������³�ʼ��
+                  VENSer0ParaChange = 1; // ���³�ʼ������������е�����
                   break;
                 }
-                case DEF_VEN_I2C_CMD_X:  //0X54  发出I2C接口的命令,立即执行
+                case DEF_VEN_I2C_CMD_X:  //0X54  ����I2C�ӿڵ�����,����ִ��
                 {
                   len = 0;
                   break;
                 }
-                case DEF_VEN_DELAY_MS:  //0X5E  以亳秒为单位延时指定时间
+                case DEF_VEN_DELAY_MS:  //0X5E  ������Ϊ��λ��ʱָ��ʱ��
                 {
                   len = 0;
                   break;
                 }
-                case DEF_VEN_GET_VER:   //0X5E   获取芯片版本 //需要回传数据-->版本号
+                case DEF_VEN_GET_VER:   //0X5E   ��ȡоƬ�汾 //��Ҫ�ش�����-->�汾��
                 {
                   len = 2;
                   pDescr = buf;
@@ -1017,18 +1017,18 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                   break;
               }
             }
-            // 标准请求
+            // ��׼����
             else if((UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK) == USB_REQ_TYP_STANDARD)
             {
-              switch( SetupReqCode )  // 请求码
+              switch( SetupReqCode )  // ������
               {
-                case USB_GET_DESCRIPTOR:  //获取描述符
+                case USB_GET_DESCRIPTOR:  //��ȡ������
                 {
                   switch( UsbSetupBuf->wValueH )
                   {
-                    case 1: // 设备描述符
+                    case 1: // �豸������
                     {
-                      if(usb_work_mode == USB_VENDOR_MODE)  //厂商模式
+                      if(usb_work_mode == USB_VENDOR_MODE)  //����ģʽ
                       {
                         memcpy(ep0_send_buf,
                                &TAB_USB_VEN_DEV_DES[0],
@@ -1036,7 +1036,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                         pDescr = ep0_send_buf;
                         len = sizeof( TAB_USB_VEN_DEV_DES );
                       }
-                      else                    //CDC类
+                      else                    //CDC��
                       {
                         memcpy(ep0_send_buf,
                                &TAB_USB_CDC_DEV_DES[0],
@@ -1047,9 +1047,9 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                       }
                       break;
                     }
-                    case 2:  // 配置描述符
+                    case 2:  // ����������
                     {
-                      if(usb_work_mode == USB_VENDOR_MODE)  //厂商模式
+                      if(usb_work_mode == USB_VENDOR_MODE)  //����ģʽ
                       {
                         memcpy(ep0_send_buf,
                                &TAB_USB_VEN_CFG_DES[0],
@@ -1057,7 +1057,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                         pDescr = ep0_send_buf;
                         len = sizeof( TAB_USB_VEN_CFG_DES );
                       }
-                      else                    //CDC类
+                      else                    //CDC��
                       {
                         memcpy(ep0_send_buf,
                                &TAB_USB_CDC_CFG_DES[0],
@@ -1067,15 +1067,15 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                       }
                       break;
                     }
-                    case 3:  // 字符串描述符
+                    case 3:  // �ַ���������
                     {
                       dg_log("str %d\r\n",UsbSetupBuf->wValueL);
-                      if(usb_work_mode == USB_VENDOR_MODE)  //厂商模式
+                      if(usb_work_mode == USB_VENDOR_MODE)  //����ģʽ
                       {
                         dg_log("str %d\r\n",UsbSetupBuf->wValueL);
                         switch(UsbSetupBuf->wValueL)
                         {
-                          case 0:  //语言描述符
+                          case 0:  //����������
                           {
                             pDescr = (PUINT8)( &TAB_USB_LID_STR_DES[0] );
                             len = sizeof( TAB_USB_LID_STR_DES );
@@ -1091,7 +1091,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                             UINT8 *manu_str;
                             UINT8 tmp;
 
-                            /* 取长度 */
+                            /* ȡ���� */
                             if(UsbSetupBuf->wValueL == 1)
                               manu_str = (UINT8 *)USB_DEV_PARA_VEN_MANUFACTURE_STR;
                             else if(UsbSetupBuf->wValueL == 2)
@@ -1114,16 +1114,16 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                             break;
                           }
                           default:
-                            len = 0xFF;    // 不支持的描述符类型
+                            len = 0xFF;    // ��֧�ֵ�����������
                             break;
                         }
                       }
-                      else   //CDC模式
+                      else   //CDCģʽ
                       {
                         dg_log("str %d\r\n",UsbSetupBuf->wValueL);
                         switch(UsbSetupBuf->wValueL)
                         {
-                          case 0:  //语言描述符
+                          case 0:  //����������
                           {
                             pDescr = (PUINT8)( &TAB_USB_LID_STR_DES[0] );
                             len = sizeof( TAB_USB_LID_STR_DES );
@@ -1139,7 +1139,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                             UINT8 *manu_str;
                             UINT8 tmp;
 
-                            /* 取长度 */
+                            /* ȡ���� */
                             if(UsbSetupBuf->wValueL == 1)
                               manu_str = (UINT8 *)USB_DEV_PARA_CDC_MANUFACTURE_STR;
                             else if(UsbSetupBuf->wValueL == 2)
@@ -1162,35 +1162,35 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                             break;
                           }
                           default:
-                            len = 0xFF;    // 不支持的描述符类型
+                            len = 0xFF;    // ��֧�ֵ�����������
                             break;
                         }
                       }
                       break;
                     }
-                    case 6:  //设备限定描述符
+                    case 6:  //�豸�޶�������
                     {
                       pDescr = (PUINT8)( &My_QueDescr[0] );
                       len = sizeof( My_QueDescr );
                       break;
                     }
                     default:
-                      len = 0xFF;                                  // 不支持的描述符类型
+                      len = 0xFF;                                  // ��֧�ֵ�����������
                       break;
                   }
-                  if ( SetupLen > len ) SetupLen = len;            // 限制总长度
-                  len = (SetupLen >= THIS_ENDP0_SIZE) ? THIS_ENDP0_SIZE : SetupLen;  // 本次传输长度
-                  memcpy( Ep0Buffer, pDescr, len );                 /* 加载上传数据 */
+                  if ( SetupLen > len ) SetupLen = len;            // �����ܳ���
+                  len = (SetupLen >= THIS_ENDP0_SIZE) ? THIS_ENDP0_SIZE : SetupLen;  // ���δ��䳤��
+                  memcpy( Ep0Buffer, pDescr, len );                 /* �����ϴ����� */
                   SetupLen -= len;
                   pDescr += len;
 
                   break;
                 }
-                case USB_SET_ADDRESS:  //设置地址
+                case USB_SET_ADDRESS:  //���õ�ַ
                 {
                   dg_log("SET_ADDRESS:%d\r\n",UsbSetupBuf->wValueL);
                   devinf.gUsbFlag |= DEF_BIT_USB_ADDRESS;
-                  devinf.UsbAddress = UsbSetupBuf->wValueL;    // 暂存USB设备地址
+                  devinf.UsbAddress = UsbSetupBuf->wValueL;    // �ݴ�USB�豸��ַ
 
                   break;
                 }
@@ -1213,7 +1213,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                 {
                   dg_log("CLEAR_FEATURE\r\n");
                   len = 0;
-                  /* 清除设备 */
+                  /* ����豸 */
                   if( ( UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_DEVICE )
                   {
                     R8_UEP1_CTRL = (R8_UEP1_CTRL & (~ ( RB_UEP_T_TOG | MASK_UEP_T_RES ))) | UEP_T_RES_NAK;
@@ -1221,7 +1221,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                     R8_UEP3_CTRL = (R8_UEP3_CTRL & (~ ( RB_UEP_T_TOG | MASK_UEP_T_RES ))) | UEP_T_RES_NAK;
                     R8_UEP4_CTRL = (R8_UEP4_CTRL & (~ ( RB_UEP_T_TOG | MASK_UEP_T_RES ))) | UEP_T_RES_NAK;
 
-                    //状态变量复位
+                    //״̬������λ
                     Ep1DataINFlag = 1;
                     Ep2DataINFlag = 1;
                     Ep3DataINFlag = 1;
@@ -1235,9 +1235,9 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                     cdc_uart_sta_trans_step = 0;
                     ven_ep1_trans_step = 0;
                   }
-                  else if ( ( UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_ENDP )  // 端点
+                  else if ( ( UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK ) == USB_REQ_RECIP_ENDP )  // �˵�
                   {
-                    switch( UsbSetupBuf->wIndexL )   //判断端点
+                    switch( UsbSetupBuf->wIndexL )   //�ж϶˵�
                     {
                       case 0x84: R8_UEP4_CTRL = (R8_UEP4_CTRL & (~ ( RB_UEP_T_TOG | MASK_UEP_T_RES ))) | UEP_T_RES_NAK; break;
                       case 0x04: R8_UEP4_CTRL = (R8_UEP4_CTRL & (~ ( RB_UEP_R_TOG | MASK_UEP_R_RES ))) | UEP_R_RES_ACK; break;
@@ -1250,7 +1250,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                       default: len = 0xFF;  break;
                     }
                   }
-                  else len = 0xFF;                                  // 不是端点不支持
+                  else len = 0xFF;                                  // ���Ƕ˵㲻֧��
 
                   break;
                 }
@@ -1271,17 +1271,17 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                   break;
                 }
                 default:
-                  len = 0xFF;                                       // 操作失败
+                  len = 0xFF;                                       // ����ʧ��
                   break;
               }
             }
-            /* 类请求 */
+            /* ������ */
             else if( ( UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK ) == USB_REQ_TYP_CLASS )
             {
-              /* 主机下传 */
+              /* �����´� */
               if(data_dir == USB_REQ_TYP_OUT)
               {
-                switch( SetupReqCode )  // 请求码
+                switch( SetupReqCode )  // ������
                 {
                   case DEF_SET_LINE_CODING: /* SET_LINE_CODING */
                   {
@@ -1309,25 +1309,25 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                   {
                     UINT8  carrier_sta;
                     UINT8  present_sta;
-                    /* 线路状态 */
+                    /* ��·״̬ */
                     dg_log("ctl %02x %02x\r\n",Ep0Buffer[2],Ep0Buffer[3]);
-                    carrier_sta = Ep0Buffer[2] & (1<<1);   //RTS状态
-                    present_sta = Ep0Buffer[2] & (1<<0);   //DTR状态
+                    carrier_sta = Ep0Buffer[2] & (1<<1);   //RTS״̬
+                    present_sta = Ep0Buffer[2] & (1<<0);   //DTR״̬
                     len = 0;
                     break;
                   }
                   default:
                   {
                     dg_log("CDC ReqCode%x\r\n",SetupReqCode);
-                    len = 0xFF;                                       // 操作失败
+                    len = 0xFF;                                       // ����ʧ��
                     break;
                   }
                 }
               }
-              /* 设备上传 */
+              /* �豸�ϴ� */
               else
               {
-                switch( SetupReqCode )  // 请求码
+                switch( SetupReqCode )  // ������
                 {
                   case DEF_GET_LINE_CODING: /* GET_LINE_CODING */
                   {
@@ -1343,7 +1343,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                   case DEF_SERIAL_STATE:
                   {
                     dg_log("GET_SERIAL_STATE:%d\r\n",Ep0Buffer[ 4 ]);
-                    //SetupLen 判断总长度
+                    //SetupLen �ж��ܳ���
                     len = 2;
                     CDCSetSerIdx = 0;
                     Ep0Buffer[0] = 0;
@@ -1353,109 +1353,109 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
                   default:
                   {
                     dg_log("CDC ReqCode%x\r\n",SetupReqCode);
-                    len = 0xFF;                                       // 操作失败
+                    len = 0xFF;                                       // ����ʧ��
                     break;
                   }
                 }
               }
             }
 
-            else len = 0xFF;   /* 失败 */
+            else len = 0xFF;   /* ʧ�� */
           }
           else
           {
-            len = 0xFF; // SETUP包长度错误
+            len = 0xFF; // SETUP�����ȴ���
           }
-          if ( len == 0xFF )  // 操作失败
+          if ( len == 0xFF )  // ����ʧ��
           {
             SetupReqCode = 0xFF;
             PFIC_DisableIRQ(USB_IRQn);
             R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;  // STALL
             PFIC_EnableIRQ(USB_IRQn);
           }
-          else if ( len <= THIS_ENDP0_SIZE )  // 上传数据或者状态阶段返回0长度包
+          else if ( len <= THIS_ENDP0_SIZE )  // �ϴ����ݻ���״̬�׶η���0���Ȱ�
           {
-            if( SetupReqCode ==  USB_SET_ADDRESS)  //设置地址 0x05
+            if( SetupReqCode ==  USB_SET_ADDRESS)  //���õ�ַ 0x05
             {
 //              dg_log("add in:%d\r\n",len);
               PFIC_DisableIRQ(USB_IRQn);
               R8_UEP0_T_LEN = len;
-              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //默认数据包是DATA1
+              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //Ĭ�����ݰ���DATA1
               PFIC_EnableIRQ(USB_IRQn);
             }
-            else if( SetupReqCode ==  USB_SET_CONFIGURATION)  //设置配置值 0x09
+            else if( SetupReqCode ==  USB_SET_CONFIGURATION)  //��������ֵ 0x09
             {
               PFIC_DisableIRQ(USB_IRQn);
               R8_UEP0_T_LEN = len;
-              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //默认数据包是DATA1
+              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //Ĭ�����ݰ���DATA1
               PFIC_EnableIRQ(USB_IRQn);
             }
-            else if( SetupReqCode ==  USB_GET_DESCRIPTOR)  //获取描述符  0x06
+            else if( SetupReqCode ==  USB_GET_DESCRIPTOR)  //��ȡ������  0x06
             {
               R8_UEP0_T_LEN = len;
               PFIC_DisableIRQ(USB_IRQn);
-              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;  //默认数据包是DATA1
+              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;  //Ĭ�����ݰ���DATA1
               PFIC_EnableIRQ(USB_IRQn);
             }
-            else if( SetupReqCode ==  DEF_VEN_UART_INIT )  //0XA1 初始化串口
+            else if( SetupReqCode ==  DEF_VEN_UART_INIT )  //0XA1 ��ʼ������
             {
               R8_UEP0_T_LEN = len;
               PFIC_DisableIRQ(USB_IRQn);
-              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //默认数据包是DATA1
+              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //Ĭ�����ݰ���DATA1
               PFIC_EnableIRQ(USB_IRQn);
             }
             else if( SetupReqCode ==  DEF_VEN_DEBUG_WRITE )  //0X9A
             {
               R8_UEP0_T_LEN = len;
               PFIC_DisableIRQ(USB_IRQn);
-              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //默认数据包是DATA1
+              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //Ĭ�����ݰ���DATA1
               PFIC_EnableIRQ(USB_IRQn);
             }
             else if( SetupReqCode ==  DEF_VEN_UART_M_OUT )  //0XA4
             {
               R8_UEP0_T_LEN = len;
               PFIC_DisableIRQ(USB_IRQn);
-              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //默认数据包是DATA1
+              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //Ĭ�����ݰ���DATA1
               PFIC_EnableIRQ(USB_IRQn);
             }
             else if( SetupReqCode ==  DEF_SET_CONTROL_LINE_STATE )  //0x22
             {
               PFIC_DisableIRQ(USB_IRQn);
               R8_UEP0_T_LEN = len;
-              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //默认数据包是DATA1
+              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //Ĭ�����ݰ���DATA1
               PFIC_EnableIRQ(USB_IRQn);
             }
             else if( SetupReqCode ==  USB_CLEAR_FEATURE )  //0x01
             {
               PFIC_DisableIRQ(USB_IRQn);
               R8_UEP0_T_LEN = len;
-              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //默认数据包是DATA1
+              R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //Ĭ�����ݰ���DATA1
               PFIC_EnableIRQ(USB_IRQn);
             }
             else
             {
-              if(data_dir == USB_REQ_TYP_IN)   //当前需要上传
+              if(data_dir == USB_REQ_TYP_IN)   //��ǰ��Ҫ�ϴ�
               {
                 PFIC_DisableIRQ(USB_IRQn);
                 R8_UEP0_T_LEN = len;
-                R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //默认数据包是DATA1
+                R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_NAK | UEP_T_RES_ACK;  //Ĭ�����ݰ���DATA1
                 PFIC_EnableIRQ(USB_IRQn);
               }
-              else                            //当前需要下传
+              else                            //��ǰ��Ҫ�´�
               {
                 PFIC_DisableIRQ(USB_IRQn);
                 R8_UEP0_T_LEN = len;
-                R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;  //默认数据包是DATA1
+                R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;  //Ĭ�����ݰ���DATA1
                 PFIC_EnableIRQ(USB_IRQn);
               }
             }
           }
-          else  // 下传数据或其它
+          else  // �´����ݻ�����
           {
-            //虽然尚未到状态阶段，但是提前预置上传0长度数据包以防主机提前进入状态阶段
+            //��Ȼ��δ��״̬�׶Σ�������ǰԤ���ϴ�0�������ݰ��Է�������ǰ����״̬�׶�
             R8_UEP0_T_LEN = 0;
             PFIC_DisableIRQ(USB_IRQn);
-            R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;  // 默认数据包是DATA1
+            R8_UEP0_CTRL = RB_UEP_R_TOG | RB_UEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;  // Ĭ�����ݰ���DATA1
             PFIC_EnableIRQ(USB_IRQn);
           }
           break;
@@ -1464,11 +1464,11 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
         {
           switch( SetupReqCode )
           {
-            /* 简单的处理SETUP的命令 */
-            case USB_GET_DESCRIPTOR:  //0x06  获取描述符
+            /* �򵥵Ĵ���SETUP������ */
+            case USB_GET_DESCRIPTOR:  //0x06  ��ȡ������
             {
-              len = (SetupLen >= THIS_ENDP0_SIZE) ? THIS_ENDP0_SIZE : SetupLen;  // 本次传输长度
-              memcpy( Ep0Buffer, pDescr, len );                    /* 加载上传数据 */
+              len = (SetupLen >= THIS_ENDP0_SIZE) ? THIS_ENDP0_SIZE : SetupLen;  // ���δ��䳤��
+              memcpy( Ep0Buffer, pDescr, len );                    /* �����ϴ����� */
               SetupLen -= len;
               pDescr += len;
 
@@ -1499,7 +1499,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
 
               break;
             }
-            //厂商读取
+            //���̶�ȡ
             case DEF_VEN_DEBUG_READ:     //0X95
             case DEF_VEN_GET_VER:         //0X5F
             {
@@ -1526,7 +1526,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
             }
             default:
             {
-              R8_UEP0_T_LEN = 0;                                      // 状态阶段完成中断或者是强制上传0长度数据包结束控制传输
+              R8_UEP0_T_LEN = 0;                                      // ״̬�׶�����жϻ�����ǿ���ϴ�0�������ݰ��������ƴ���
               PFIC_DisableIRQ(USB_IRQn);
               R8_UEP0_CTRL = RB_UEP_R_TOG|RB_UEP_T_TOG|UEP_R_RES_NAK | UEP_T_RES_NAK;
               PFIC_EnableIRQ(USB_IRQn);
@@ -1545,7 +1545,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
             {
               switch(SetupReqCode)
               {
-                /* 设置串口 */
+                /* ���ô��� */
                 case DEF_SET_LINE_CODING:
                 {
                   UINT32 set_bps;
@@ -1609,7 +1609,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
     }
   }
 
-  if ( R8_USB_INT_FG & RB_UIF_BUS_RST )  // USB总线复位
+  if ( R8_USB_INT_FG & RB_UIF_BUS_RST )  // USB���߸�λ
   {
     if(usb_work_mode == USB_VENDOR_MODE)
     {
@@ -1632,11 +1632,11 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
     R8_USB_DEV_AD = 0x00;
     devinf.UsbAddress = 0;
 
-    R8_USB_INT_FG = RB_UIF_BUS_RST;             // 清中断标志
+    R8_USB_INT_FG = RB_UIF_BUS_RST;             // ���жϱ�־
   }
-  else if (  R8_USB_INT_FG & RB_UIF_SUSPEND )  // USB总线挂起/唤醒完成
+  else if (  R8_USB_INT_FG & RB_UIF_SUSPEND )  // USB���߹���/�������
   {
-    if ( R8_USB_MIS_ST & RB_UMS_SUSPEND )    //挂起
+    if ( R8_USB_MIS_ST & RB_UMS_SUSPEND )    //����
     {
       if(usb_work_mode == USB_VENDOR_MODE)
       {
@@ -1658,7 +1658,7 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
       Ep4DataOUTFlag = 0;
 
     }
-    else                                     //唤醒
+    else                                     //����
     {
       Ep1DataINFlag = 1;
       Ep2DataINFlag = 1;
@@ -1680,10 +1680,10 @@ void USB_IRQProcessHandler( void )   /* USB中断服务程序 */
 
 /*******************************************************************************
 * Function Name  : USBDevEPnINSetStatus
-* Description    : 端点状态设置函数
-* Input          : ep_num：端点号
-                   type：端点传输类型
-                   sta：切换的端点状态
+* Description    : �˵�״̬���ú���
+* Input          : ep_num���˵��
+                   type���˵㴫������
+                   sta���л��Ķ˵�״̬
 * Output         : None
 * Return         : None
 *******************************************************************************/
@@ -1698,7 +1698,7 @@ void USBDevEPnINSetStatus(UINT8 ep_num, UINT8 type, UINT8 sta)
 
 /*******************************************************************************
 * Function Name  : USBParaInit
-* Description    : USB参数初始化，缓存和标志
+* Description    : USB������ʼ��������ͱ�־
 * Input          : None
 * Output         : None
 * Return         : None
@@ -1718,28 +1718,28 @@ void USBParaInit(void)
 
 /*******************************************************************************
 * Function Name  : InitCDCDevice
-* Description    : 初始化CDC设备
+* Description    : ��ʼ��CDC�豸
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
 void InitCDCDevice(void)
 {
-  /* 初始化缓存 */
+  /* ��ʼ������ */
   USBParaInit();
 
-  R8_USB_CTRL = 0x00;                                                 // 先设定模式
+  R8_USB_CTRL = 0x00;                                                 // ���趨ģʽ
 
-//  1.端点分配：
-//  端点0
-//  端点1：IN和OUT  （数据接口）
-//  端点2：IN和OUT  （数据接口）
-//  端点3：IN       （接口23组合，中断上传）
-//  端点4：IN       （接口01组合，中断上传）
+//  1.�˵���䣺
+//  �˵�0
+//  �˵�1��IN��OUT  �����ݽӿڣ�
+//  �˵�2��IN��OUT  �����ݽӿڣ�
+//  �˵�3��IN       ���ӿ�23��ϣ��ж��ϴ���
+//  �˵�4��IN       ���ӿ�01��ϣ��ж��ϴ���
 
   R8_UEP4_1_MOD = RB_UEP4_TX_EN|RB_UEP1_TX_EN|RB_UEP1_RX_EN;
 
-  /* 单 64 字节接收缓冲区(OUT)，单 64 字节发送缓冲区（IN） */
+  /* �� 64 �ֽڽ��ջ�����(OUT)���� 64 �ֽڷ��ͻ�������IN�� */
   R8_UEP2_3_MOD = RB_UEP2_RX_EN | RB_UEP2_TX_EN | RB_UEP3_TX_EN;
 
   R16_UEP0_DMA = (UINT16)(UINT32)&Ep0Buffer[0];
@@ -1748,40 +1748,40 @@ void InitCDCDevice(void)
   R16_UEP3_DMA = (UINT16)(UINT32)&Ep3Buffer[0];
   //R16_UEP4_DMA = (UINT16)(UINT32)&Ep2Buffer[0];
 
-  /* 端点0状态：OUT--ACK IN--NAK */
+  /* �˵�0״̬��OUT--ACK IN--NAK */
   R8_UEP0_CTRL = UEP_R_RES_NAK | UEP_T_RES_NAK;
 
-  /* 端点1状态：OUT--ACK IN--NAK 自动翻转 */
+  /* �˵�1״̬��OUT--ACK IN--NAK �Զ���ת */
   R8_UEP1_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
 
-  /* 端点2状态：OUT--ACK IN--NAK 自动翻转 */
+  /* �˵�2״̬��OUT--ACK IN--NAK �Զ���ת */
   R8_UEP2_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
 
-  /* 端点3状态：IN--NAK 自动翻转 */
+  /* �˵�3״̬��IN--NAK �Զ���ת */
   R8_UEP3_CTRL = UEP_T_RES_NAK;
 
-  /* 端点4状态：IN--NAK 手动翻转 */
+  /* �˵�4״̬��IN--NAK �ֶ���ת */
   R8_UEP4_CTRL = UEP_T_RES_NAK;
 
-  /* 设备地址 */
+  /* �豸��ַ */
   R8_USB_DEV_AD = 0x00;
 
-  //禁止DP/DM下拉电阻s
+  //��ֹDP/DM��������s
   R8_UDEV_CTRL = RB_UD_PD_DIS;
 
-  //启动USB设备及DMA，在中断期间中断标志未清除前自动返回NAK
+  //����USB�豸��DMA�����ж��ڼ��жϱ�־δ���ǰ�Զ�����NAK
   R8_USB_CTRL = RB_UC_DEV_PU_EN | RB_UC_INT_BUSY | RB_UC_DMA_EN;
 
-  //清中断标志
+  //���жϱ�־
   R8_USB_INT_FG = 0xFF;
 
-  //程序统一查询？
-  //开启中断          挂起            传输完成         总线复位
+  //����ͳһ��ѯ��
+  //�����ж�          ����            �������         ���߸�λ
   //R8_USB_INT_EN = RB_UIE_SUSPEND | RB_UIE_TRANSFER | RB_UIE_BUS_RST;
   R8_USB_INT_EN = RB_UIE_TRANSFER ;
   PFIC_EnableIRQ(USB_IRQn);
 
-  //使能USB端口
+  //ʹ��USB�˿�
   R8_UDEV_CTRL |= RB_UD_PORT_EN;
 
   devinf.UsbConfig = 0;
@@ -1790,60 +1790,60 @@ void InitCDCDevice(void)
 
 /*******************************************************************************
 * Function Name  : InitVendorDevice
-* Description    : 初始化厂商USB设备
+* Description    : ��ʼ������USB�豸
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
 void InitVendorDevice(void)
 {
-  /* 初始化缓存 */
+  /* ��ʼ������ */
   USBParaInit();
 
-  R8_USB_CTRL = 0x00;                                                 // 先设定模式
+  R8_USB_CTRL = 0x00;                                                 // ���趨ģʽ
 
-//  1.端点分配：
-//  端点0
-//  端点1：IN和OUT  （配置接口）
-//  端点2：IN和OUT  （数据接口）
+//  1.�˵���䣺
+//  �˵�0
+//  �˵�1��IN��OUT  �����ýӿڣ�
+//  �˵�2��IN��OUT  �����ݽӿڣ�
 
-  /* 单 64 字节接收缓冲区(OUT)，单 64 字节发送缓冲区（IN） */
+  /* �� 64 �ֽڽ��ջ�����(OUT)���� 64 �ֽڷ��ͻ�������IN�� */
   R8_UEP4_1_MOD = RB_UEP1_TX_EN | RB_UEP1_RX_EN;
 
-  /* 单 64 字节接收缓冲区(OUT)，单 64 字节发送缓冲区（IN） */
+  /* �� 64 �ֽڽ��ջ�����(OUT)���� 64 �ֽڷ��ͻ�������IN�� */
   R8_UEP2_3_MOD = RB_UEP2_RX_EN | RB_UEP2_TX_EN;
 
   R16_UEP0_DMA = (UINT16)(UINT32)&Ep0Buffer[0];
   R16_UEP1_DMA = (UINT16)(UINT32)&Ep1Buffer[0];
   R16_UEP2_DMA = (UINT16)(UINT32)&Ep2Buffer[0];
 
-  /* 端点0状态：OUT--ACK IN--NAK */
+  /* �˵�0״̬��OUT--ACK IN--NAK */
   R8_UEP0_CTRL = UEP_R_RES_NAK | UEP_T_RES_NAK;
 
-  /* 端点1状态：OUT--ACK IN--NAK 自动翻转 */
+  /* �˵�1״̬��OUT--ACK IN--NAK �Զ���ת */
   R8_UEP1_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
 
-  /* 端点2状态：OUT--ACK IN--NAK 自动翻转 */
+  /* �˵�2״̬��OUT--ACK IN--NAK �Զ���ת */
   R8_UEP2_CTRL =  UEP_R_RES_ACK | UEP_T_RES_NAK;
 
-  /* 设备地址 */
+  /* �豸��ַ */
   R8_USB_DEV_AD = 0x00;
 
-  //禁止DP/DM下拉电阻s
+  //��ֹDP/DM��������s
   R8_UDEV_CTRL = RB_UD_PD_DIS;
 
-  //启动USB设备及DMA，在中断期间中断标志未清除前自动返回NAK
+  //����USB�豸��DMA�����ж��ڼ��жϱ�־δ���ǰ�Զ�����NAK
   R8_USB_CTRL = RB_UC_DEV_PU_EN | RB_UC_INT_BUSY | RB_UC_DMA_EN;
 
-  //清中断标志
+  //���жϱ�־
   R8_USB_INT_FG = 0xFF;
 
-  //开启中断          挂起            传输完成         总线复位
+  //�����ж�          ����            �������         ���߸�λ
   //R8_USB_INT_EN = RB_UIE_SUSPEND | RB_UIE_TRANSFER | RB_UIE_BUS_RST;
   R8_USB_INT_EN = RB_UIE_TRANSFER ;
   PFIC_EnableIRQ(USB_IRQn);
 
-  //使能USB端口
+  //ʹ��USB�˿�
   R8_UDEV_CTRL |= RB_UD_PORT_EN;
 
   devinf.UsbConfig = 0;
@@ -1852,7 +1852,7 @@ void InitVendorDevice(void)
 
 /*******************************************************************************
 * Function Name  : InitUSBDevPara
-* Description    : USB相关的变量初始化
+* Description    : USB��صı�����ʼ��
 * Input          : None
 * Output         : None
 * Return         : None
@@ -1882,9 +1882,9 @@ void InitUSBDevPara(void)
   UART0_DSR_Val = 0;
   UART0_CTS_Val = 0;
 
-  UART0_RTS_Val = 0; //输出 表示DTE请求DCE发送数据
-  UART0_DTR_Val = 0; //输出 数据终端就绪
-  UART0_OUT_Val = 0; //自定义modem信号（CH340手册）
+  UART0_RTS_Val = 0; //��� ��ʾDTE����DCE��������
+  UART0_DTR_Val = 0; //��� �����ն˾���
+  UART0_OUT_Val = 0; //�Զ���modem�źţ�CH340�ֲᣩ
 
   for(i=0; i<USB_IRQ_FLAG_NUM; i++)
   {
@@ -1894,7 +1894,7 @@ void InitUSBDevPara(void)
 
 /*******************************************************************************
 * Function Name  : InitUSBDevice
-* Description    : 初始化USB
+* Description    : ��ʼ��USB
 * Input          : None
 * Output         : None
 * Return         : None
@@ -1905,20 +1905,20 @@ void InitUSBDevice(void)
   else                                 InitCDCDevice();
 }
 
-/* 通讯相关 */
+/* ͨѶ��� */
 /*******************************************************************************
 * Function Name  : SendUSBData
-* Description    : 发送数据处理
-* Input          : p_send_dat：发送的数据指针
-                   send_len：发送的状态
+* Description    : �������ݴ���
+* Input          : p_send_dat�����͵�����ָ��
+                   send_len�����͵�״̬
 * Output         : None
-* Return         : 发送的状态
+* Return         : ���͵�״̬
 *******************************************************************************/
 UINT8 SendUSBData(UINT8 *p_send_dat,UINT16 send_len)
 {
   UINT8 sta = 0;
 
-  /* 厂商模式处理 */
+  /* ����ģʽ���� */
   if(usb_work_mode == USB_VENDOR_MODE)
   {
     memcpy(&Ep2Buffer[MAX_PACKET_SIZE],p_send_dat,send_len);
@@ -1929,10 +1929,10 @@ UINT8 SendUSBData(UINT8 *p_send_dat,UINT16 send_len)
     R8_UEP2_CTRL = R8_UEP2_CTRL & 0xfc; //IN_ACK
     PFIC_EnableIRQ(USB_IRQn);
   }
-  /* CDC模式处理 */
+  /* CDCģʽ���� */
   else
   {
-    /* 直接发送数据 */
+    /* ֱ�ӷ������� */
     memcpy(&Ep1Buffer[MAX_PACKET_SIZE],p_send_dat,send_len);
 
     Ep1DataINFlag = 0;
@@ -1970,3 +1970,5 @@ int main()
     USB_IRQProcessHandler();
   }
 }
+
+

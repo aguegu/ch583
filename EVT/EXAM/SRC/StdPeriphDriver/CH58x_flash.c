@@ -6,7 +6,7 @@
  * Description
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
+ * Attention: This software (modified or not) and binary are used for 
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -53,13 +53,13 @@ void FLASH_ROM_READ(uint32_t StartAddr, void *Buffer, uint32_t len)
 /*********************************************************************
  * @fn      UserOptionByteConfig
  *
- * @brief   Configure User Option Byte.éœ€åœ¨è°ƒç”¨ç”¨æˆ·é…ç½®å­—ç”Ÿæ•ˆå‡½æ•°åç”Ÿæ•ˆ,ä¸”æ¯æ¬¡çƒ§å½•ååªèƒ½ä¿®æ”¹ä¸€æ¬¡
- *          (ä½¿ç”¨è¯¥å‡½æ•°ï¼Œå¿…é¡»ä½¿ç”¨å®˜æ–¹æä¾›çš„.Sæ–‡ä»¶ï¼ŒåŒæ—¶è°ƒç”¨è¯¥å‡½æ•°åï¼Œä¸¤æ¬¡ä¸Šç”µåï¼Œä¸¤çº¿è°ƒè¯•æ¥å£é»˜è®¤å…³é—­)
+ * @brief   Configure User Option Byte.ĞèÔÚµ÷ÓÃÓÃ»§ÅäÖÃ×ÖÉúĞ§º¯ÊıºóÉúĞ§,ÇÒÃ¿´ÎÉÕÂ¼ºóÖ»ÄÜĞŞ¸ÄÒ»´Î
+ *          (Ê¹ÓÃ¸Ãº¯Êı£¬±ØĞëÊ¹ÓÃ¹Ù·½Ìá¹©µÄ.SÎÄ¼ş£¬Í¬Ê±µ÷ÓÃ¸Ãº¯Êıºó£¬Á½´ÎÉÏµçºó£¬Á½Ïßµ÷ÊÔ½Ó¿ÚÄ¬ÈÏ¹Ø±Õ)
  *
- * @param   RESET_EN        - å¤–éƒ¨å¤ä½å¼•è„šä½¿èƒ½
- * @param   BOOT_PIN        - ENABLE-ä½¿ç”¨é»˜è®¤bootè„š-PB22,DISABLE-ä½¿ç”¨bootè„š-PB11
- * @param   UART_NO_KEY_EN  - ä¸²å£å…æŒ‰é”®ä¸‹è½½ä½¿èƒ½
- * @param   FLASHProt_Size  - å†™ä¿æŠ¤å¤§å°(å•ä½4K)
+ * @param   RESET_EN        - Íâ²¿¸´Î»Òı½ÅÊ¹ÄÜ
+ * @param   BOOT_PIN        - ENABLE-Ê¹ÓÃÄ¬ÈÏboot½Å-PB22,DISABLE-Ê¹ÓÃboot½Å-PB11
+ * @param   UART_NO_KEY_EN  - ´®¿ÚÃâ°´¼üÏÂÔØÊ¹ÄÜ
+ * @param   FLASHProt_Size  - Ğ´±£»¤´óĞ¡(µ¥Î»4K)
  *
  * @return  0-Success, 1-Err
  */
@@ -82,7 +82,7 @@ uint8_t UserOptionByteConfig(FunctionalState RESET_EN, FunctionalState BOOT_PIN,
             s &= RESET_Disable;
 
         /* bit[7:0]-bit[31-24] */
-        s |= ((~(s << 24)) & 0xFF000000); //é«˜8ä½ é…ç½®ä¿¡æ¯å–åï¼›
+        s |= ((~(s << 24)) & 0xFF000000); //¸ß8Î» ÅäÖÃĞÅÏ¢È¡·´£»
 
         if(BOOT_PIN == ENABLE)
             s |= BOOT_PIN_PB22;
@@ -111,8 +111,8 @@ uint8_t UserOptionByteConfig(FunctionalState RESET_EN, FunctionalState BOOT_PIN,
 /*********************************************************************
  * @fn      UserOptionByteClose_SWD
  *
- * @brief   å…³ä¸¤çº¿è°ƒè¯•æ¥å£ï¼Œå…¶ä½™é…ç½®å€¼ä¿æŒä¸å˜.éœ€åœ¨è°ƒç”¨ç”¨æˆ·é…ç½®å­—ç”Ÿæ•ˆå‡½æ•°åç”Ÿæ•ˆ,ä¸”æ¯æ¬¡çƒ§å½•ååªèƒ½ä¿®æ”¹ä¸€æ¬¡
- *          (ä½¿ç”¨è¯¥å‡½æ•°ï¼Œå¿…é¡»ä½¿ç”¨å®˜æ–¹æä¾›çš„.Sæ–‡ä»¶ï¼ŒåŒæ—¶è°ƒç”¨è¯¥å‡½æ•°åï¼Œä¸¤æ¬¡ä¸Šç”µåï¼Œä¸¤çº¿è°ƒè¯•æ¥å£é»˜è®¤å…³é—­)
+ * @brief   ¹ØÁ½Ïßµ÷ÊÔ½Ó¿Ú£¬ÆäÓàÅäÖÃÖµ±£³Ö²»±ä.ĞèÔÚµ÷ÓÃÓÃ»§ÅäÖÃ×ÖÉúĞ§º¯ÊıºóÉúĞ§,ÇÒÃ¿´ÎÉÕÂ¼ºóÖ»ÄÜĞŞ¸ÄÒ»´Î
+ *          (Ê¹ÓÃ¸Ãº¯Êı£¬±ØĞëÊ¹ÓÃ¹Ù·½Ìá¹©µÄ.SÎÄ¼ş£¬Í¬Ê±µ÷ÓÃ¸Ãº¯Êıºó£¬Á½´ÎÉÏµçºó£¬Á½Ïßµ÷ÊÔ½Ó¿ÚÄ¬ÈÏ¹Ø±Õ)
  *
  * @return  0-Success, 1-Err
  */
@@ -126,11 +126,11 @@ uint8_t UserOptionByteClose_SWD(void)
     {
         FLASH_EEPROM_CMD(CMD_GET_ROM_INFO, 0x7EFFC, &s, 4);
 
-        s &= ~((1 << 4) | (1 << 7)); //ç¦ç”¨è°ƒè¯•åŠŸèƒ½ï¼Œ ç¦ç”¨SPIè¯»å†™FLASH
+        s &= ~((1 << 4) | (1 << 7)); //½ûÓÃµ÷ÊÔ¹¦ÄÜ£¬ ½ûÓÃSPI¶ÁĞ´FLASH
 
         /* bit[7:0]-bit[31-24] */
         s &= 0x00FFFFFF;
-        s |= ((~(s << 24)) & 0xFF000000); //é«˜8ä½ é…ç½®ä¿¡æ¯å–åï¼›
+        s |= ((~(s << 24)) & 0xFF000000); //¸ß8Î» ÅäÖÃĞÅÏ¢È¡·´£»
 
         /*Write user option byte*/
         FLASH_ROM_WRITE(0x14, &s, 4);
@@ -150,7 +150,7 @@ uint8_t UserOptionByteClose_SWD(void)
 /*********************************************************************
  * @fn      UserOptionByte_Active
  *
- * @brief   ç”¨æˆ·é…ç½®å­—ç”Ÿæ•ˆå‡½æ•°ï¼Œæ‰§è¡Œåè‡ªåŠ¨å¤ä½
+ * @brief   ÓÃ»§ÅäÖÃ×ÖÉúĞ§º¯Êı£¬Ö´ĞĞºó×Ô¶¯¸´Î»
  *
  * @return  0-Success, 1-Err
  */
@@ -159,8 +159,25 @@ void UserOptionByte_Active(void)
     FLASH_ROM_SW_RESET();
     sys_safe_access_enable();
     R16_INT32K_TUNE = 0xFFFF;
+    sys_safe_access_disable();
     sys_safe_access_enable();
     R8_RST_WDOG_CTRL |= RB_SOFTWARE_RESET;
     sys_safe_access_disable();
     while(1);
+}
+
+/*********************************************************************
+ * @fn      GET_UNIQUE_ID
+ *
+ * @brief   get 64 bit unique ID
+ *
+ * @param   Buffer      - Pointer to the buffer where data should be stored, Must be aligned to 4 bytes.
+ *
+ * @return  0-SUCCESS  (!0)-FAILURE
+ */
+void GET_UNIQUE_ID(uint8_t *Buffer)
+{
+    FLASH_EEPROM_CMD( CMD_GET_ROM_INFO, ROM_CFG_MAC_ADDR, Buffer, 0 );
+    Buffer[6] = 0;
+    Buffer[7] = 0;
 }

@@ -3,7 +3,7 @@
  * Author             : WCH
  * Version            : V1.2
  * Date               : 2022/01/18
- * Description        : RTCé…ç½®åŠå…¶åˆå§‹åŒ–
+ * Description        : RTCÅäÖÃ¼°Æä³õÊ¼»¯
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
  * Attention: This software (modified or not) and binary are used for 
@@ -11,7 +11,7 @@
  *******************************************************************************/
 
 /******************************************************************************/
-/* å¤´æ–‡ä»¶åŒ…å« */
+/* Í·ÎÄ¼ş°üº¬ */
 #include "HAL.h"
 
 /*********************************************************************
@@ -29,9 +29,9 @@ volatile uint32_t RTCTigFlag;
 /*******************************************************************************
  * @fn      RTC_SetTignTime
  *
- * @brief   é…ç½®RTCè§¦å‘æ—¶é—´
+ * @brief   ÅäÖÃRTC´¥·¢Ê±¼ä
  *
- * @param   time    - è§¦å‘æ—¶é—´.
+ * @param   time    - ´¥·¢Ê±¼ä.
  *
  * @return  None.
  */
@@ -46,7 +46,7 @@ void RTC_SetTignTime(uint32_t time)
 /*******************************************************************************
  * @fn      RTC_IRQHandler
  *
- * @brief   RTCä¸­æ–­å¤„ç†
+ * @brief   RTCÖĞ¶Ï´¦Àí
  *
  * @param   None.
  *
@@ -63,7 +63,7 @@ void RTC_IRQHandler(void)
 /*******************************************************************************
  * @fn      HAL_Time0Init
  *
- * @brief   ç³»ç»Ÿå®šæ—¶å™¨åˆå§‹åŒ–
+ * @brief   ÏµÍ³¶¨Ê±Æ÷³õÊ¼»¯
  *
  * @param   None.
  *
@@ -74,16 +74,18 @@ void HAL_TimeInit(void)
 #if(CLK_OSC32K)
     sys_safe_access_enable();
     R8_CK32K_CONFIG &= ~(RB_CLK_OSC32K_XT | RB_CLK_XT32K_PON);
+    sys_safe_access_disable();
     sys_safe_access_enable();
     R8_CK32K_CONFIG |= RB_CLK_INT32K_PON;
     sys_safe_access_disable();
+    LSECFG_Current(LSE_RCur_100);
     Lib_Calibration_LSI();
 #else
     sys_safe_access_enable();
     R8_CK32K_CONFIG |= RB_CLK_OSC32K_XT | RB_CLK_INT32K_PON | RB_CLK_XT32K_PON;
     sys_safe_access_disable();
 #endif
-    RTC_InitTime(2020, 1, 1, 0, 0, 0); //RTCæ—¶é’Ÿåˆå§‹åŒ–å½“å‰æ—¶é—´
+    RTC_InitTime(2020, 1, 1, 0, 0, 0); //RTCÊ±ÖÓ³õÊ¼»¯µ±Ç°Ê±¼ä
     TMOS_TimerInit(0);
 }
 

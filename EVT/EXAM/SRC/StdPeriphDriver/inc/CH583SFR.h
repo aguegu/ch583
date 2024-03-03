@@ -350,7 +350,7 @@ extern "C" {
 #define  RB_PWR_EXTEND      0x08                      // RWA, power retention for USB and BLE
 #define  RB_PWR_RAM30K      0x10                      // RWA, power for main SRAM
 #define  RB_PWR_SYS_EN      0x80                      // RWA, power for system
-//#define  RB_PWR_LDO_EN      0x0100                    // RWA, LDO enable
+//#define  RB_PWR_LDO_EN      0x0100                    // RWA, LDO enable 
 #define  RB_PWR_DCDC_EN     0x0200                    // RWA, DC/DC converter enable: 0=DC/DC disable and bypass, 1=DC/DC enable
 #define  RB_PWR_DCDC_PRE    0x0400                    // RWA, DC/DC converter pre-enable
 #define  RB_PWR_PLAN_EN     0x8000                    // RWA/WZ, power plan enable, auto clear after sleep executed
@@ -449,7 +449,7 @@ extern "C" {
 #define  RB_ADC_CH_INX      0x0F                      // RW, ADC input channel index
 #define R8_ADC_CFG          (*((PUINT8V)0x40001059))  // RW, ADC configure
 #define  RB_ADC_POWER_ON    0x01                      // RW, ADC power control: 0=power down, 1=power on
-#define  RB_ADC_BUF_EN      0x02                      // RW, ADC input buffer enable
+#define  RB_ADC_BUF_EN      0x02                      // RW, ADC input buffer enable 
 #define  RB_ADC_DIFF_EN     0x04                      // RW, ADC input channel mode: 0=single-end, 1=differnetial
 #define  RB_ADC_OFS_TEST    0x08                      // RW, enable ADC offset test mode: 0=normal mode, 1=short to test offset
 #define  RB_ADC_PGA_GAIN    0x30                      // RW, set ADC input PGA gain: 00=-12dB, 01=-6dB, 10=0dB, 11=6dB
@@ -1063,7 +1063,7 @@ extern "C" {
 #define R16_I2C_DATAR       (*((PUINT16V)0x40004810)) // RW, I2C data register
 #define R16_I2C_STAR1       (*((PUINT16V)0x40004814)) // R0, I2C stauts register 1
 #define R16_I2C_STAR2       (*((PUINT16V)0x40004818)) // R0, I2C status register 2
-#define R8_I2C_PEC          (*((PUINT8V) 0x40004819)) // R0, I2C Packet error checking register
+#define R8_I2C_PEC          (*((PUINT8V) 0x40004819)) // R0, I2C Packet error checking register 
 #define R16_I2C_CKCFGR      (*((PUINT16V)0x4000481C)) // RW, I2C clock control register
 #define R16_I2C_RTR         (*((PUINT16V)0x40004820)) // RW, I2C trise register
 
@@ -1098,7 +1098,7 @@ extern "C" {
 #define I2C_OADDR2          12
 #define  RB_I2C_ENDUAL      0x0001                    // RW, Dual addressing mode enable
 #define  RB_I2C_ADD2        0x00FE                    // RW, bit[7:1] of address2
-#define I2C_DATAR           16
+#define I2C_DATAR           16              
 #define I2C_STAR1           20
 #define  RB_I2C_SB          0x0001                    // RW0, Start bit flag (Master mode)
 #define  RB_I2C_ADDR        0x0002                    // RW0, Address sent (master mode)/matched (slave mode) flag
@@ -1304,7 +1304,7 @@ extern "C" {
 /******************************************************************************/
 /*                         Peripheral memory map                              */
 /******************************************************************************/
-/* usb addresses
+/* usb addresses         
 //      USB:     +8000H - 83FFH                                                    */
 #define USB_BASE_ADDR              (0x40008000)
 #define USB2_BASE_ADDR             (0x40008400)
@@ -1763,7 +1763,7 @@ extern "C" {
 #endif
 
 #ifndef USB_DEVICE_ADDR
-#define USB_DEVICE_ADDR         0x02    /* é»˜è®¤çš„USBè®¾å¤‡åœ°å€ */
+#define USB_DEVICE_ADDR         0x02    /* Ä¬ÈÏµÄUSBÉè±¸µØÖ· */
 #endif
 #ifndef DEFAULT_ENDP0_SIZE
 #define DEFAULT_ENDP0_SIZE      8       /* default maximum packet size for endpoint 0 */
@@ -1772,12 +1772,12 @@ extern "C" {
 #define MAX_PACKET_SIZE         64      /* maximum packet size */
 #endif
 #ifndef USB_BO_CBW_SIZE
-#define USB_BO_CBW_SIZE         0x1F    /* å‘½ä»¤å—CBWçš„æ€»é•¿åº¦ */
-#define USB_BO_CSW_SIZE         0x0D    /* å‘½ä»¤çŠ¶æ€å—CSWçš„æ€»é•¿åº¦ */
+#define USB_BO_CBW_SIZE         0x1F    /* ÃüÁî¿éCBWµÄ×Ü³¤¶È */
+#define USB_BO_CSW_SIZE         0x0D    /* ÃüÁî×´Ì¬¿éCSWµÄ×Ü³¤¶È */
 #endif
 #ifndef USB_BO_CBW_SIG
-#define USB_BO_CBW_SIG          0x43425355    /* å‘½ä»¤å—CBWè¯†åˆ«æ ‡å¿—'USBC' */
-#define USB_BO_CSW_SIG          0x53425355    /* å‘½ä»¤çŠ¶æ€å—CSWè¯†åˆ«æ ‡å¿—'USBS' */
+#define USB_BO_CBW_SIG          0x43425355    /* ÃüÁî¿éCBWÊ¶±ğ±êÖ¾'USBC' */
+#define USB_BO_CSW_SIG          0x53425355    /* ÃüÁî×´Ì¬¿éCSWÊ¶±ğ±êÖ¾'USBS' */
 #endif
 
 #ifndef __PACKED
