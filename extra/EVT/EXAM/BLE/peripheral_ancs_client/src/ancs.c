@@ -8,7 +8,7 @@
 /*********************************************************************
  * INCLUDES
  */
-#include "CONFIG.h"
+#include "config.h"
 #include "devinfoservice.h"
 #include "ancs_client.h"
 #include "ancs_client_internal.h"

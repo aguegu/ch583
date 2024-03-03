@@ -11,7 +11,7 @@
  *******************************************************************************/
 
 /******************************************************************************/
-#include "CONFIG.h"
+#include "config.h"
 #include "MESH_LIB.h"
 #include "app_mesh_config.h"
 #include "app_als_led_color_attr.h"

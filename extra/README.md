@@ -3,6 +3,10 @@
 
 This repo is folked from https://github.com/openwch/ch583. The goal is provide a quick and plain work environment to ch58x development under Linux and without `Mounriver Studio`.
 
+To keep trace of upstream, all my modification would live in `extra` folder.
+
+`extra/EVT` is the `UTF-8` encoded source files from `EVT`(which most of the text files are in GBK).
+
 Since WCH ch581/ch582/ch583 share the same datasheets and official EVT examples, this repo should be fine for WCH ch58x series.
 
 1. Setup Toolchains

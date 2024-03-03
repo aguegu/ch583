@@ -12,7 +12,7 @@
 
 /******************************************************************************/
 /* 头文件包含 */
-#include "CONFIG.h"
+#include "config.h"
 #include "app_mesh_config.h"
 #include "MESH_LIB.h"
 

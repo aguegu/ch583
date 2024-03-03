@@ -19,7 +19,7 @@
 /*********************************************************************
  * INCLUDES
  */
-#include "CONFIG.h"
+#include "config.h"
 #include "gattprofile.h"
 #include "multiCentral.h"
 

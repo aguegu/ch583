@@ -11,7 +11,7 @@
  * INCLUDES
  */
 
-#include "CONFIG.h"
+#include "config.h"
 #include "devinfoservice.h"
 #include "cyclingservice.h"
 #include "cyclingsensor.h"

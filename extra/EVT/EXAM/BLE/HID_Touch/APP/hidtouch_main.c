@@ -12,7 +12,7 @@
 
 /******************************************************************************/
 /* 头文件包含 */
-#include "CONFIG.h"
+#include "config.h"
 #include "HAL.h"
 #include "hiddev.h"
 #include "hidtouch.h"
