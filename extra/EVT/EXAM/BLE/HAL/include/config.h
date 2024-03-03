@@ -21,7 +21,7 @@
 #ifdef CH58xBLE_ROM
 #include "CH58xBLE_ROM.H"
 #else
-#include "CH58xBLE_LIB.H"
+#include "CH58xBLE_LIB.h"
 #endif
 
 #include "CH58x_common.h"

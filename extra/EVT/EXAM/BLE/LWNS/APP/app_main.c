@@ -10,7 +10,7 @@
 
 /******************************************************************************/
 /* 头文件包含 */
-#include "CONFIG.h"
+#include "config.h"
 #include "CH58x_common.h"
 #include "HAL.h"
 #include "stdlib.h"

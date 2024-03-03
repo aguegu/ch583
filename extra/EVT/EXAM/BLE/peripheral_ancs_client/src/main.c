@@ -13,7 +13,7 @@
 /******************************************************************************/
 /* 澶存枃浠跺寘鍚? */
 #include <time_units.h>
-#include "CONFIG.h"
+#include "config.h"
 #include "HAL.h"
 #include "ancs.h"
 #include "ancs_client.h"

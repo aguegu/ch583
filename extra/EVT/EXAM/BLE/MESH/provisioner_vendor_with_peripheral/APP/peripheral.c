@@ -14,7 +14,7 @@
 /*********************************************************************
  * INCLUDES
  */
-#include "CONFIG.h"
+#include "config.h"
 #include "MESH_LIB.h"
 #include "gattprofile.h"
 #include "peripheral.h"

@@ -13,7 +13,7 @@
 /******************************************************************************/
 #include "app_mesh_config.h"
 #include "MESH_LIB.h"
-#include "CONFIG.h"
+#include "config.h"
 #include "app_vendor_model.h"
 #include "app_generic_onoff2_model.h"
 #include "app_als_fan_attr.h"

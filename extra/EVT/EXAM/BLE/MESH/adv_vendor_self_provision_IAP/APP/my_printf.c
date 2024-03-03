@@ -1,5 +1,5 @@
 
-#include "CH58xBLE_LIB.H"
+#include "CH58xBLE_LIB.h"
 #include <stdarg.h>
 #include <string.h>
 #include "log.h"

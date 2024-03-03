@@ -14,7 +14,7 @@
  * INCLUDES
  */
 
-#include "CONFIG.h"
+#include "config.h"
 #include "stdint.h"
 #include "buf.h"
 #include "uart.h"

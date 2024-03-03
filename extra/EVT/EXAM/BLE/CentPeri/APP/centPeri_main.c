@@ -13,7 +13,7 @@
 /*********************************************************************
  * INCLUDES
  */
-#include "CONFIG.h"
+#include "config.h"
 #include "HAL.h"
 #include "peripheral.h"
 #include "central.h"

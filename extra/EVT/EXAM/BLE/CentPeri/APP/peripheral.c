@@ -14,7 +14,7 @@
 /*********************************************************************
  * INCLUDES
  */
-#include "CONFIG.h"
+#include "config.h"
 #include "devinfoservice.h"
 #include "gattprofile.h"
 #include "peripheral.h"

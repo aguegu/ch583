@@ -9,7 +9,7 @@
 
 /******************************************************************************/
 /* 头文件包含 */
-#include "CONFIG.h"
+#include "config.h"
 #include "HAL.h"
 #include "cyclingservice.h"
 #include "cyclingsensor.h"
