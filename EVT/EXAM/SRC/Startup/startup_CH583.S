@@ -6,7 +6,7 @@
  * Description        :
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
+ * Attention: This software (modified or not) and binary are used for 
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -90,44 +90,46 @@ _vector_base:
     .weak   UART3_IRQHandler
     .weak   WDOG_BAT_IRQHandler
 
-NMI_Handler:         1:  j 1b
-HardFault_Handler:   1:  j 1b
-Ecall_M_Mode_Handler:   1:  j 1b
-Ecall_U_Mode_Handler:   1:  j 1b
-Break_Point_Handler:   1:  j 1b
-SysTick_Handler:     1:  j 1b
-SW_Handler:          1:  j 1b
-TMR0_IRQHandler:     1:  j 1b
-GPIOA_IRQHandler:    1:  j 1b
-GPIOB_IRQHandler:    1:  j 1b
-SPI0_IRQHandler:     1:  j 1b
-BB_IRQHandler:       1:  j 1b
-LLE_IRQHandler:      1:  j 1b
-USB_IRQHandler:      1:  j 1b
-USB2_IRQHandler:      1:  j 1b
-TMR1_IRQHandler:     1:  j 1b
-TMR2_IRQHandler:     1:  j 1b
-UART0_IRQHandler:    1:  j 1b
-UART1_IRQHandler:    1:  j 1b
-RTC_IRQHandler:      1:  j 1b
-ADC_IRQHandler:      1:  j 1b
-I2C_IRQHandler:		 1:  j 1b
-PWMX_IRQHandler:     1:  j 1b
-TMR3_IRQHandler:     1:  j 1b
-UART2_IRQHandler:    1:  j 1b
-UART3_IRQHandler:    1:  j 1b
-WDOG_BAT_IRQHandler: 1:  j 1b
+NMI_Handler:
+HardFault_Handler:
+Ecall_M_Mode_Handler:
+Ecall_U_Mode_Handler:
+Break_Point_Handler:
+SysTick_Handler:
+SW_Handler:
+TMR0_IRQHandler:
+GPIOA_IRQHandler:
+GPIOB_IRQHandler:
+SPI0_IRQHandler:
+BB_IRQHandler:
+LLE_IRQHandler:
+USB_IRQHandler:
+USB2_IRQHandler:
+TMR1_IRQHandler:
+TMR2_IRQHandler:
+UART0_IRQHandler:
+UART1_IRQHandler:
+RTC_IRQHandler:
+ADC_IRQHandler:
+I2C_IRQHandler:
+PWMX_IRQHandler:
+TMR3_IRQHandler:
+UART2_IRQHandler:
+UART3_IRQHandler:
+WDOG_BAT_IRQHandler: 
+1:  
+	j 1b
 
 	.section	.handle_reset,"ax",@progbits
 	.weak	handle_reset
 	.align	1
 handle_reset:
-.option push
-.option	norelax
+.option push 
+.option	norelax 
 	la gp, __global_pointer$
-.option	pop
+.option	pop 
 1:
-	la sp, _eusrstack
+	la sp, _eusrstack 
 
 /* Load highcode code  section from flash to RAM */
 2:
@@ -164,23 +166,25 @@ handle_reset:
 	addi a0, a0, 4
 	bltu a0, a1, 1b
 2:
-	/* æµæ°´çº¿æ§åˆ¶ä½ & åŠ¨æ€é¢„æµ‹æ§åˆ¶ä½ */
+	/* Á÷Ë®Ïß¿ØÖÆÎ» & ¶¯Ì¬Ô¤²â¿ØÖÆÎ» */
 	li t0, 0x1f
 	csrw 0xbc0, t0
-	/* æ‰“å¼€åµŒå¥—ä¸­æ–­ã€ç¡¬ä»¶å‹æ ˆåŠŸèƒ½ */
+	/* ´ò¿ªÇ¶Ì×ÖĞ¶Ï¡¢Ó²¼şÑ¹Õ»¹¦ÄÜ */
 	li t0, 0x3
 	csrw 0x804, t0
-
+	
     li t0, 0x88
-    csrs mstatus, t0
+    csrw mstatus, t0
 	la t0, _vector_base
 
-	/* é…ç½®å‘é‡è¡¨æ¨¡å¼ä¸ºç»å¯¹åœ°å€æ¨¡å¼ */
+	/* ÅäÖÃÏòÁ¿±íÄ£Ê½Îª¾ø¶ÔµØÖ·Ä£Ê½ */
     ori t0, t0, 3
 	csrw mtvec, t0
 
 	la t0, main
 	csrw mepc, t0
-
-
+	
+	
 	mret
+
+
