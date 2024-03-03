@@ -25,7 +25,7 @@ extern "C" {
 // GATT层配网功能
 #define CONFIG_BLE_MESH_PB_GATT                1
 // FLASH存储功能
-#define CONFIG_BLE_MESH_SETTINGS               0
+#define CONFIG_BLE_MESH_SETTINGS               1
 // 朋友节点功能
 #define CONFIG_BLE_MESH_FRIEND                 0
 // 低功耗节点功能
@@ -168,10 +168,10 @@ extern "C" {
 #define CONFIG_MESH_FRIEND_RECV_WIN_DEF        (30)
 #define CONFIG_MESH_FRIEND_RECV_WIN_MAX        (255)
 
-// 低功耗节点的请求消息队列大小
+// 低功耗节点的请求消息队列大小(log2(N)),例配置为4，则大小为2^4=16
 #define CONFIG_MESH_LPN_REQ_QUEUE_SIZE_MIN     (2)
 #define CONFIG_MESH_LPN_REQ_QUEUE_SIZE_DEF     (2)
-#define CONFIG_MESH_LPN_REQ_QUEUE_SIZE_MAX     (20)
+#define CONFIG_MESH_LPN_REQ_QUEUE_SIZE_MAX     (4)
 
 // 低功耗节点的请求消息间隔(100ms)
 #define CONFIG_MESH_LPN_POLLINTERVAL_MIN       (1)
