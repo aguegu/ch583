@@ -3,6 +3,8 @@ BIN_PREFIX = riscv-none-embed
 
 OUTPUT_DIR = ./dist
 
+DEFINES := -DDEBUG=1 -DBLE_MEMHEAP_SIZE=4096 -DHAL_KEY=1
+
 TARGET     := $(addprefix $(OUTPUT_DIR)/, $(notdir $(CURDIR)))
 
 Startup_ROOT	= ../../EVT/EXAM/SRC/Startup
@@ -37,18 +39,18 @@ $(OUTPUT_DIR)/Startup/%.o: %.S
 	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g -x assembler-with-cpp -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
 $(OUTPUT_DIR)/RVMSIS/%.o: %.c
-	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g -DDEBUG=1 \
+	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g $(DEFINES) \
 		-I $(RVMSIS_ROOT) \
 		-std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
 $(OUTPUT_DIR)/StdPeriphDriver/%.o: %.c
-	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g -DDEBUG=1 \
+	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g $(DEFINES) \
 		-I $(RVMSIS_ROOT) \
 		-I $(StdPeriphDriver_INC) \
 		-std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
 $(OUTPUT_DIR)/HAL/%.o: %.c
-	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g -DDEBUG=1 \
+	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g $(DEFINES) \
 		-I ../../EVT/EXAM/BLE/LIB \
 		-I $(HAL_INC) \
 		-I $(RVMSIS_ROOT) \
@@ -56,7 +58,7 @@ $(OUTPUT_DIR)/HAL/%.o: %.c
 		-std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
 $(OUTPUT_DIR)/APP/%.o: %.c
-	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g -DDEBUG=1 \
+	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g $(DEFINES) \
 		-I ../../EVT/EXAM/BLE/LIB \
 		-I ../../EVT/EXAM/BLE/MESH/MESH_LIB \
 		-I $(HAL_INC) \

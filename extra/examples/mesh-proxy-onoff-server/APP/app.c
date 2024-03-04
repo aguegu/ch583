@@ -13,7 +13,7 @@
 /******************************************************************************/
 #include "config.h"
 #include "MESH_LIB.h"
-#include "app_generic_onoff_model.h"
+#include "app_generic_onoff_server_model.h"
 #include "app.h"
 #include "HAL.h"
 
@@ -80,18 +80,18 @@ uint16_t gen_onoff_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {BLE_MESH_KEY_UNUSE
 uint16_t gen_onoff_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {BLE_MESH_ADDR_UNASSIGNED};
 
 static struct bt_mesh_model root_models[] = {
-    BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
-    BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv, &health_pub),
-    BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op, NULL, gen_onoff_srv_keys, gen_onoff_srv_groups, NULL),
+  BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
+  BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv, &health_pub),
+  BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op, NULL, gen_onoff_srv_keys, gen_onoff_srv_groups, NULL),
 };
 
 static struct bt_mesh_elem elements[] = {
-    {
-        /* Location Descriptor (GATT Bluetooth Namespace Descriptors) */
-        .loc = (0),
-        .model_count = ARRAY_SIZE(root_models),
-        .models = (root_models),
-    }
+  {
+    /* Location Descriptor (GATT Bluetooth Namespace Descriptors) */
+    .loc = (0),
+    .model_count = ARRAY_SIZE(root_models),
+    .models = (root_models),
+  }
 };
 
 static uint8_t dev_uuid[16];
@@ -99,18 +99,18 @@ uint8_t        MACAddr[6];
 
 // elements 构成 Node Composition
 const struct bt_mesh_comp app_comp = {
-    .cid = 0x07D7, // WCH 公司id
-    .elem = elements,
-    .elem_count = ARRAY_SIZE(elements),
+  .cid = 0x07D7, // WCH 公司id
+  .elem = elements,
+  .elem_count = ARRAY_SIZE(elements),
 };
 
 // 配网参数和回调
 static const struct bt_mesh_prov app_prov = {
-    .uuid = dev_uuid,
-    .link_open = link_open,
-    .link_close = link_close,
-    .complete = prov_complete,
-    .reset = prov_reset,
+  .uuid = dev_uuid,
+  .link_open = link_open,
+  .link_close = link_close,
+  .complete = prov_complete,
+  .reset = prov_reset,
 };
 
 /*********************************************************************
@@ -124,22 +124,17 @@ static const struct bt_mesh_prov app_prov = {
  *
  * @return  none
  */
-static void prov_enable(void)
-{
-    if(bt_mesh_is_provisioned())
-    {
-        return;
-    }
+static void prov_enable(void) {
+  if (bt_mesh_is_provisioned()) {
+    return;
+  }
 
-    // Make sure we're scanning for provisioning inviations
-    bt_mesh_scan_enable();
-    // Enable unprovisioned beacon sending
-    bt_mesh_beacon_enable();
+  bt_mesh_scan_enable(); // Make sure we're scanning for provisioning inviations
+  bt_mesh_beacon_enable(); // Enable unprovisioned beacon sending
 
-    if(CONFIG_BLE_MESH_PB_GATT)
-    {
-        bt_mesh_proxy_prov_enable();
-    }
+  if (CONFIG_BLE_MESH_PB_GATT) {
+    bt_mesh_proxy_prov_enable();
+  }
 }
 
 /*********************************************************************
@@ -151,9 +146,8 @@ static void prov_enable(void)
  *
  * @return  none
  */
-static void link_open(bt_mesh_prov_bearer_t bearer)
-{
-    APP_DBG(" ");
+static void link_open(bt_mesh_prov_bearer_t bearer) {
+  APP_DBG(" ");
 }
 
 /*********************************************************************
@@ -166,17 +160,13 @@ static void link_open(bt_mesh_prov_bearer_t bearer)
  *
  * @return  none
  */
-static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason)
-{
-    APP_DBG("reason %x", reason);
+static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
+  APP_DBG("reason %x", reason);
 
-    if(!bt_mesh_is_provisioned())
-    {
-        prov_enable();
-    }
-    else
-    {
-    }
+  if (!bt_mesh_is_provisioned()) {
+    prov_enable();
+  } else {
+  }
 }
 
 /*********************************************************************
@@ -191,9 +181,8 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason)
  *
  * @return  none
  */
-static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index)
-{
-    APP_DBG(" ");
+static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
+  APP_DBG(" ");
 }
 
 /*********************************************************************
@@ -203,11 +192,9 @@ static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32
  *
  * @return  none
  */
-static void prov_reset(void)
-{
-    APP_DBG("");
-
-    prov_enable();
+static void prov_reset(void) {
+  APP_DBG("");
+  prov_enable();
 }
 
 /*********************************************************************
@@ -219,44 +206,28 @@ static void prov_reset(void)
  *
  * @return  none
  */
-static void cfg_srv_rsp_handler( const cfg_srv_status_t *val )
-{
-    if(val->cfgHdr.status)
-    {
-        // 配置命令执行不成功
-        APP_DBG("warning opcode 0x%02x", val->cfgHdr.opcode);
-        return;
-    }
-    if(val->cfgHdr.opcode == OP_APP_KEY_ADD)
-    {
-        APP_DBG("App Key Added");
-    }
-    else if(val->cfgHdr.opcode == OP_MOD_APP_BIND)
-    {
-        APP_DBG("Vendor Model Binded");
-    }
-    else if(val->cfgHdr.opcode == OP_MOD_SUB_ADD)
-    {
-        APP_DBG("Vendor Model Subscription Set");
-    }
-    else
-    {
-        APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
-    }
+static void cfg_srv_rsp_handler( const cfg_srv_status_t *val ) {
+  if (val->cfgHdr.status) {
+    // 配置命令执行不成功
+    APP_DBG("warning opcode 0x%02x", val->cfgHdr.opcode);
+    return;
+  }
+
+  if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
+    APP_DBG("App Key Added");
+  } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
+    APP_DBG("Vendor Model Binded");
+  } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
+    APP_DBG("Vendor Model Subscription Set");
+  } else if (val->cfgHdr.opcode == OP_NET_TRANSMIT_SET) {
+    APP_DBG("Vendor Net Transmit Set");
+  } else {
+    APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
+  }
 }
 
-/*********************************************************************
- * @fn      keyPress
- *
- * @brief   按键回调
- *
- * @param   keys    - 按键类型
- *
- * @return  none
- */
 void keyPress(uint8_t keys) {
   APP_DBG("keys %d ", keys);
-  PRINT("%d\r\n", keys);
   switch(keys) {
     default:
       break;
@@ -378,13 +349,6 @@ void blemesh_on_sync(void) {
   APP_DBG("Mesh initialized");
 }
 
-/*********************************************************************
- * @fn      App_Init
- *
- * @brief   应用层初始化
- *
- * @return  none
- */
 void App_Init() {
   App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
 
