@@ -10,8 +10,8 @@
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
-#ifndef app_generic_onoff_model_H
-#define app_generic_onoff_model_H
+#ifndef app_generic_onoff_server_model_H
+#define app_generic_onoff_server_model_H
 
 #ifdef __cplusplus
 extern "C" {
