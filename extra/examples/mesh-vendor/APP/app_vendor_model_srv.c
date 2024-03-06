@@ -346,41 +346,31 @@ const struct bt_mesh_model_op vnd_model_srv_op[] = {
  *
  * @return  参考Global_Error_Code
  */
-int vendor_message_srv_indicate(struct send_param *param, uint8_t *pData,
-                                uint16_t len) {
-    if (!param->addr)
-        return -EINVAL;
-    if (indicate.buf->__buf)
-        return -EBUSY;
-    if (len > (APP_MAX_TX_SIZE))
-        return -EINVAL;
+int vendor_message_srv_indicate(struct send_param *param, uint8_t *pData, uint16_t len) {
+  if (!param->addr)
+    return -EINVAL;
+  if (indicate.buf->__buf)
+    return -EBUSY;
+  if (len > (APP_MAX_TX_SIZE))
+    return -EINVAL;
 
-    indicate.buf->__buf = tmos_msg_allocate(len + 8);
-    if (!(indicate.buf->__buf))
-    {
-        APP_DBG("No enough space!");
-        return -ENOMEM;
-    }
-    indicate.buf->size = len + 4;
-    /* Init indication opcode */
-    bt_mesh_model_msg_init(&(indicate.buf->b),
-                           OP_VENDOR_MESSAGE_TRANSPARENT_IND);
+  indicate.buf->__buf = tmos_msg_allocate(len + 8);
+  if (!(indicate.buf->__buf)) {
+    APP_DBG("No enough space!");
+    return -ENOMEM;
+  }
+  indicate.buf->size = len + 4;
+  bt_mesh_model_msg_init(&(indicate.buf->b), OP_VENDOR_MESSAGE_TRANSPARENT_IND);
+  net_buf_simple_add_u8(&(indicate.buf->b), param->tid);
+  net_buf_simple_add_mem(&(indicate.buf->b), pData, len);
 
-    /* Add tid field */
-    net_buf_simple_add_u8(&(indicate.buf->b), param->tid);
+  memcpy(&indicate.param, param, sizeof(struct send_param));
 
-    net_buf_simple_add_mem(&(indicate.buf->b), pData, len);
+  vendor_model_srv_prepare(OP_VENDOR_MESSAGE_TRANSPARENT_IND, OP_VENDOR_MESSAGE_TRANSPARENT_ACK);
 
-    memcpy(&indicate.param, param, sizeof(struct send_param));
-
-    vendor_model_srv_prepare(OP_VENDOR_MESSAGE_TRANSPARENT_IND,
-                             OP_VENDOR_MESSAGE_TRANSPARENT_ACK);
-
-    tmos_start_task(vendor_model_srv_TaskID, VENDOR_MODEL_SRV_INDICATE_EVT,
-                    param->rand);
-
-    vendor_model_srv_wait();
-    return 0;
+  tmos_start_task(vendor_model_srv_TaskID, VENDOR_MODEL_SRV_INDICATE_EVT, param->rand);
+  vendor_model_srv_wait();
+  return 0;
 }
 
 /*********************************************************************
@@ -394,8 +384,7 @@ int vendor_message_srv_indicate(struct send_param *param, uint8_t *pData,
  *
  * @return  参考Global_Error_Code
  */
-int vendor_message_srv_send_trans(struct send_param *param, uint8_t *pData,
-                                  uint16_t len) {
+int vendor_message_srv_send_trans(struct send_param *param, uint8_t *pData, uint16_t len) {
   if (!param->addr)
     return -EINVAL;
   if (srv_trans.buf->__buf)
@@ -406,8 +395,8 @@ int vendor_message_srv_send_trans(struct send_param *param, uint8_t *pData,
   srv_trans.buf->__buf = tmos_msg_allocate(len + 8);
 
   if (!(srv_trans.buf->__buf)) {
-      APP_DBG("No enough space!");
-      return -ENOMEM;
+    APP_DBG("No enough space!");
+    return -ENOMEM;
   }
 
   srv_trans.buf->size = len + 4;
