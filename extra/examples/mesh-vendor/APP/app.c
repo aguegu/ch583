@@ -136,7 +136,6 @@ const struct bt_mesh_comp app_comp = {
   .elem_count = ARRAY_SIZE(elements),
 };
 
-// 配网参数和回调
 static const struct bt_mesh_prov app_prov = {
   .uuid = dev_uuid,
   .link_open = link_open,
@@ -147,20 +146,9 @@ static const struct bt_mesh_prov app_prov = {
 
 app_mesh_manage_t app_mesh_manage;
 
-uint16_t delete_node_info_address=0;
+uint16_t delete_node_info_address = 0;
 uint8_t settings_load_over = FALSE;
 
-/*********************************************************************
- * GLOBAL TYPEDEFS
- */
-
-/*********************************************************************
- * @fn      prov_enable
- *
- * @brief   使能配网功能
- *
- * @return  none
- */
 static void prov_enable(void) {
   if (bt_mesh_is_provisioned()) {
     return;
@@ -168,69 +156,33 @@ static void prov_enable(void) {
 
   bt_mesh_scan_enable();    // Make sure we're scanning for provisioning inviations
   bt_mesh_beacon_enable();  // Enable unprovisioned beacon sending
-
-  if (CONFIG_BLE_MESH_PB_GATT) {
-    bt_mesh_proxy_prov_enable();
-  }
 }
 
-/*********************************************************************
- * @fn      link_open
- *
- * @brief   配网时后的link打开回调
- *
- * @param   bearer  - 当前link是PB_ADV还是PB_GATT
- *
- * @return  none
- */
 static void link_open(bt_mesh_prov_bearer_t bearer) {
-  APP_DBG("");
+  APP_DBG("bearer: %x", bearer);
 }
 
-/*********************************************************************
- * @fn      link_close
- *
- * @brief   配网后的link关闭回调
- *
- * @param   bearer  - 当前link是PB_ADV还是PB_GATT
- * @param   reason  - link关闭原因
- *
- * @return  none
- */
 static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
-  APP_DBG("");
+  APP_DBG("bearer: %x", bearer);
   if (reason != CLOSE_REASON_SUCCESS)
     APP_DBG("reason %x", reason);
 }
 
 /*********************************************************************
  * @fn      prov_complete
- *
  * @brief   配网完成回调，重新开始广播
- *
  * @param   net_idx     - 网络key的index
  * @param   addr        - link关闭原因网络地址
  * @param   flags       - 是否处于key refresh状态
  * @param   iv_index    - 当前网络iv的index
- *
- * @return  none
  */
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
   APP_DBG("net_idx %x, addr %x", net_idx, addr);
-  if (settings_load_over || (vnd_models[0].keys[0]==BLE_MESH_KEY_UNUSED)) {
+  if (settings_load_over || (vnd_models[0].keys[0] == BLE_MESH_KEY_UNUSED)) {
     tmos_start_task(App_TaskID, APP_DELETE_LOCAL_NODE_EVT, APP_WAIT_ADD_APPKEY_DELAY);
   }
 }
 
-/*********************************************************************
- * @fn      prov_reset
- *
- * @brief   复位配网功能回调
- *
- * @param   none
- *
- * @return  none
- */
 static void prov_reset(void) {
   APP_DBG("provision reset completed");
   prov_enable();
@@ -337,36 +289,25 @@ static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val) {
     APP_DBG("len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.write.len,
               val->vendor_model_srv_Event.write.pdata[0],
               val->vendor_model_srv_Event.write.addr);
-  } else if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_ACK) {
-      // 发送的indicate已收到应答
+  } else if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_IND) {
+    APP_DBG("Indicate acked, 0x%02x", val->vendor_model_srv_Hdr.opcode);    
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
   }
 }
 
-/*********************************************************************
- * @fn      vendor_model_srv_send
- *
- * @brief   通过厂商自定义模型发送数据
- *
- * @param   addr    - 需要发送的目的地址
- *          pData   - 需要发送的数据指针
- *          len     - 需要发送的数据长度
- *
- * @return  参考Global_Error_Code
- */
 static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len) {
   struct send_param param = {
     .app_idx = vnd_models[0].keys[0], // 此消息使用的app key，如无特定则使用第0个key
     .addr = addr,                     // 此消息发往的目的地地址
     .trans_cnt = 0x01,                // 此消息的用户层发送次数
     .period = K_MSEC(400),            // 此消息重传的间隔，建议不小于(200+50*TTL)ms，若数据较大则建议加长
-    .rand = 0,                      // 此消息发送的随机延迟
+    .rand = K_MSEC(5),                // 此消息发送的随机延迟
     .tid = vendor_srv_tid_get(),      // tid，每个独立消息递增循环，srv使用128~191
     .send_ttl = BLE_MESH_TTL_DEFAULT, // ttl，无特定则使用默认值
   };
-//    return vendor_message_srv_indicate(&param, pData, len);  // 调用自定义模型服务的有应答指示函数发送数据，默认超时2s
-  return vendor_message_srv_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
+  return vendor_message_srv_indicate(&param, pData, len);  // 调用自定义模型服务的有应答指示函数发送数据，默认超时2s
+  // return vendor_message_srv_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
 }
 
 void keyChange(HalKeyChangeEvent event) {
@@ -413,9 +354,10 @@ void blemesh_on_sync(void) {
 
   uint8_t MacAddr[6];
   GetMACAddress(MacAddr);
-  tmos_memcpy(dev_uuid, MacAddr, 6);
 
   err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, MacAddr, &info);     // 使用芯片mac地址
+
+  tmos_memcpy(dev_uuid, MacAddr, 6);
 
   if (err) {
     APP_DBG("Unable set configuration (err:%d)", err);
@@ -469,13 +411,6 @@ void blemesh_on_sync(void) {
   APP_DBG("Mesh initialized");
 }
 
-/*********************************************************************
- * @fn      App_Init
- *
- * @brief   应用层初始化
- *
- * @return  none
- */
 void App_Init() {
   App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
 
@@ -486,17 +421,6 @@ void App_Init() {
   tmos_start_task(App_TaskID, APP_NODE_TEST_EVT, 1600);
 }
 
-/*********************************************************************
- * @fn      App_ProcessEvent
- *
- * @brief   应用层事件处理函数
- *
- * @param   task_id  - The TMOS assigned task ID.
- * @param   events - events to process.  This is a bit map and can
- *                   contain more than one event.
- *
- * @return  events not processed
- */
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
   if (events & APP_NODE_TEST_EVT) {
     tmos_start_task(App_TaskID, APP_NODE_TEST_EVT, 2400);
@@ -517,5 +441,3 @@ static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
 
   return 0;
 }
-
-/******************************** endfile @ main ******************************/
