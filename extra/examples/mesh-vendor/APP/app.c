@@ -361,7 +361,7 @@ static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len) {
     .addr = addr,                     // 此消息发往的目的地地址
     .trans_cnt = 0x01,                // 此消息的用户层发送次数
     .period = K_MSEC(400),            // 此消息重传的间隔，建议不小于(200+50*TTL)ms，若数据较大则建议加长
-    .rand = (0),                      // 此消息发送的随机延迟
+    .rand = 0,                      // 此消息发送的随机延迟
     .tid = vendor_srv_tid_get(),      // tid，每个独立消息递增循环，srv使用128~191
     .send_ttl = BLE_MESH_TTL_DEFAULT, // ttl，无特定则使用默认值
   };
@@ -369,29 +369,26 @@ static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len) {
   return vendor_message_srv_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
 }
 
-/*********************************************************************
- * @fn      keyPress
- *
- * @brief   按键回调
- *
- * @param   keys    - 按键类型
- *
- * @return  none
- */
-void keyPress(uint8_t keys) {
-  APP_DBG("%d", keys);
+void keyChange(HalKeyChangeEvent event) {
+  APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
 
-  switch(keys) {
-    case 0x01: {
-      uint8_t data[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-      int status = vendor_model_srv_send(0x0001, data, 8);  // 发往配网者节点
-      if (status) {
-        APP_DBG("send failed %d", status);
-      }
-      break;
+  uint8_t data[6] = {0};
+  int status;
+
+  data[0] = event.changed & event.current;
+
+  if (event.changed & 0x01) {
+    status = vendor_model_srv_send(0x0001, data, 6);
+    if (status) {
+      APP_DBG("send failed %d", status);
     }
-    default:
-      break;
+  }
+
+  if (event.changed & 0x02) {
+    status = vendor_model_srv_send(0xc000, data, 6);
+    if (status) {
+      APP_DBG("send failed %d", status);
+    }
   }
 }
 
@@ -485,7 +482,7 @@ void App_Init() {
   vendor_model_srv_init(vnd_models);
   blemesh_on_sync();
   HAL_KeyInit();
-  HalKeyConfig(keyPress);
+  HAL_KeyConfig(keyChange);
   tmos_start_task(App_TaskID, APP_NODE_TEST_EVT, 1600);
 }
 
@@ -506,16 +503,13 @@ static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
     return (events ^ APP_NODE_TEST_EVT);
   }
 
-  if (events & APP_DELETE_LOCAL_NODE_EVT) {
-    // 收到删除命令，删除自身网络信息
+  if (events & APP_DELETE_LOCAL_NODE_EVT) { // 收到删除命令，删除自身网络信息
     APP_DBG("Delete local node");
-    // 复位自身网络状态
-    bt_mesh_reset();
+    bt_mesh_reset();  // 复位自身网络状态
     return (events ^ APP_DELETE_LOCAL_NODE_EVT);
   }
 
-  if (events & APP_DELETE_NODE_INFO_EVT) {
-    // 删除已存储的被删除节点的信息
+  if (events & APP_DELETE_NODE_INFO_EVT) {  // 删除已存储的被删除节点的信息
     bt_mesh_delete_node_info(delete_node_info_address,app_comp.elem_count);
     APP_DBG("Delete stored node info complete");
     return (events ^ APP_DELETE_NODE_INFO_EVT);
