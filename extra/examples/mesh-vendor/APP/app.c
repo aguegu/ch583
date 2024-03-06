@@ -1,25 +1,9 @@
-/********************************** (C) COPYRIGHT *******************************
- * File Name          : app.c
- * Author             : WCH
- * Version            : V1.1
- * Date               : 2022/01/18
- * Description        :
- *********************************************************************************
- * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
- * microcontroller manufactured by Nanjing Qinheng Microelectronics.
- *******************************************************************************/
-
-/******************************************************************************/
 #include "config.h"
 #include "MESH_LIB.h"
 #include "app_vendor_model_srv.h"
 #include "app.h"
 #include "HAL.h"
 
-/*********************************************************************
- * GLOBAL TYPEDEFS
- */
 #define ADV_TIMEOUT       K_MINUTES(10)
 
 #define SELENCE_ADV_ON    0x01
@@ -30,9 +14,7 @@
 #define APP_DELETE_LOCAL_NODE_DELAY   3200
 // shall not less than APP_DELETE_LOCAL_NODE_DELAY
 #define APP_DELETE_NODE_INFO_DELAY    3200
-/*********************************************************************
- * GLOBAL TYPEDEFS
- */
+
 
 static uint8_t MESH_MEM[1024 * 2] = {0};
 
@@ -43,22 +25,18 @@ static uint8_t App_TaskID = 0; // Task ID for internal task/event processing
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
-static uint8_t dev_uuid[16] = {0}; // 此设备的UUID
+static uint8_t dev_uuid[16] = {0};
 
 #if (!CONFIG_BLE_MESH_PB_GATT)
 NET_BUF_SIMPLE_DEFINE_STATIC(rx_buf, 65);
-#endif /* !PB_GATT */
-
-/*********************************************************************
- * LOCAL FUNCION
- */
+#endif
 
 static void cfg_srv_rsp_handler( const cfg_srv_status_t *val );
 static void link_open(bt_mesh_prov_bearer_t bearer);
 static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason);
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index);
 static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val);
-static int  vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len);
+static int  vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len, BOOL requireACK);
 static void prov_reset(void);
 
 static struct bt_mesh_cfg_srv cfg_srv = {
@@ -97,7 +75,6 @@ uint16_t cfg_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASS
 uint16_t health_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
 uint16_t health_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
-// root模型加载
 static struct bt_mesh_model root_models[] = {
   BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
   BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv, &health_pub),
@@ -111,13 +88,11 @@ struct bt_mesh_vendor_model_srv vendor_model_srv = {
 uint16_t vnd_model_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {BLE_MESH_KEY_UNUSED};
 uint16_t vnd_model_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {BLE_MESH_ADDR_UNASSIGNED};
 
-// 自定义模型加载
 struct bt_mesh_model vnd_models[] = {
   BLE_MESH_MODEL_VND_CB(CID_WCH, BLE_MESH_MODEL_ID_WCH_SRV, vnd_model_srv_op, NULL, vnd_model_srv_keys,
                           vnd_model_srv_groups, &vendor_model_srv, NULL),
 };
 
-// 模型组成 elements
 static struct bt_mesh_elem elements[] = {
   {
     /* Location Descriptor (GATT Bluetooth Namespace Descriptors) */
@@ -143,8 +118,6 @@ static const struct bt_mesh_prov app_prov = {
   .complete = prov_complete,
   .reset = prov_reset,
 };
-
-app_mesh_manage_t app_mesh_manage;
 
 uint16_t delete_node_info_address = 0;
 uint8_t settings_load_over = FALSE;
@@ -188,15 +161,6 @@ static void prov_reset(void) {
   prov_enable();
 }
 
-/*********************************************************************
- * @fn      cfg_srv_rsp_handler
- *
- * @brief   config 模型服务回调
- *
- * @param   val     - 回调参数，包括命令类型、配置命令执行状态
- *
- * @return  none
- */
 static void cfg_srv_rsp_handler( const cfg_srv_status_t *val ) {
   if (val->cfgHdr.status) {
     APP_DBG("warning opcode 0x%02x", val->cfgHdr.opcode);
@@ -219,95 +183,41 @@ static void cfg_srv_rsp_handler( const cfg_srv_status_t *val ) {
   }
 }
 
-/*********************************************************************
- * @fn      vendor_model_srv_rsp_handler
- *
- * @brief   自定义模型服务回调
- *
- * @param   val     - 回调参数，包括消息类型、数据内容、长度、来源地址
- *
- * @return  none
- */
 static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val) {
   if (val->vendor_model_srv_Hdr.status) {     // 有应答数据传输 超时未收到应答
     APP_DBG("Timeout opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
     return;
   }
-  if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_MSG) {      // 收到透传数据
+  if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_MSG) {
     APP_DBG("len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.trans.len,
-            val->vendor_model_srv_Event.trans.pdata[0],
-            val->vendor_model_srv_Event.trans.addr);
-
-      // tmos_memcpy(&app_mesh_manage, val->vendor_model_srv_Event.trans.pdata, val->vendor_model_srv_Event.trans.len);
-      // switch(app_mesh_manage.data.buf[0])
-      // {
-      //     // 判断是否为删除命令
-      //     case CMD_DELETE_NODE:
-      //     {
-      //         if (val->vendor_model_srv_Event.trans.len != DELETE_NODE_DATA_LEN)
-      //         {
-      //             APP_DBG("Delete node data err!");
-      //             return;
-      //         }
-      //         uint8_t status;
-      //         APP_DBG("receive delete cmd, send ack and start delete node delay");
-      //         app_mesh_manage.delete_node_ack.cmd = CMD_DELETE_NODE_ACK;
-      //         status = vendor_model_srv_send(val->vendor_model_srv_Event.trans.addr,
-      //                                         app_mesh_manage.data.buf, DELETE_NODE_ACK_DATA_LEN);
-      //         if (status)
-      //         {
-      //             APP_DBG("send ack failed %d", status);
-      //         }
-      //         // 即将删除自身，先发送CMD_DELETE_NODE_INFO命令
-      //         APP_DBG("send to all node to let them delete stored info ");
-      //         app_mesh_manage.delete_node_info.cmd = CMD_DELETE_NODE_INFO;
-      //         status = vendor_model_srv_send(BLE_MESH_ADDR_ALL_NODES,
-      //                                         app_mesh_manage.data.buf, DELETE_NODE_INFO_DATA_LEN);
-      //         if (status)
-      //         {
-      //             APP_DBG("send ack failed %d", status);
-      //         }
-      //         tmos_start_task(App_TaskID, APP_DELETE_LOCAL_NODE_EVT, APP_DELETE_LOCAL_NODE_DELAY);
-      //         break;
-      //     }
-      //
-      //     // 判断是否为有节点被删除，需要删除存储的节点信息
-      //     case CMD_DELETE_NODE_INFO:
-      //     {
-      //         if (val->vendor_model_srv_Event.trans.len != DELETE_NODE_INFO_DATA_LEN)
-      //         {
-      //             APP_DBG("Delete node info data err!");
-      //             return;
-      //         }
-      //         delete_node_info_address = val->vendor_model_srv_Event.trans.addr;
-      //         tmos_start_task(App_TaskID, APP_DELETE_NODE_INFO_EVT, APP_DELETE_NODE_INFO_DELAY);
-      //         break;
-      //     }
-      // }
+      val->vendor_model_srv_Event.trans.pdata[0],
+      val->vendor_model_srv_Event.trans.addr);
   } else if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_WRT) {
-      // 收到write数据
     APP_DBG("len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.write.len,
-              val->vendor_model_srv_Event.write.pdata[0],
-              val->vendor_model_srv_Event.write.addr);
+      val->vendor_model_srv_Event.write.pdata[0],
+      val->vendor_model_srv_Event.write.addr);
   } else if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_IND) {
-    APP_DBG("Indicate acked, 0x%02x", val->vendor_model_srv_Hdr.opcode);    
+    APP_DBG("Indicate acked");
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
   }
 }
 
-static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len) {
+static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len, BOOL requireACK) {
   struct send_param param = {
     .app_idx = vnd_models[0].keys[0], // 此消息使用的app key，如无特定则使用第0个key
     .addr = addr,                     // 此消息发往的目的地地址
     .trans_cnt = 0x01,                // 此消息的用户层发送次数
     .period = K_MSEC(400),            // 此消息重传的间隔，建议不小于(200+50*TTL)ms，若数据较大则建议加长
-    .rand = K_MSEC(5),                // 此消息发送的随机延迟
+    .rand = K_MSEC(1),                // 此消息发送的随机延迟
     .tid = vendor_srv_tid_get(),      // tid，每个独立消息递增循环，srv使用128~191
     .send_ttl = BLE_MESH_TTL_DEFAULT, // ttl，无特定则使用默认值
   };
-  return vendor_message_srv_indicate(&param, pData, len);  // 调用自定义模型服务的有应答指示函数发送数据，默认超时2s
-  // return vendor_message_srv_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
+
+  if (requireACK)
+    return vendor_message_srv_indicate(&param, pData, len);  // 调用自定义模型服务的有应答指示函数发送数据，默认超时2s
+
+  return vendor_message_srv_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
 }
 
 void keyChange(HalKeyChangeEvent event) {
@@ -319,27 +229,20 @@ void keyChange(HalKeyChangeEvent event) {
   data[0] = event.changed & event.current;
 
   if (event.changed & 0x01) {
-    status = vendor_model_srv_send(0x0001, data, 6);
+    status = vendor_model_srv_send(0x0001, data, 6, TRUE);
     if (status) {
       APP_DBG("send failed %d", status);
     }
   }
 
   if (event.changed & 0x02) {
-    status = vendor_model_srv_send(0xc000, data, 6);
+    status = vendor_model_srv_send(0xc000, data, 6, FALSE);
     if (status) {
       APP_DBG("send failed %d", status);
     }
   }
 }
 
-/*********************************************************************
- * @fn      blemesh_on_sync
- *
- * @brief   同步mesh参数，启用对应功能，不建议修改
- *
- * @return  none
- */
 void blemesh_on_sync(void) {
   int        err;
   mem_info_t info;
@@ -354,8 +257,7 @@ void blemesh_on_sync(void) {
 
   uint8_t MacAddr[6];
   GetMACAddress(MacAddr);
-
-  err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, MacAddr, &info);     // 使用芯片mac地址
+  err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, MacAddr, &info);
 
   tmos_memcpy(dev_uuid, MacAddr, 6);
 
@@ -369,13 +271,13 @@ void blemesh_on_sync(void) {
 
 #if (CONFIG_BLE_MESH_RELAY)
   bt_mesh_relay_init();
-#endif /* RELAY  */
+#endif
 
   bt_mesh_prov_retransmit_init();
 
 #if (!CONFIG_BLE_MESH_PB_GATT)
   adv_link_rx_buf_register(&rx_buf);
-#endif /* !PB_GATT */
+#endif
 
   err = bt_mesh_prov_init(&app_prov);
 
@@ -388,7 +290,7 @@ void blemesh_on_sync(void) {
 
 #if (CONFIG_BLE_MESH_SETTINGS)
   bt_mesh_settings_init();
-#endif /* SETTINGS */
+#endif
 
   if (err) {
     APP_DBG("Initializing mesh failed (err %d)", err);
@@ -400,10 +302,10 @@ void blemesh_on_sync(void) {
 #if (CONFIG_BLE_MESH_SETTINGS)
   settings_load();
   settings_load_over = TRUE;
-#endif /* SETTINGS */
+#endif
 
   if (bt_mesh_is_provisioned()) {
-    APP_DBG("Mesh network restored from flash");
+    APP_DBG("Provisioned. Mesh network restored from flash");
   } else {
     prov_enable();
   }
@@ -418,26 +320,13 @@ void App_Init() {
   blemesh_on_sync();
   HAL_KeyInit();
   HAL_KeyConfig(keyChange);
-  tmos_start_task(App_TaskID, APP_NODE_TEST_EVT, 1600);
 }
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
-  if (events & APP_NODE_TEST_EVT) {
-    tmos_start_task(App_TaskID, APP_NODE_TEST_EVT, 2400);
-    return (events ^ APP_NODE_TEST_EVT);
-  }
-
   if (events & APP_DELETE_LOCAL_NODE_EVT) { // 收到删除命令，删除自身网络信息
     APP_DBG("Delete local node");
     bt_mesh_reset();  // 复位自身网络状态
     return (events ^ APP_DELETE_LOCAL_NODE_EVT);
   }
-
-  if (events & APP_DELETE_NODE_INFO_EVT) {  // 删除已存储的被删除节点的信息
-    bt_mesh_delete_node_info(delete_node_info_address,app_comp.elem_count);
-    APP_DBG("Delete stored node info complete");
-    return (events ^ APP_DELETE_NODE_INFO_EVT);
-  }
-
   return 0;
 }

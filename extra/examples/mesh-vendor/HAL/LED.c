@@ -6,7 +6,7 @@
  * Description        :
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -59,7 +59,7 @@ void HAL_LedInit(void)
 {
     /* Initialize all LEDs to OFF */
     LED1_DDR;
-    HalLedSet(HAL_LED_ALL, HAL_LED_MODE_OFF);
+    HalLedSet(HAL_LED_ALL, HAL_LED_MODE_FLASH);
     // just test
     HalLedBlink(HAL_LED_1, 10, 30, 4000);
     /* Initialize sleepActive to FALSE */
