@@ -20,7 +20,7 @@ StdPeriphDriver_INC = $(StdPeriphDriver_ROOT)/inc
 StdPeriphDriver_SRC = $(notdir $(wildcard $(StdPeriphDriver_ROOT)/*.c))
 StdPeriphDriver_OBJ = $(addprefix $(OUTPUT_DIR)/StdPeriphDriver/, $(StdPeriphDriver_SRC:.c=.o))
 
-HAL_ROOT	=	../../EVT/EXAM/BLE/HAL
+HAL_ROOT	=	./HAL
 HAL_INC	 	= $(HAL_ROOT)/include
 HAL_SRC 	= MCU.c RTC.c SLEEP.c KEY.c
 HAL_OBJ 	= $(addprefix $(OUTPUT_DIR)/HAL/, $(HAL_SRC:.c=.o))
