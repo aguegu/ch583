@@ -4,17 +4,7 @@
 #include "app.h"
 #include "HAL.h"
 
-#define ADV_TIMEOUT       K_MINUTES(10)
-
-#define SELENCE_ADV_ON    0x01
-#define SELENCE_ADV_OF    0x00
-
 #define APP_WAIT_ADD_APPKEY_DELAY     1600*10
-
-#define APP_DELETE_LOCAL_NODE_DELAY   3200
-// shall not less than APP_DELETE_LOCAL_NODE_DELAY
-#define APP_DELETE_NODE_INFO_DELAY    3200
-
 
 static uint8_t MESH_MEM[1024 * 2] = {0};
 
