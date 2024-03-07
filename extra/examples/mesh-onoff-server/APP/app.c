@@ -1,6 +1,7 @@
 #include "config.h"
 #include "MESH_LIB.h"
-#include "app_vendor_model_srv.h"
+// #include "app_vendor_model_srv.h"
+#include "app_generic_onoff_server_model.h"
 #include "app.h"
 #include "HAL.h"
 
@@ -11,7 +12,7 @@ static uint8_t MESH_MEM[1024 * 2] = {0};
 extern const ble_mesh_cfg_t app_mesh_cfg;
 extern const struct device  app_dev;
 
-static uint8_t App_TaskID = 0; // Task ID for internal task/event processing
+static uint8_t App_TaskID = 0;
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
@@ -25,8 +26,8 @@ static void cfg_srv_rsp_handler( const cfg_srv_status_t *val );
 static void link_open(bt_mesh_prov_bearer_t bearer);
 static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason);
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index);
-static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val);
-static int  vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len, BOOL requireACK);
+// static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val);
+// static int  vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len, BOOL requireACK);
 static void prov_reset(void);
 
 static struct bt_mesh_cfg_srv cfg_srv = {
@@ -65,23 +66,27 @@ uint16_t cfg_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASS
 uint16_t health_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
 uint16_t health_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
+uint16_t gen_onoff_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
+uint16_t gen_onoff_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
+
 static struct bt_mesh_model root_models[] = {
   BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
   BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv, &health_pub),
+  BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op, NULL, gen_onoff_srv_keys, gen_onoff_srv_groups, NULL),
 };
 
-struct bt_mesh_vendor_model_srv vendor_model_srv = {
-  .srv_tid.trans_tid = 0xFF,
-  .handler = vendor_model_srv_rsp_handler,
-};
+// struct bt_mesh_vendor_model_srv vendor_model_srv = {
+//   .srv_tid.trans_tid = 0xFF,
+//   .handler = vendor_model_srv_rsp_handler,
+// };
 
-uint16_t vnd_model_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {BLE_MESH_KEY_UNUSED};
-uint16_t vnd_model_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {BLE_MESH_ADDR_UNASSIGNED};
+// uint16_t vnd_model_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {BLE_MESH_KEY_UNUSED};
+// uint16_t vnd_model_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {BLE_MESH_ADDR_UNASSIGNED};
 
-struct bt_mesh_model vnd_models[] = {
-  BLE_MESH_MODEL_VND_CB(CID_WCH, BLE_MESH_MODEL_ID_WCH_SRV, vnd_model_srv_op, NULL, vnd_model_srv_keys,
-                          vnd_model_srv_groups, &vendor_model_srv, NULL),
-};
+// struct bt_mesh_model vnd_models[] = {
+//   BLE_MESH_MODEL_VND_CB(CID_WCH, BLE_MESH_MODEL_ID_WCH_SRV, vnd_model_srv_op, NULL, vnd_model_srv_keys,
+//                           vnd_model_srv_groups, &vendor_model_srv, NULL),
+// };
 
 static struct bt_mesh_elem elements[] = {
   {
@@ -89,8 +94,8 @@ static struct bt_mesh_elem elements[] = {
     .loc = (0),
     .model_count = ARRAY_SIZE(root_models),
     .models = (root_models),
-    .vnd_model_count = ARRAY_SIZE(vnd_models),
-    .vnd_models = (vnd_models),
+    // .vnd_model_count = ARRAY_SIZE(vnd_models),
+    // .vnd_models = (vnd_models),
   }
 };
 
@@ -141,7 +146,7 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
  */
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
   APP_DBG("net_idx %x, addr %x", net_idx, addr);
-  if (settings_load_over || (vnd_models[0].keys[0] == BLE_MESH_KEY_UNUSED)) {
+  if (settings_load_over || gen_onoff_srv_keys[0] == BLE_MESH_KEY_UNUSED) {
     tmos_start_task(App_TaskID, APP_DELETE_LOCAL_NODE_EVT, APP_WAIT_ADD_APPKEY_DELAY);
   }
 }
@@ -173,64 +178,45 @@ static void cfg_srv_rsp_handler( const cfg_srv_status_t *val ) {
   }
 }
 
-static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val) {
-  if (val->vendor_model_srv_Hdr.status) {     // 有应答数据传输 超时未收到应答
-    APP_DBG("Timeout opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
-    return;
-  }
-  if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_MSG) {
-    APP_DBG("len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.trans.len,
-      val->vendor_model_srv_Event.trans.pdata[0],
-      val->vendor_model_srv_Event.trans.addr);
-  } else if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_WRT) {
-    APP_DBG("len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.write.len,
-      val->vendor_model_srv_Event.write.pdata[0],
-      val->vendor_model_srv_Event.write.addr);
-  } else if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_IND) {
-    APP_DBG("Indicate acked");
-  } else {
-    APP_DBG("Unknow opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
-  }
-}
-
-static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len, BOOL requireACK) {
-  struct send_param param = {
-    .app_idx = vnd_models[0].keys[0], // 此消息使用的app key，如无特定则使用第0个key
-    .addr = addr,                     // 此消息发往的目的地地址
-    .trans_cnt = 0x01,                // 此消息的用户层发送次数
-    .period = K_MSEC(400),            // 此消息重传的间隔，建议不小于(200+50*TTL)ms，若数据较大则建议加长
-    .rand = K_MSEC(1),                // 此消息发送的随机延迟
-    .tid = vendor_srv_tid_get(),      // tid，每个独立消息递增循环，srv使用128~191
-    .send_ttl = BLE_MESH_TTL_DEFAULT, // ttl，无特定则使用默认值
-  };
-
-  if (requireACK)
-    return vendor_message_srv_indicate(&param, pData, len);  // 调用自定义模型服务的有应答指示函数发送数据，默认超时2s
-
-  return vendor_message_srv_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
-}
+// static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val) {
+//   if (val->vendor_model_srv_Hdr.status) {     // 有应答数据传输 超时未收到应答
+//     APP_DBG("Timeout opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
+//     return;
+//   }
+//   if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_MSG) {
+//     APP_DBG("len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.trans.len,
+//       val->vendor_model_srv_Event.trans.pdata[0],
+//       val->vendor_model_srv_Event.trans.addr);
+//   } else if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_WRT) {
+//     APP_DBG("len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.write.len,
+//       val->vendor_model_srv_Event.write.pdata[0],
+//       val->vendor_model_srv_Event.write.addr);
+//   } else if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_IND) {
+//     APP_DBG("Indicate acked");
+//   } else {
+//     APP_DBG("Unknow opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
+//   }
+// }
+//
+// static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len, BOOL requireACK) {
+//   struct send_param param = {
+//     .app_idx = vnd_models[0].keys[0], // 此消息使用的app key，如无特定则使用第0个key
+//     .addr = addr,                     // 此消息发往的目的地地址
+//     .trans_cnt = 0x01,                // 此消息的用户层发送次数
+//     .period = K_MSEC(400),            // 此消息重传的间隔，建议不小于(200+50*TTL)ms，若数据较大则建议加长
+//     .rand = K_MSEC(1),                // 此消息发送的随机延迟
+//     .tid = vendor_srv_tid_get(),      // tid，每个独立消息递增循环，srv使用128~191
+//     .send_ttl = BLE_MESH_TTL_DEFAULT, // ttl，无特定则使用默认值
+//   };
+//
+//   if (requireACK)
+//     return vendor_message_srv_indicate(&param, pData, len);  // 调用自定义模型服务的有应答指示函数发送数据，默认超时2s
+//
+//   return vendor_message_srv_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
+// }
 
 void keyChange(HalKeyChangeEvent event) {
   APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
-
-  uint8_t data[6] = {0};
-  int status;
-
-  data[0] = event.changed & event.current;
-
-  if (event.changed & 0x01) {
-    status = vendor_model_srv_send(0x0001, data, 6, TRUE);
-    if (status) {
-      APP_DBG("send failed %d", status);
-    }
-  }
-
-  if (event.changed & 0x02) {
-    status = vendor_model_srv_send(0xc000, data, 6, FALSE);
-    if (status) {
-      APP_DBG("send failed %d", status);
-    }
-  }
 }
 
 void blemesh_on_sync(void) {
@@ -306,7 +292,7 @@ void blemesh_on_sync(void) {
 void App_Init() {
   App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
 
-  vendor_model_srv_init(vnd_models);
+  // vendor_model_srv_init(vnd_models);
   blemesh_on_sync();
   HAL_KeyInit();
   HAL_KeyConfig(keyChange);
