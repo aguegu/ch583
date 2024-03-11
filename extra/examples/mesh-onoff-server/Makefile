@@ -92,7 +92,7 @@ $(TARGET).lst: $(TARGET).elf
 flash: $(TARGET).hex
 	sudo ../../isp/WCHISPTool_CMD -p /dev/ch37x0 -c ./isp-config.ini -o program -f $<
 
-lint: $(APP_HEADERS) $(APP_SRC) $(HAL)
+lint: $(APP_HEADERS) $(APP_SRC)
 	$(foreach f, $^, $(LINTER) $(f);)
 
 $(OUTPUT_DIR):
