@@ -24,8 +24,8 @@ extern "C" {
 #define APP_NODE_TEST_EVT (1 << 1)
 #define APP_DELETE_NODE_TIMEOUT_EVT (1 << 2)
 
-#define CMD_DELETE_NODE 0xA2
-#define CMD_DELETE_NODE_ACK 0x82
+// #define CMD_DELETE_NODE 0xA2
+// #define CMD_DELETE_NODE_ACK 0x82
 
 #define PERIPHERAL_CMD_LEN 1
 #define ADDRESS_LEN 2
@@ -43,10 +43,12 @@ extern "C" {
 typedef enum {
   NODE_INIT = 0,
   NODE_APPKEY_ADD = 1,
-  NODE_MOD_BIND_SET = 2,
-  NODE_MOD_SUB_SET = 3,
+  NODE_MOD_APP_GET = 2,
+  NODE_MOD_BIND_SET = 3,
+  NODE_MOD_SUB_SET = 4,
 
-  NODE_CONFIGURATIONED = 4,
+  NODE_CONFIGURATIONED = 0x0f,
+  NODE_ABORT = 0xff,
 } node_stage_t;
 
 /**
@@ -57,7 +59,8 @@ typedef enum {
   LOCAL_APPKEY_ADD = 1,
   LOCAL_MOD_BIND_SET = 2,
 
-  LOCAL_CONFIGURATIONED = 4,
+  LOCAL_CONFIGURATIONED = 0x0f,
+  LOCAL_ABORT = 0xff,
 } local_stage_t;
 
 /**

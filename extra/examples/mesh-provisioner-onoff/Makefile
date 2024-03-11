@@ -1,4 +1,5 @@
-BIN     = ../../riscv-embedded-gcc/bin
+#BIN     = ../../riscv-embedded-gcc/bin
+BIN = ../../tmp/MRS_Toolchain_Linux_x64_V1.91/RISC-V_Embedded_GCC/bin
 BIN_PREFIX = riscv-none-embed
 
 LINTER = clang-format --style=LLVM -i
