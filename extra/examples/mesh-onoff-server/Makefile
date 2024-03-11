@@ -35,6 +35,8 @@ VPATH = $(Startup_ROOT):$(RVMSIS_ROOT):$(StdPeriphDriver_ROOT):$(HAL_ROOT):$(Pro
 
 LIBS := -lISP583 -lCH58xBLE -lMESH
 
+LINTER = clang-format --style=LLVM -i
+
 $(OUTPUT_DIR)/Startup/%.o: %.S
 	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g -x assembler-with-cpp -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
@@ -90,6 +92,9 @@ $(TARGET).lst: $(TARGET).elf
 flash: $(TARGET).hex
 	sudo ../../isp/WCHISPTool_CMD -p /dev/ch37x0 -c ./isp-config.ini -o program -f $<
 
+lint: $(APP_HEADERS) $(APP_SRC) $(HAL)
+	$(foreach f, $^, $(LINTER) $(f);)
+
 $(OUTPUT_DIR):
 	mkdir -p $(OUTPUT_DIR)/Startup
 	mkdir -p $(OUTPUT_DIR)/RVMSIS
@@ -100,4 +105,4 @@ $(OUTPUT_DIR):
 clean:
 	rm -rf $(OUTPUT_DIR)
 
-.PHONY: clean flash
+.PHONY: clean flash lint

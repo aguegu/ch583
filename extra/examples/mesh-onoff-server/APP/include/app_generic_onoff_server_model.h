@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #include "MESH_LIB.h"
-#define MSG_PIN    GPIO_Pin_18
+#define MSG_PIN GPIO_Pin_18
 
 BOOL read_led_state(uint32_t led_pin);
 
