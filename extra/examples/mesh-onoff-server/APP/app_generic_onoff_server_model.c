@@ -1,16 +1,3 @@
-/********************************** (C) COPYRIGHT *******************************
- * File Name          : app_generic_onoff_model.c
- * Author             : WCH
- * Version            : V1.0
- * Date               : 2021/03/24
- * Description        :
- *********************************************************************************
- * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
- * microcontroller manufactured by Nanjing Qinheng Microelectronics.
- *******************************************************************************/
-
-/******************************************************************************/
 #include "config.h"
 #include "MESH_LIB.h"
 #include "app_mesh_config.h"
@@ -76,5 +63,3 @@ const struct bt_mesh_model_op gen_onoff_op[] = {
   { BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, 2, gen_onoff_set_unack },
   BLE_MESH_MODEL_OP_END,
 };
-
-/******************************** endfile @ main ******************************/

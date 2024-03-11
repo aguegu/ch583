@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define APP_DELETE_LOCAL_NODE_EVT       (1 << 0)
+#define APP_RESET_MESH_EVENT       (1 << 0)
 
 void App_Init(void);
 

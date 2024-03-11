@@ -26,8 +26,6 @@ static void cfg_srv_rsp_handler( const cfg_srv_status_t *val );
 static void link_open(bt_mesh_prov_bearer_t bearer);
 static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason);
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index);
-// static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val);
-// static int  vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len, BOOL requireACK);
 static void prov_reset(void);
 
 static struct bt_mesh_cfg_srv cfg_srv = {
@@ -39,12 +37,10 @@ static struct bt_mesh_cfg_srv cfg_srv = {
   .handler = cfg_srv_rsp_handler,
 };
 
-/* Attention on */
 void app_prov_attn_on(struct bt_mesh_model *model) {
   APP_DBG("app_prov_attn_on");
 }
 
-/* Attention off */
 void app_prov_attn_off(struct bt_mesh_model *model) {
   APP_DBG("app_prov_attn_off");
 }
@@ -75,31 +71,15 @@ static struct bt_mesh_model root_models[] = {
   BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op, NULL, gen_onoff_srv_keys, gen_onoff_srv_groups, NULL),
 };
 
-// struct bt_mesh_vendor_model_srv vendor_model_srv = {
-//   .srv_tid.trans_tid = 0xFF,
-//   .handler = vendor_model_srv_rsp_handler,
-// };
-
-// uint16_t vnd_model_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {BLE_MESH_KEY_UNUSED};
-// uint16_t vnd_model_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {BLE_MESH_ADDR_UNASSIGNED};
-
-// struct bt_mesh_model vnd_models[] = {
-//   BLE_MESH_MODEL_VND_CB(CID_WCH, BLE_MESH_MODEL_ID_WCH_SRV, vnd_model_srv_op, NULL, vnd_model_srv_keys,
-//                           vnd_model_srv_groups, &vendor_model_srv, NULL),
-// };
-
 static struct bt_mesh_elem elements[] = {
   {
     /* Location Descriptor (GATT Bluetooth Namespace Descriptors) */
     .loc = (0),
     .model_count = ARRAY_SIZE(root_models),
     .models = (root_models),
-    // .vnd_model_count = ARRAY_SIZE(vnd_models),
-    // .vnd_models = (vnd_models),
   }
 };
 
-// elements 构成 Node Composition
 const struct bt_mesh_comp app_comp = {
   .cid = 0x07D7, // WCH 公司id
   .elem = elements,
@@ -124,6 +104,7 @@ static void prov_enable(void) {
 
   bt_mesh_scan_enable();    // Make sure we're scanning for provisioning inviations
   bt_mesh_beacon_enable();  // Enable unprovisioned beacon sending
+  APP_DBG("Sending Unprovisioned beacons");
 }
 
 static void link_open(bt_mesh_prov_bearer_t bearer) {
@@ -146,8 +127,8 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
  */
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
   APP_DBG("net_idx %x, addr %x", net_idx, addr);
-  if (settings_load_over || gen_onoff_srv_keys[0] == BLE_MESH_KEY_UNUSED) {
-    tmos_start_task(App_TaskID, APP_DELETE_LOCAL_NODE_EVT, APP_WAIT_ADD_APPKEY_DELAY);
+  if (settings_load_over || gen_onoff_srv_keys[0] == BLE_MESH_KEY_UNUSED) { // if no key binded to model, start all over
+    tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, APP_WAIT_ADD_APPKEY_DELAY);
   }
 }
 
@@ -166,13 +147,13 @@ static void cfg_srv_rsp_handler( const cfg_srv_status_t *val ) {
     APP_DBG("Provision Reset successed");
   } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
     APP_DBG("App Key Added");
-    tmos_start_task(App_TaskID, APP_DELETE_LOCAL_NODE_EVT, APP_WAIT_ADD_APPKEY_DELAY);
+    tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
     APP_DBG("Vendor Model Binded");
-    tmos_start_task(App_TaskID, APP_DELETE_LOCAL_NODE_EVT, APP_WAIT_ADD_APPKEY_DELAY);
+    tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
     APP_DBG("Vendor Model Subscription Set");
-    tmos_stop_task(App_TaskID, APP_DELETE_LOCAL_NODE_EVT);
+    tmos_stop_task(App_TaskID, APP_RESET_MESH_EVENT); // if not stopped, mesh would be reset
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
   }
@@ -292,17 +273,16 @@ void blemesh_on_sync(void) {
 void App_Init() {
   App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
 
-  // vendor_model_srv_init(vnd_models);
   blemesh_on_sync();
   HAL_KeyInit();
   HAL_KeyConfig(keyChange);
 }
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
-  if (events & APP_DELETE_LOCAL_NODE_EVT) { // 收到删除命令，删除自身网络信息
-    APP_DBG("Delete local node");
+  if (events & APP_RESET_MESH_EVENT) { // 收到删除命令，删除自身网络信息
+    APP_DBG("Reset mesh, delete local node");
     bt_mesh_reset();
-    return (events ^ APP_DELETE_LOCAL_NODE_EVT);
+    return (events ^ APP_RESET_MESH_EVENT);
   }
   return 0;
 }
