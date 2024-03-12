@@ -446,23 +446,31 @@ static void local_stage_set(node_t *node, local_stage_t new_stage) {
 static void node_rsp(void *p1, const void *p2) {
   node_t *node = p1;
   const cfg_cli_status_t *val = p2;
+
   switch (val->cfgHdr.opcode) {
   case OP_APP_KEY_ADD:
     APP_DBG("node Application Key Added");
-    node_stage_set(node, NODE_MOD_BIND_SET);
+    node_stage_set(node, NODE_MOD_BIND_GENERIC_ONOFF_SERVER);
     break;
-  // case OP_SIG_MOD_APP_GET:
-  //   APP_DBG("node app got");
-  //   node_stage_set(node, val->cfgHdr.status ? NODE_ABORT :
-  //   NODE_MOD_BIND_SET); break;
   case OP_MOD_APP_BIND:
-    APP_DBG("node vendor Model Binded: %02x", val->cfgHdr.status);
-    if (!val->cfgHdr.status) {
-      node_stage_set(node, NODE_MOD_SUB_SET);
+    APP_DBG("node stage: %02x", node->stage.node);
+    APP_DBG("node Model Binded: %02x", val->cfgHdr.status);
+    if (val->cfgHdr.status) {
+      if (node->stage.node == NODE_MOD_BIND_GENERIC_ONOFF_SERVER) {
+        node_stage_set(node, NODE_MOD_BIND_GENERIC_ONOFF_CLIENT);
+      } else if (node->stage.node == NODE_MOD_BIND_GENERIC_ONOFF_CLIENT) {
+        node_stage_set(node, NODE_MOD_BIND_GENERIC_ONOFF_SERVER);
+      }
+    } else {
+      if (node->stage.node == NODE_MOD_BIND_GENERIC_ONOFF_SERVER) {
+        node_stage_set(node, NODE_MOD_SUB_GENERIC_ONOFF_SERVER);
+      } else if (node->stage.node == NODE_MOD_BIND_GENERIC_ONOFF_CLIENT) {
+        node_stage_set(node, NODE_MOD_SUB_GENERIC_ONOFF_CLIENT);
+      }
     }
     break;
   case OP_MOD_SUB_ADD:
-    APP_DBG("node vendor Model Subscription Set");
+    APP_DBG("node Model Subscription Set");
     node_stage_set(node, NODE_CONFIGURATIONED);
     break;
   default:
@@ -472,16 +480,6 @@ static void node_rsp(void *p1, const void *p2) {
   }
 }
 
-/*********************************************************************
- * @fn      local_rsp
- *
- * @brief   每执行一个本地节点配置流程的回调，设置下一个配置阶段
- *
- * @param   p1      - 要配置的本地node
- * @param   p2      - 当前的状态
- *
- * @return  none
- */
 static void local_rsp(void *p1, const void *p2) {
   node_t *node = p1;
   const cfg_cli_status_t *val = p2;
@@ -501,22 +499,12 @@ static void local_rsp(void *p1, const void *p2) {
   }
 }
 
-/*********************************************************************
- * @fn      node_stage
- *
- * @brief   远端节点配置，添加app key，并为自定义服务绑定app key，设置模型订阅
- *
- * @param   p1      - 要配置的本地node
- *
- * @return  TRUE    配置发送失败
- *          FALSE   配置发送正常
- */
 static BOOL node_stage(void *p1) {
   int err;
   BOOL ret = FALSE;
   node_t *node = p1;
-  APP_DBG("node stage: %d", node->stage.node);
-  APP_DBG("node element count: %d", node->elem_count);
+  APP_DBG("node stage: 0x%02x", node->stage.node);
+  // APP_DBG("node element count: %d", node->elem_count);
 
   switch (node->stage.node) {
   case NODE_APPKEY_ADD:
@@ -538,32 +526,46 @@ static BOOL node_stage(void *p1) {
   //     BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, err); ret = TRUE;
   //   }
   //   break;
-  case NODE_MOD_BIND_SET:
-    APP_DBG("NODE_MOD_BIND_SET");
+  case NODE_MOD_BIND_GENERIC_ONOFF_SERVER:
+    APP_DBG("NODE_MOD_BIND_GENERIC_ONOFF_SERVER");
     err = bt_mesh_cfg_mod_app_bind(node->net_idx, node->node_addr,
                                    node->node_addr, self_prov_app_idx,
-                                   BLE_MESH_MODEL_ID_GEN_ONOFF_CLI);
-    APP_DBG("NODE_MOD_BIND_SET err: %d", err);
+                                   BLE_MESH_MODEL_ID_GEN_ONOFF_SRV);
     if (err) {
       APP_DBG("Unable to Binding vendor Model (err %d)", err);
       ret = TRUE;
     }
     break;
-  case NODE_MOD_SUB_SET: // 设置模型订阅
-    APP_DBG("NODE_MOD_SUB_SET");
+  case NODE_MOD_BIND_GENERIC_ONOFF_CLIENT:
+    APP_DBG("NODE_MOD_BIND_GENERIC_ONOFF_CLIENT");
+    err = bt_mesh_cfg_mod_app_bind(node->net_idx, node->node_addr,
+                                   node->node_addr, self_prov_app_idx,
+                                   BLE_MESH_MODEL_ID_GEN_ONOFF_CLI);
+    if (err) {
+      APP_DBG("Unable to Binding vendor Model (err %d)", err);
+      ret = TRUE;
+    }
+    break;
+  case NODE_MOD_SUB_GENERIC_ONOFF_SERVER:
+    APP_DBG("NODE_MOD_SUB_GENERIC_ONOFF_SERVER");
     err = bt_mesh_cfg_mod_sub_add(node->net_idx, node->node_addr,
                                   node->node_addr, vendor_sub_addr,
                                   BLE_MESH_MODEL_ID_GEN_ONOFF_SRV);
-    // err = bt_mesh_cfg_mod_sub_add_vnd(node->net_idx, node->node_addr,
-    //                                   node->node_addr, vendor_sub_addr,
-    //                                   BLE_MESH_MODEL_ID_WCH_SRV, CID_WCH);
     if (err) {
       APP_DBG("Unable to Set vendor Model Subscription (err %d)", err);
       ret = TRUE;
     }
     break;
-  // case NODE_ABORT:
-  //   APP_DBG("NODE_ABORT");
+  case NODE_MOD_SUB_GENERIC_ONOFF_CLIENT:
+    APP_DBG("NODE_MOD_SUB_GENERIC_ONOFF_CLIENT");
+    err = bt_mesh_cfg_mod_sub_add(node->net_idx, node->node_addr,
+                                  node->node_addr, vendor_sub_addr,
+                                  BLE_MESH_MODEL_ID_GEN_ONOFF_CLI);
+    if (err) {
+      APP_DBG("Unable to Set vendor Model Subscription (err %d)", err);
+      ret = TRUE;
+    }
+    break;
   default:
     ret = TRUE;
     break;
@@ -865,15 +867,6 @@ end:
 //       len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
 // }
 
-/*********************************************************************
- * @fn      keyPress
- *
- * @brief   按键回调
- *
- * @param   keys    - 按键类型
- *
- * @return  none
- */
 void keyPress(uint8_t keys) {
   APP_DBG("%d", keys);
 
@@ -891,20 +884,20 @@ void keyPress(uint8_t keys) {
     break;
   }
   case 0x02: {
-    // 删除节点，可以通过协议栈写好的命令删除，也可以通过应用层自定协议删除
-    if (app_nodes[1].node_addr) {
-      uint8_t status;
-      APP_DBG("node1_addr %x", app_nodes[1].node_addr);
-
-      // 通过协议栈写好的命令删除
-      status =
-          bt_mesh_cfg_node_reset(self_prov_net_idx, app_nodes[1].node_addr);
-      if (status) {
-        APP_DBG("reset failed %d", status);
-      } else {
-        APP_DBG("node reset %04x", app_nodes[1].node_addr);
-        reset_node_addr = app_nodes[1].node_addr;
+    for (int i = 1; i < ARRAY_SIZE(app_nodes); i++) {
+      if (app_nodes[i].node_addr) {
+        uint8_t status;
+        APP_DBG("unprovision node[%d]: %x", i, app_nodes[i].node_addr);
+        status =
+            bt_mesh_cfg_node_reset(self_prov_net_idx, app_nodes[i].node_addr);
+        if (status) {
+          APP_DBG("reset failed %d", status);
+        } else {
+          APP_DBG("node reset %04x", app_nodes[i].node_addr);
+          reset_node_addr = app_nodes[i].node_addr;
+        }
       }
+    }
 
       // if(0)
       // {
@@ -924,7 +917,6 @@ void keyPress(uint8_t keys) {
       //         tmos_start_task(App_TaskID, APP_DELETE_NODE_TIMEOUT_EVT, 4800);
       //     }
       // }
-    }
     break;
   }
   default:

@@ -1,8 +1,8 @@
-#include "MESH_LIB.h"
-#include "config.h"
-#include "HAL.h"
 #include "app.h"
-#include "app_generic_onoff_server_model.h"
+#include "HAL.h"
+#include "MESH_LIB.h"
+#include "app_generic_onoff_client_model.h"
+#include "config.h"
 
 #define APP_WAIT_ADD_APPKEY_DELAY 1600 * 10
 
@@ -16,6 +16,7 @@ static uint8_t App_TaskID = 0;
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
 static uint8_t dev_uuid[16] = {0};
+static uint16_t netIndex;
 
 #if (!CONFIG_BLE_MESH_PB_GATT)
 NET_BUF_SIMPLE_DEFINE_STATIC(rx_buf, 65);
@@ -27,6 +28,7 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason);
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags,
                           uint32_t iv_index);
 static void prov_reset(void);
+void gen_onoff_cli_rsp_handler(const gen_onoff_cli_status_t *val);
 
 static struct bt_mesh_cfg_srv cfg_srv = {
     .relay = BLE_MESH_RELAY_ENABLED,
@@ -66,17 +68,21 @@ uint16_t health_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {BLE_MESH_KEY_UNUSED};
 uint16_t health_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {
     BLE_MESH_ADDR_UNASSIGNED};
 
-uint16_t gen_onoff_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {
+uint16_t gen_onoff_cli_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {
     BLE_MESH_KEY_UNUSED};
-uint16_t gen_onoff_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {
+uint16_t gen_onoff_cli_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {
     BLE_MESH_ADDR_UNASSIGNED};
+
+struct bt_mesh_gen_onoff_cli gen_onoff_cli = {
+    .handler = gen_onoff_cli_rsp_handler,
+};
 
 static struct bt_mesh_model root_models[] = {
     BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
     BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv,
                               &health_pub),
-    BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op, NULL,
-                   gen_onoff_srv_keys, gen_onoff_srv_groups, NULL),
+    BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op, NULL,
+                      gen_onoff_cli_keys, gen_onoff_cli_groups, &gen_onoff_cli),
 };
 
 static struct bt_mesh_elem elements[] = {{
@@ -135,8 +141,9 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags,
                           uint32_t iv_index) {
   APP_DBG("net_idx %x, addr %x", net_idx, addr);
+  netIndex = net_idx;
   if (settings_load_over ||
-      gen_onoff_srv_keys[0] ==
+      gen_onoff_cli_keys[0] ==
           BLE_MESH_KEY_UNUSED) { // if no key binded to model, start all over
     tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
                     APP_WAIT_ADD_APPKEY_DELAY);
@@ -150,7 +157,7 @@ static void prov_reset(void) {
 
 static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
   if (val->cfgHdr.status) {
-    APP_DBG("warning opcode 0x%02x", val->cfgHdr.opcode);
+    APP_DBG("warning opcode 0x%02x, status: %02x", val->cfgHdr.opcode, val->cfgHdr.status);
     return;
   }
 
@@ -173,38 +180,16 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
   }
 }
 
-// static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t
-// *val) {
-//   if (val->vendor_model_srv_Hdr.status) {     // 有应答数据传输
-//   超时未收到应答
-//     APP_DBG("Timeout opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
-//     return;
-//   }
-//   if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_MSG)
-//   {
-//     APP_DBG("len %d, data 0x%02x from 0x%04x",
-//     val->vendor_model_srv_Event.trans.len,
-//       val->vendor_model_srv_Event.trans.pdata[0],
-//       val->vendor_model_srv_Event.trans.addr);
-//   } else if (val->vendor_model_srv_Hdr.opcode ==
-//   OP_VENDOR_MESSAGE_TRANSPARENT_WRT) {
-//     APP_DBG("len %d, data 0x%02x from 0x%04x",
-//     val->vendor_model_srv_Event.write.len,
-//       val->vendor_model_srv_Event.write.pdata[0],
-//       val->vendor_model_srv_Event.write.addr);
-//   } else if (val->vendor_model_srv_Hdr.opcode ==
-//   OP_VENDOR_MESSAGE_TRANSPARENT_IND) {
-//     APP_DBG("Indicate acked");
-//   } else {
-//     APP_DBG("Unknow opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
-//   }
-// }
+void gen_onoff_cli_rsp_handler(const gen_onoff_cli_status_t *val) {
+  APP_DBG("opcode 0x%02x", val->gen_onoff_Hdr.opcode);
+}
+
 //
 // static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t
 // len, BOOL requireACK) {
 //   struct send_param param = {
-//     .app_idx = vnd_models[0].keys[0], // 此消息使用的app
-//     key，如无特定则使用第0个key .addr = addr,                     //
+//     .app_idx = vnd_models[0].keys[0], //
+//     此消息使用的appkey，如无特定则使用第0个key .addr = addr, //
 //     此消息发往的目的地地址 .trans_cnt = 0x01,                //
 //     此消息的用户层发送次数 .period = K_MSEC(400),            //
 //     此消息重传的间隔，建议不小于(200+50*TTL)ms，若数据较大则建议加长 .rand =
@@ -223,6 +208,20 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
 
 void keyChange(HalKeyChangeEvent event) {
   APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
+  int err;
+  if (event.changed & 0x01) {
+    struct bt_mesh_gen_onoff_set_val param = {
+        .op_en = FALSE,
+        .onoff = event.current & 0x01,
+        .tid = cli_tid_get(),
+        .trans_time = 0,
+        .delay = 0,
+    };
+    err = bt_mesh_gen_onoff_set_unack(netIndex, root_models[2].keys[0], 0xffff, &param);
+    if (err) {
+      APP_DBG("send failed %d", err);
+    }
+  }
 }
 
 void blemesh_on_sync(void) {
@@ -300,6 +299,7 @@ void blemesh_on_sync(void) {
 void App_Init() {
   App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
 
+  gen_onoff_cli_init(&root_models[2]);
   blemesh_on_sync();
   HAL_KeyInit();
   HAL_KeyConfig(keyChange);
