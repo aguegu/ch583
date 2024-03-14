@@ -15,7 +15,11 @@ static uint8_t App_TaskID = 0;
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
-static uint8_t dev_uuid[16] = {0};
+static uint8_t dev_uuid[16] = {
+  0x1c, 0x72, 0x6b, 0x4a, 0x19, 0x3c, 0x4e, 0x6e, 0x96, 0xb8,
+  0x81, 0x23, 0xbf, 0x42, 0xbc, 0x92
+};
+
 static uint16_t netIndex;
 
 #if (!CONFIG_BLE_MESH_PB_GATT)
@@ -145,8 +149,8 @@ static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags,
   if (settings_load_over ||
       gen_onoff_cli_keys[0] ==
           BLE_MESH_KEY_UNUSED) { // if no key binded to model, start all over
-    tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
-                    APP_WAIT_ADD_APPKEY_DELAY);
+    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
+    //                 APP_WAIT_ADD_APPKEY_DELAY);
   }
 }
 
@@ -165,16 +169,16 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("Provision Reset successed");
   } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
     APP_DBG("App Key Added");
-    tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
-                    APP_WAIT_ADD_APPKEY_DELAY);
+    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
+    //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
     APP_DBG("Vendor Model Binded");
-    tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
-                    APP_WAIT_ADD_APPKEY_DELAY);
+    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
+    //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
     APP_DBG("Vendor Model Subscription Set");
-    tmos_stop_task(App_TaskID,
-                   APP_RESET_MESH_EVENT); // if not stopped, mesh would be reset
+    // tmos_stop_task(App_TaskID,
+    //                APP_RESET_MESH_EVENT); // if not stopped, mesh would be reset
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
   }
@@ -217,7 +221,7 @@ void keyChange(HalKeyChangeEvent event) {
         .trans_time = 0,
         .delay = 0,
     };
-    err = bt_mesh_gen_onoff_set_unack(netIndex, root_models[2].keys[0], 0xffff, &param);
+    err = bt_mesh_gen_onoff_set_unack(netIndex, root_models[2].keys[0], 0x00b3, &param);
     if (err) {
       APP_DBG("send failed %d", err);
     }
@@ -241,6 +245,11 @@ void blemesh_on_sync(void) {
   uint8_t MacAddr[6];
   GetMACAddress(MacAddr);
   err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, MacAddr, &info);
+
+  uint8_t MacAddrReverse[6];
+  for (uint8_t i = 0; i < 6; i++)
+    MacAddrReverse[i] = MacAddr[5 - i];
+  tmos_memcpy(dev_uuid + 10, MacAddrReverse, 6);
 
   tmos_memcpy(dev_uuid, MacAddr, 6);
 
