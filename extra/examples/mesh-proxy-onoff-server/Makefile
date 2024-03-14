@@ -1,6 +1,8 @@
 BIN     = ../../riscv-embedded-gcc/bin
 BIN_PREFIX = riscv-none-embed
 
+LINTER = clang-format --style=LLVM -i
+
 OUTPUT_DIR = ./dist
 
 DEFINES := -DDEBUG=1 -DBLE_MEMHEAP_SIZE=4096 -DHAL_KEY=1
@@ -78,7 +80,7 @@ $(TARGET).elf: $(Startup_OBJ) $(RVMSIS_OBJ) $(StdPeriphDriver_OBJ) $(HAL_OBJ) $(
 		-L"$(StdPeriphDriver_ROOT)" \
 		-Xlinker --print-memory-usage -Wl,-Map,"$(OUTPUT_DIR)/project.map" --specs=nano.specs --specs=nosys.specs -o "$@" $^ $(LIBS)
 
-$(TARGET).hex: $(TARGET).elf
+$(TARGET).hex: $(OUTPUT_DIR) $(TARGET).elf
 	$(BIN)/$(BIN_PREFIX)-objcopy -O ihex "$(TARGET).elf" "$(TARGET).hex"
 
 $(TARGET).siz: $(TARGET).elf
@@ -88,7 +90,10 @@ $(TARGET).lst: $(TARGET).elf
 	$(BIN)/$(BIN_PREFIX)-objdump --source --all-headers --demangle --line-numbers --wide $^ > $@
 
 flash: $(TARGET).hex
-	sudo ../../isp/WCHISPTool_CMD -p /dev/ch37x0 -c ../../isp/config.ini -o program -f $<
+	sudo ../../isp/WCHISPTool_CMD -p /dev/ch37x0 -c ./isp-config.ini -o program -f $<
+
+lint: $(APP_HEADERS) $(APP_SRC)
+	$(foreach f, $^, $(LINTER) $(f);)
 
 $(OUTPUT_DIR):
 	mkdir -p $(OUTPUT_DIR)/Startup
@@ -100,4 +105,4 @@ $(OUTPUT_DIR):
 clean:
 	rm -rf $(OUTPUT_DIR)
 
-.PHONY: clean flash
+.PHONY: clean flash lint
