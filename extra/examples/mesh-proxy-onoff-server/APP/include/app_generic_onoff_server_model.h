@@ -1,5 +1,5 @@
-/********************************** (C) COPYRIGHT *******************************
- * File Name          : app_generic_onoff_model.h
+/********************************** (C) COPYRIGHT
+ ******************************** File Name          : app_generic_onoff_model.h
  * Author             : WCH
  * Version            : V1.0
  * Date               : 2018/11/12
@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 #include "MESH_LIB.h"
-#define MSG_PIN    GPIO_Pin_18
+#define MSG_PIN GPIO_Pin_18
 
 BOOL read_led_state(uint32_t led_pin);
 
