@@ -15,7 +15,10 @@ static uint8_t App_TaskID = 0;
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
-static uint8_t dev_uuid[16] = {0};
+static uint8_t dev_uuid[16] = {
+  0x1c, 0x72, 0x6b, 0x4a, 0x19, 0x3c, 0x4e, 0x6e, 0x96, 0xb8,
+  0x81, 0x23, 0xbf, 0x42, 0xbc, 0x92
+};
 
 #if (!CONFIG_BLE_MESH_PB_GATT)
 NET_BUF_SIMPLE_DEFINE_STATIC(rx_buf, 65);
@@ -92,12 +95,8 @@ const struct bt_mesh_comp app_comp = {
     .elem_count = ARRAY_SIZE(elements),
 };
 
-uint8_t static_key[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-
 static const struct bt_mesh_prov app_prov = {
     .uuid = dev_uuid,
-    .static_val_len = ARRAY_SIZE(static_key),
-    .static_val = static_key,
     .link_open = link_open,
     .link_close = link_close,
     .complete = prov_complete,
@@ -142,8 +141,8 @@ static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags,
   if (settings_load_over ||
       gen_onoff_srv_keys[0] ==
           BLE_MESH_KEY_UNUSED) { // if no key binded to model, start all over
-    tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
-                    APP_WAIT_ADD_APPKEY_DELAY);
+    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
+    //                 APP_WAIT_ADD_APPKEY_DELAY);
   }
 }
 
@@ -162,16 +161,16 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("Provision Reset successed");
   } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
     APP_DBG("App Key Added");
-    tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
-                    APP_WAIT_ADD_APPKEY_DELAY);
+    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
+    //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
     APP_DBG("Vendor Model Binded");
-    tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
-                    APP_WAIT_ADD_APPKEY_DELAY);
+    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
+    //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
     APP_DBG("Vendor Model Subscription Set");
-    tmos_stop_task(App_TaskID,
-                   APP_RESET_MESH_EVENT); // if not stopped, mesh would be reset
+    // tmos_stop_task(App_TaskID,
+    //                APP_RESET_MESH_EVENT); // if not stopped, mesh would be reset
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
   }
@@ -247,7 +246,10 @@ void blemesh_on_sync(void) {
   GetMACAddress(MacAddr);
   err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, MacAddr, &info);
 
-  tmos_memcpy(dev_uuid, MacAddr, 6);
+  uint8_t MacAddrReverse[6];
+  for (uint8_t i = 0; i < 6; i++)
+    MacAddrReverse[i] = MacAddr[5 - i];
+  tmos_memcpy(dev_uuid + 10, MacAddrReverse, 6);
 
   if (err) {
     APP_DBG("Unable set configuration (err:%d)", err);
