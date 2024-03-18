@@ -83,11 +83,14 @@ uint16_t gen_onoff_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {
 uint16_t gen_onoff_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {
     BLE_MESH_ADDR_UNASSIGNED};
 
+
+struct bt_mesh_model_pub gen_onoff_pub;
+
 static struct bt_mesh_model root_models[] = {
     BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
     BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv,
                               &health_pub),
-    BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op, NULL,
+    BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op, &gen_onoff_pub,
                    gen_onoff_srv_keys, gen_onoff_srv_groups, NULL),
 };
 
@@ -228,11 +231,13 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
   } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
     APP_DBG("App Key Added");
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
-    APP_DBG("Vendor Model Binded");
+    APP_DBG("Model Binded");
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
-    APP_DBG("Vendor Model Subscription Set");
+    APP_DBG("Model Subscription Set");
   } else if (val->cfgHdr.opcode == OP_NET_TRANSMIT_SET) {
-    APP_DBG("Vendor Net Transmit Set");
+    APP_DBG("Net Transmit Set");
+  } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
+    APP_DBG("Model Publication Set: 0x%04x", gen_onoff_pub.addr);
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
   }
