@@ -15,10 +15,8 @@ static uint8_t App_TaskID = 0;
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
-static uint8_t dev_uuid[16] = {
-  0x1c, 0x72, 0x6b, 0x4a, 0x19, 0x3c, 0x4e, 0x6e, 0x96, 0xb8,
-  0x81, 0x23, 0xbf, 0x42, 0xbc, 0x92
-};
+static uint8_t dev_uuid[16] = {0x1c, 0x72, 0x6b, 0x4a, 0x19, 0x3c, 0x4e, 0x6e,
+                               0x96, 0xb8, 0x81, 0x23, 0xbf, 0x42, 0xbc, 0x92};
 
 static uint16_t netIndex;
 
@@ -81,12 +79,17 @@ struct bt_mesh_gen_onoff_cli gen_onoff_cli = {
     .handler = gen_onoff_cli_rsp_handler,
 };
 
+int gen_onoff_cli_pub_update(struct bt_mesh_model *model) { APP_DBG(""); }
+
+BLE_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub, gen_onoff_cli_pub_update, 12);
+
 static struct bt_mesh_model root_models[] = {
     BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
     BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv,
                               &health_pub),
-    BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op, NULL,
-                      gen_onoff_cli_keys, gen_onoff_cli_groups, &gen_onoff_cli),
+    BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, gen_onoff_cli_op,
+                   &gen_onoff_cli_pub, gen_onoff_cli_keys, gen_onoff_cli_groups,
+                   &gen_onoff_cli),
 };
 
 static struct bt_mesh_elem elements[] = {{
@@ -161,7 +164,8 @@ static void prov_reset(void) {
 
 static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
   if (val->cfgHdr.status) {
-    APP_DBG("warning opcode 0x%02x, status: %02x", val->cfgHdr.opcode, val->cfgHdr.status);
+    APP_DBG("warning opcode 0x%02x, status: %02x", val->cfgHdr.opcode,
+            val->cfgHdr.status);
     return;
   }
 
@@ -172,13 +176,29 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
     //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
-    APP_DBG("Vendor Model Binded");
+    APP_DBG("Model Binded");
     // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
     //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
-    APP_DBG("Vendor Model Subscription Set");
+    APP_DBG("Model Subscription Set");
     // tmos_stop_task(App_TaskID,
-    //                APP_RESET_MESH_EVENT); // if not stopped, mesh would be reset
+    //                APP_RESET_MESH_EVENT); // if not stopped, mesh would be
+    //                reset
+  } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
+    APP_DBG("Model Publication Set");
+    APP_DBG("addr: 0x%04x", gen_onoff_cli_pub.addr);
+    APP_DBG("key: 0x%04x", gen_onoff_cli_pub.key);
+    APP_DBG("cred: 0x%02x", gen_onoff_cli_pub.cred);
+    APP_DBG("send_rel: 0x%02x", gen_onoff_cli_pub.send_rel);
+
+    APP_DBG("ttl: 0x%02x", gen_onoff_cli_pub.ttl);
+    APP_DBG("retransmit: 0x%02x", gen_onoff_cli_pub.retransmit);
+    APP_DBG("period: 0x%02x", gen_onoff_cli_pub.period);
+    APP_DBG("period_div: 0x%02x", gen_onoff_cli_pub.period_div);
+    APP_DBG("fast_period: 0x%02x", gen_onoff_cli_pub.fast_period);
+    APP_DBG("count: 0x%02x", gen_onoff_cli_pub.count);
+    APP_DBG("period_start: 0x%08lx", gen_onoff_cli_pub.period_start);
+
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
   }
@@ -221,7 +241,10 @@ void keyChange(HalKeyChangeEvent event) {
         .trans_time = 0,
         .delay = 0,
     };
-    err = bt_mesh_gen_onoff_set_unack(netIndex, root_models[2].keys[0], 0x00b3, &param);
+    // err = bt_mesh_gen_onoff_set_unack(netIndex, root_models[2].keys[0],
+    // 0x00b3, &param);
+    err = bt_mesh_gen_onoff_set_unack(netIndex, gen_onoff_cli_pub.key,
+                                      gen_onoff_cli_pub.addr, &param);
     if (err) {
       APP_DBG("send failed %d", err);
     }

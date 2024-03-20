@@ -84,7 +84,9 @@ uint16_t gen_onoff_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {
     BLE_MESH_ADDR_UNASSIGNED};
 
 
-struct bt_mesh_model_pub gen_onoff_pub;
+// static struct bt_mesh_model_pub gen_onoff_pub;
+
+BLE_MESH_MODEL_PUB_DEFINE(gen_onoff_pub, NULL, 12);
 
 static struct bt_mesh_model root_models[] = {
     BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
