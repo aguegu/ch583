@@ -13,10 +13,13 @@ Since WCH ch581/ch582/ch583 share the same datasheets and official EVT examples,
 
 * GCC toolchains
 
-*riscv-embedded-gcc.tar.xz* is the gzipped of 'RISC-V Embedded GCC' folder in [MRS_Toolchain_Linux_x64_V1.80.tar.xz](http://file.mounriver.com/tools/MRS_Toolchain_Linux_x64_V1.80.tar.xz), extract it with
+Download *MRS_Toolchain_Linux_x64_V1.92.tar.xz* from [Mounriver](http://mounriver.com/download), extract it and create symbolic link
 
 ```
-tar xJf riscv-embedded-gcc.tar.xz`
+cd extra/
+wget http://file-oss.mounriver.com/tools/MRS_Toolchain_Linux_x64_V1.92.tar.xz
+tar xJf MRS_Toolchain_Linux_x64_V1.92.tar.xz`
+ln -s MRS_Toolchain_Linux_x64_V1.92/RISC-V_Embedded_GCC riscv-embedded-gcc
 ```
 
 * install USB driver for ISP
@@ -31,7 +34,7 @@ cd isp/driver
 sudo make install
 ```
 
-2. Try Demo Codes
+2. Try to compile Demo Codes
 
 * Goto `examples`, like `examples/gpio-toggleLed`
 
