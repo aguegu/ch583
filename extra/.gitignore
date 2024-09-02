@@ -1,5 +1,7 @@
 dist/
 riscv-embedded-gcc/
+riscv-embedded-gcc
+MRS_Toolchain_Linux_x64_*/
 
 YT-583/
 rsc/
