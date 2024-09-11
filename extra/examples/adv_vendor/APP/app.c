@@ -83,8 +83,12 @@ struct bt_mesh_vendor_model_srv vendor_model_srv = {
 uint16_t vnd_model_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {BLE_MESH_KEY_UNUSED};
 uint16_t vnd_model_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {BLE_MESH_ADDR_UNASSIGNED};
 
+int vnd_model_srv_pub_update(struct bt_mesh_model *model) { APP_DBG(""); }
+
+BLE_MESH_MODEL_PUB_DEFINE(vnd_model_srv_pub, vnd_model_srv_pub_update, 12);
+
 struct bt_mesh_model vnd_models[] = {
-  BLE_MESH_MODEL_VND_CB(CID_WCH, BLE_MESH_MODEL_ID_WCH_SRV, vnd_model_srv_op, NULL, vnd_model_srv_keys,
+  BLE_MESH_MODEL_VND_CB(CID_WCH, BLE_MESH_MODEL_ID_WCH_SRV, vnd_model_srv_op, &vnd_model_srv_pub, vnd_model_srv_keys,
                           vnd_model_srv_groups, &vendor_model_srv, NULL),
 };
 
@@ -156,9 +160,25 @@ static void cfg_srv_rsp_handler( const cfg_srv_status_t *val ) {
   } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
     APP_DBG("App Key Added");
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
-    APP_DBG("Vendor Model Binded");
+    APP_DBG("AppKey Binded");
+  } else if (val->cfgHdr.opcode == OP_MOD_APP_UNBIND) {
+    APP_DBG("AppKey Unbinded");
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
     APP_DBG("Vendor Model Subscription Set");
+  } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
+    APP_DBG("Model Publication Set");
+    APP_DBG("addr: 0x%04x", vnd_model_srv_pub.addr);
+    APP_DBG("key: 0x%04x", vnd_model_srv_pub.key);
+    APP_DBG("cred: 0x%02x", vnd_model_srv_pub.cred);
+    APP_DBG("send_rel: 0x%02x", vnd_model_srv_pub.send_rel);
+
+    APP_DBG("ttl: 0x%02x", vnd_model_srv_pub.ttl);
+    APP_DBG("retransmit: 0x%02x", vnd_model_srv_pub.retransmit);
+    APP_DBG("period: 0x%02x", vnd_model_srv_pub.period);
+    APP_DBG("period_div: 0x%02x", vnd_model_srv_pub.period_div);
+    APP_DBG("fast_period: 0x%02x", vnd_model_srv_pub.fast_period);
+    APP_DBG("count: 0x%02x", vnd_model_srv_pub.count);
+    APP_DBG("period_start: 0x%08lx", vnd_model_srv_pub.period_start);
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
   }
@@ -203,20 +223,18 @@ static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len) {
 
 void keyPress(uint8_t keys) {
   APP_DBG("%d", keys);
-  // switch(keys) {
-  //     default:
-  //     {
-  //         int status;
-  //         uint8_t data[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  //         // 发往配网者节点
-  //         status = vendor_model_srv_send(0x0001, data, 8);
-  //         if (status)
-  //         {
-  //             APP_DBG("send failed %d", status);
-  //         }
-  //         break;
-  //     }
-  // }
+  switch(keys) {
+      default: {
+          int status;
+          uint8_t data[2] = {0, 1};
+          // 发往配网者节点
+          status = vendor_model_srv_send(vnd_model_srv_pub.addr, data, 2);
+          if (status) {
+            APP_DBG("send failed %d", status);
+          }
+          break;
+      }
+  }
 }
 
 void blemesh_on_sync(void) {
