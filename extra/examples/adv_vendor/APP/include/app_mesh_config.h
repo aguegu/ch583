@@ -6,7 +6,7 @@
  * Description        :
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -90,7 +90,7 @@ extern "C" {
 
 // 不分包消息支持的长度（超过此长度则需要分包，默认值为7，注意同网络里所有设备配置需统一）
 #define CONFIG_MESH_UNSEG_LENGTH_MIN           (7)
-#define CONFIG_MESH_UNSEG_LENGTH_DEF           (221)
+#define CONFIG_MESH_UNSEG_LENGTH_DEF           (7)
 #define CONFIG_MESH_UNSEG_LENGTH_MAX           (221)
 
 // 每个消息的最大分包数

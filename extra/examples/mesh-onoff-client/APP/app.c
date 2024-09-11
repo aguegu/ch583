@@ -4,7 +4,7 @@
 #include "app_generic_onoff_client_model.h"
 #include "config.h"
 
-#define APP_WAIT_ADD_APPKEY_DELAY 1600 * 10
+// #define APP_WAIT_ADD_APPKEY_DELAY 1600 * 10
 
 static uint8_t MESH_MEM[1024 * 2] = {0};
 

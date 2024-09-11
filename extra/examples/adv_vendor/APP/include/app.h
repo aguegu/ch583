@@ -6,7 +6,7 @@
  * Description        :
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -20,8 +20,7 @@ extern "C" {
 /******************************************************************************/
 
 #define APP_NODE_TEST_EVT               (1 << 0)
-#define APP_DELETE_LOCAL_NODE_EVT       (1 << 1)
-#define APP_DELETE_NODE_INFO_EVT        (1 << 2)
+#define APP_RESET_MESH_EVENT       (1 << 1)
 
 #define CMD_DELETE_NODE                0xA2
 #define CMD_DELETE_NODE_ACK            0x82
