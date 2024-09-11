@@ -173,17 +173,12 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("Provision Reset successed");
   } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
     APP_DBG("App Key Added");
-    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
-    //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
-    APP_DBG("Model Binded");
-    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
-    //                 APP_WAIT_ADD_APPKEY_DELAY);
+    APP_DBG("AppKey Binded");
+  } else if (val->cfgHdr.opcode == OP_MOD_APP_UNBIND) {
+    APP_DBG("AppKey Unbinded");
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
     APP_DBG("Model Subscription Set");
-    // tmos_stop_task(App_TaskID,
-    //                APP_RESET_MESH_EVENT); // if not stopped, mesh would be
-    //                reset
   } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
     APP_DBG("Model Publication Set");
     APP_DBG("addr: 0x%04x", gen_onoff_cli_pub.addr);
