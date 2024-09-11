@@ -3,7 +3,7 @@
  * Author             : WCH
  * Version            : V1.0
  * Date               : 2022/05/10
- * Description        : WCH Qingke V4A FreeRTOS“∆÷≤ª„±‡Ω”ø⁄
+ * Description        : WCH Qingke V4A FreeRTOSÁßªÊ§çÊ±áÁºñÊé•Âè£
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
  * SPDX-License-Identifier: Apache-2.0
  *******************************************************************************/

@@ -36,8 +36,9 @@ int main(void) {
   UART1_DefInit();
 #endif
 
-  PRINT("%s\n", VER_LIB);
-  PRINT("%s\n", VER_MESH_LIB);
+  APP_DBG(VER_LIB);
+  APP_DBG(VER_MESH_LIB);
+
   CH58X_BLEInit();
   HAL_Init();
   bt_mesh_lib_init();

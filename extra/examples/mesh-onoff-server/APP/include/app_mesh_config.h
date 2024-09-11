@@ -197,6 +197,8 @@ extern "C" {
     printf("\n");                                                              \
   }
 
+void app_log(char *s, unsigned char * p, unsigned char len);
+
 /******************************************************************************/
 
 #ifdef __cplusplus
