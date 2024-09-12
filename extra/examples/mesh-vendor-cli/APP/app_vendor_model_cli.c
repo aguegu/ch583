@@ -28,7 +28,7 @@ static void     adv_cli_trans_send(void);
 uint8_t vendor_cli_tid_get(void) {
   cli_send_tid++;
   if (cli_send_tid > 127)
-      cli_send_tid = 0;
+    cli_send_tid = 0;
   return cli_send_tid;
 }
 
