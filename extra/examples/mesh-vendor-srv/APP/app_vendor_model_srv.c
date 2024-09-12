@@ -447,7 +447,9 @@ static void adv_srv_trans_send(void) {
   ctx.send_ttl = srv_trans.param.send_ttl;
   net_buf_simple_add_mem(&msg, srv_trans.buf->data, srv_trans.buf->len);
 
+  set_led_state(MSG_PIN, 1);
   err = bt_mesh_model_send(vendor_model_srv->model, &ctx, &msg, NULL, NULL);
+  set_led_state(MSG_PIN, 0);
   if (err) {
     APP_DBG("Unable send model message (err:%d)", err);
     tmos_msg_deallocate(srv_trans.buf->__buf);
