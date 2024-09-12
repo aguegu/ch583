@@ -186,9 +186,9 @@ static void cfg_srv_rsp_handler( const cfg_srv_status_t *val ) {
 
 static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val) {
   if (val->vendor_model_srv_Hdr.status) {
-      // 有应答数据传输 超时未收到应答
-      APP_DBG("Timeout opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
-      return;
+    // 有应答数据传输 超时未收到应答
+    APP_DBG("Timeout opcode 0x%02x", val->vendor_model_srv_Hdr.opcode);
+    return;
   }
 
   if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_MSG) {       // 收到透传数据
@@ -209,13 +209,13 @@ static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val) {
 
 static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len) {
   struct send_param param = {
-      .app_idx = vnd_models[0].keys[0], // 此消息使用的app key，如无特定则使用第0个key
-      .addr = addr,                     // 此消息发往的目的地地址
-      .trans_cnt = 0x01,                // 此消息的用户层发送次数
-      .period = K_MSEC(400),            // 此消息重传的间隔，建议不小于(200+50*TTL)ms，若数据较大则建议加长
-      .rand = (0),                      // 此消息发送的随机延迟
-      .tid = vendor_srv_tid_get(),      // tid，每个独立消息递增循环，srv使用128~191
-      .send_ttl = BLE_MESH_TTL_DEFAULT, // ttl，无特定则使用默认值
+    .app_idx = vnd_models[0].keys[0], // 此消息使用的app key，如无特定则使用第0个key
+    .addr = addr,                     // 此消息发往的目的地地址
+    .trans_cnt = 0x01,                // 此消息的用户层发送次数
+    .period = K_MSEC(400),            // 此消息重传的间隔，建议不小于(200+50*TTL)ms，若数据较大则建议加长
+    .rand = (0),                      // 此消息发送的随机延迟
+    .tid = vendor_srv_tid_get(),      // tid，每个独立消息递增循环，srv使用128~191
+    .send_ttl = BLE_MESH_TTL_DEFAULT, // ttl，无特定则使用默认值
   };
 //    return vendor_message_srv_indicate(&param, pData, len);  // 调用自定义模型服务的有应答指示函数发送数据，默认超时2s
   return vendor_message_srv_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
@@ -224,16 +224,14 @@ static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len) {
 void keyPress(uint8_t keys) {
   APP_DBG("%d", keys);
   switch(keys) {
-      default: {
-          int status;
-          uint8_t data[2] = {0, 1};
-          // 发往配网者节点
-          status = vendor_model_srv_send(vnd_model_srv_pub.addr, data, 2);
-          if (status) {
-            APP_DBG("send failed %d", status);
-          }
-          break;
+    default: {
+      uint8_t data[2] = {0, 1};
+      int status = vendor_model_srv_send(vnd_model_srv_pub.addr, data, 2);
+      if (status) {
+        APP_DBG("send failed %d", status);
       }
+      break;
+    }
   }
 }
 
@@ -317,15 +315,9 @@ void App_Init() {
   blemesh_on_sync();
   HAL_KeyInit();
   HalKeyConfig(keyPress);
-  // tmos_start_task(App_TaskID, APP_NODE_TEST_EVT, 1600);
 }
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
-  if (events & APP_NODE_TEST_EVT) {
-    tmos_start_task(App_TaskID, APP_NODE_TEST_EVT, 2400);
-    return (events ^ APP_NODE_TEST_EVT);
-  }
-
   if (events & APP_RESET_MESH_EVENT) {
     APP_DBG("Reset mesh, delete local node");
     bt_mesh_reset();

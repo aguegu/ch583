@@ -1,15 +1,3 @@
-/********************************** (C) COPYRIGHT *******************************
- * File Name          : app_vendor_model_srv.h
- * Author             : WCH
- * Version            : V1.1
- * Date               : 2021/11/18
- * Description        :
- *********************************************************************************
- * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
- * microcontroller manufactured by Nanjing Qinheng Microelectronics.
- *******************************************************************************/
-
 #ifndef app_vendor_model_srv_H
 #define app_vendor_model_srv_H
 
@@ -19,7 +7,7 @@ extern "C" {
 
 #include "MESH_LIB.h"
 
-#define MSG_PIN                              GPIO_Pin_12
+#define MSG_PIN                              GPIO_Pin_19
 
 #define CID_WCH                              0x07D7
 
@@ -164,28 +152,9 @@ struct bt_mesh_vendor_model_srv
 
 extern const struct bt_mesh_model_op vnd_model_srv_op[];
 
-/**
- * @brief   读取led状态
- *
- * @param   led_pin - 引脚
- *
- * @return  led状态
- */
+
 BOOL read_led_state(uint32_t led_pin);
-
-/**
- * @brief   设置led状态
- *
- * @param   led_pin - 引脚
- * @param   on      - 状态
- */
 void set_led_state(uint32_t led_pin, BOOL on);
-
-/**
- * @brief   翻转led状态
- *
- * @param   led_pin - 引脚
- */
 void toggle_led_state(uint32_t led_pin);
 
 /**
