@@ -192,12 +192,12 @@ static void vendor_model_srv_rsp_handler(const vendor_model_srv_status_t *val) {
   }
 
   if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_MSG) {       // 收到透传数据
-    APP_DBG("len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.trans.len,
+    APP_DBG("msg: len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.trans.len,
             val->vendor_model_srv_Event.trans.pdata[0],
             val->vendor_model_srv_Event.trans.addr);
     tmos_memcpy(&app_mesh_manage, val->vendor_model_srv_Event.trans.pdata, val->vendor_model_srv_Event.trans.len);
   } else if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_WRT) {   // 收到write数据
-    APP_DBG("len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.write.len,
+    APP_DBG("wrt: len %d, data 0x%02x from 0x%04x", val->vendor_model_srv_Event.write.len,
             val->vendor_model_srv_Event.write.pdata[0],
             val->vendor_model_srv_Event.write.addr);
   } else if (val->vendor_model_srv_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_IND) {

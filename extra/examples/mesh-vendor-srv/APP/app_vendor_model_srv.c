@@ -115,7 +115,7 @@ static void vendor_message_srv_confirm(struct bt_mesh_model   *model,
   recv_tid = net_buf_simple_pull_u8(buf);
   APP_DBG("tid 0x%02x ", recv_tid);
 
-  bt_mesh_model_msg_init(&msg, OP_VENDOR_MESSAGE_TRANSPARENT_CFM);  /* Init indication opcode */
+  bt_mesh_model_msg_init(&msg, OP_VENDOR_MESSAGE_TRANSPARENT_CFM); 
   net_buf_simple_add_u8(&msg, recv_tid); /* Add tid field */
 
   err = bt_mesh_model_send(model, ctx, &msg, NULL, NULL);

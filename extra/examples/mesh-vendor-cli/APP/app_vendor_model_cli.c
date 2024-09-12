@@ -163,18 +163,18 @@ static void vendor_message_cli_ind(struct bt_mesh_model *model, struct bt_mesh_m
 
 static void vendor_message_cli_cfm(struct bt_mesh_model   *model,
                                    struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf) {
-    uint8_t                   recv_tid;
-    vendor_model_cli_status_t vendor_model_cli_status;
+  uint8_t                   recv_tid;
+  vendor_model_cli_status_t vendor_model_cli_status;
 
-    recv_tid = net_buf_simple_pull_u8(buf);
+  recv_tid = net_buf_simple_pull_u8(buf);
 
-    APP_DBG("src: 0x%04x dst: 0x%04x tid 0x%02x rssi: %d", ctx->addr,
-            ctx->recv_dst, recv_tid, ctx->recv_rssi);
+  APP_DBG("src: 0x%04x dst: 0x%04x tid: (0x%02x, 0x%02x) rssi: %d", ctx->addr,
+          ctx->recv_dst, recv_tid, cli_write.param.tid, ctx->recv_rssi);
 
-    if (cli_write.param.tid == recv_tid) {
-      write_reset(&cli_write, 0);
-      vendor_model_cli_rsp_recv(&vendor_model_cli_status, 0);
-    }
+  if (cli_write.param.tid == recv_tid) {
+    write_reset(&cli_write, 0);
+    vendor_model_cli_rsp_recv(&vendor_model_cli_status, 0);
+  }
 }
 
 const struct bt_mesh_model_op vnd_model_cli_op[] = {
