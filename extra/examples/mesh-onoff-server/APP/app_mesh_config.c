@@ -92,12 +92,12 @@ void putHex(unsigned char c) {
   putchar(toHex(c & 0x0f));
 }
 
-void app_log(char *s, unsigned char * p, unsigned char len) {
+void app_log(char *s, void * p, unsigned char len) {
   printf("APP_LOG,");
   printf(s);
   putchar(',');
   for (unsigned char i = 0; i < len; i++) {
-    putHex(*p++);
+    putHex(*(unsigned char *)p++);
   }
   putchar('\n');
 }

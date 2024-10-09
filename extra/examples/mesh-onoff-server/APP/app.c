@@ -15,11 +15,7 @@ static uint8_t App_TaskID = 0;
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
-static uint8_t dev_uuid[16] = {
-  0x1c, 0x72, 0x6b, 0x4a, 0x19, 0x3c, 0x4e, 0x6e, 0x96, 0xb8,
-  // 's', 'o', 'u', 'r', 'c', 'e', 'k', 'i', 't', ' ',
-  0x81, 0x23, 0xbf, 0x42, 0xbc, 0x92
-};
+static uint8_t dev_uuid[16];
 
 #if (!CONFIG_BLE_MESH_PB_GATT)
 NET_BUF_SIMPLE_DEFINE_STATIC(rx_buf, 65);
@@ -201,15 +197,17 @@ void blemesh_on_sync(void) {
   info.base_addr = MESH_MEM;
   info.mem_len = ARRAY_SIZE(MESH_MEM);
 
-  uint8_t MacAddr[6];
-  GetMACAddress(MacAddr);
-  err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, MacAddr, &info);
-
-  uint8_t MacAddrReverse[6];
+  GetMACAddress(dev_uuid);
   for (uint8_t i = 0; i < 6; i++)
-    MacAddrReverse[i] = MacAddr[5 - i];
-  tmos_memcpy(dev_uuid + 10, MacAddrReverse, 6);
+    dev_uuid[15 - i] = dev_uuid[i];
 
+  FLASH_EEPROM_CMD(CMD_GET_UNIQUE_ID, 0, dev_uuid, 0);
+  dev_uuid[9] = dev_uuid[6];
+  dev_uuid[8] = R8_CHIP_ID; //
+  dev_uuid[6] = 'G';
+  // https://git.kernel.org/pub/scm/libs/ell/ell.git/commit/?id=718d7ef1acb75bd171474a45801dacf43b67d3fe
+
+  err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, dev_uuid, &info);
   if (err) {
     APP_DBG("Unable set configuration (err:%d)", err);
     return;
@@ -266,6 +264,7 @@ void App_Init() {
   App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
 
   blemesh_on_sync();
+
   HAL_KeyInit();
   HAL_KeyConfig(keyChange);
 }
