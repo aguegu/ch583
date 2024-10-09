@@ -6,7 +6,7 @@
  * Description        :
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -94,13 +94,13 @@ int main(void)
 {
     SetSysClock(CLK_SOURCE_PLL_60MHz);
 
-#ifdef DEBUG
+#if DEBUG == Debug_UART1
     GPIOA_SetBits(bTXD1);
     GPIOA_ModeCfg(bTXD1, GPIO_ModeOut_PP_5mA);
     UART1_DefInit();
 #endif
-    PRINT("%s\n", VER_LIB);
-    PRINT("%s\n", VER_MESH_LIB);
+    // PRINT("%s\n", VER_LIB);
+    // PRINT("%s\n", VER_MESH_LIB);
     CH58X_BLEInit();
     HAL_Init();
     bt_mesh_lib_init();
