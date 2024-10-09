@@ -205,9 +205,9 @@ extern "C" {
 #define APP_DBG(X...)                     \
   if(1)                                   \
   {                                       \
-    printf("APP_DBG %s> ", __FUNCTION__); \
+    printf("{\"level\":\"debug\", \"function\": \"%s\", \"msg\":\"", __FUNCTION__); \
     printf(X);                            \
-    printf("\n");                         \
+    printf("\"}\n");                      \
   }
 
 /******************************************************************************/

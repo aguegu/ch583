@@ -221,17 +221,11 @@ static int vendor_model_srv_send(uint16_t addr, uint8_t *pData, uint16_t len) {
   return vendor_message_srv_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
 }
 
-void keyPress(uint8_t keys) {
-  APP_DBG("%d", keys);
-  switch(keys) {
-    default: {
-      uint8_t data[2] = {0, 1};
-      int status = vendor_model_srv_send(vnd_model_srv_pub.addr, data, 2);
-      if (status) {
-        APP_DBG("send failed %d", status);
-      }
-      break;
-    }
+void keyChange(HalKeyChangeEvent event) {
+  APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
+  int status = vendor_model_srv_send(vnd_model_srv_pub.addr, &event.current, 1);
+  if (status) {
+    APP_DBG("send failed %d", status);
   }
 }
 
@@ -314,7 +308,7 @@ void App_Init() {
   vendor_model_srv_init(vnd_models);
   blemesh_on_sync();
   HAL_KeyInit();
-  HalKeyConfig(keyPress);
+  HAL_KeyConfig(keyChange);
 }
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {

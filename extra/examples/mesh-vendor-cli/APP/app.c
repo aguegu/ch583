@@ -3,7 +3,6 @@
 #include "MESH_LIB.h"
 #include "app_vendor_model_cli.h"
 #include "app.h"
-#include "utils.h"
 
 static uint8_t MESH_MEM[1024 * 2] = {0};
 
@@ -189,14 +188,15 @@ static void vendor_model_cli_rsp_handler(const vendor_model_cli_status_t *val) {
   }
 
   if (val->vendor_model_cli_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_MSG) {
-    APP_DBG("len %d, data 0x%02x from 0x%04x", val->vendor_model_cli_Event.trans.len,
-            val->vendor_model_cli_Event.trans.pdata[0],
-            val->vendor_model_cli_Event.trans.addr);
-    app_log("pdata", val->vendor_model_cli_Event.trans.pdata, val->vendor_model_cli_Event.trans.len);
-    app_log("addr", (uint8_t *)&val->vendor_model_cli_Event.trans.addr, 2);
+    printf("{\"level\": \"production\",\"source\": %d, \"keys\": [%d, %d]}\n",
+      val->vendor_model_cli_Event.trans.addr,
+      val->vendor_model_cli_Event.trans.pdata[0] & 0x01,
+      (val->vendor_model_cli_Event.trans.pdata[0] & 0x02) >> 1
+    );
+
     tmos_memcpy(&app_mesh_manage, val->vendor_model_cli_Event.trans.pdata, val->vendor_model_cli_Event.trans.len);
   } else if(val->vendor_model_cli_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_IND) {
-    APP_DBG("ind len %d, data 0x%02x from 0x%04x", val->vendor_model_cli_Event.ind.len,
+    APP_DBG("ind: len %d, data 0x%02x from 0x%04x", val->vendor_model_cli_Event.ind.len,
             val->vendor_model_cli_Event.ind.pdata[0],
             val->vendor_model_cli_Event.ind.addr);
   } else if (val->vendor_model_cli_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_WRT) {
@@ -216,21 +216,15 @@ static int vendor_model_cli_send(uint16_t addr, uint8_t *pData, uint16_t len) {
     .tid = vendor_cli_tid_get(),      // tid，每个独立消息递增循环，srv使用128~191
     .send_ttl = BLE_MESH_TTL_DEFAULT, // ttl，无特定则使用默认值
   };
-  return vendor_message_cli_write(&param, pData, len);  // 调用自定义模型服务的有应答指示函数发送数据，默认超时2s
-  // return vendor_message_cli_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
+  // return vendor_message_cli_write(&param, pData, len);  // 调用自定义模型服务的有应答指示函数发送数据，默认超时2s
+  return vendor_message_cli_send_trans(&param, pData, len); // 或者调用自定义模型服务的透传函数发送数据，只发送，无应答机制
 }
 
-void keyPress(uint8_t keys) {
-  APP_DBG("%d", keys);
-  switch(keys) {
-    default: {
-      uint8_t data[2] = {0, 1};
-      int status = vendor_model_cli_send(vnd_model_cli_pub.addr, data, 2);
-      if (status) {
-        APP_DBG("send failed %d", status);
-      }
-      break;
-    }
+void keyChange(HalKeyChangeEvent event) {
+  APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
+  int status = vendor_model_cli_send(vnd_model_cli_pub.addr, &event.current, 1);
+  if (status) {
+    APP_DBG("send failed %d", status);
   }
 }
 
@@ -239,7 +233,7 @@ void blemesh_on_sync(void) {
   mem_info_t info;
 
   if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
-    PRINT("head file error...\n");
+    APP_DBG("head file error...\n");
     while(1);
   }
 
@@ -313,7 +307,7 @@ void App_Init() {
   vendor_model_cli_init(vnd_models);
   blemesh_on_sync();
   HAL_KeyInit();
-  HalKeyConfig(keyPress);
+  HAL_KeyConfig(keyChange);
 }
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
