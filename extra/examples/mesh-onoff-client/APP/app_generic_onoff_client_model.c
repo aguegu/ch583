@@ -261,8 +261,7 @@ int bt_mesh_gen_onoff_set_unack(u16_t net_idx, u16_t app_idx, u16_t addr,
 
   int err;
 
-  err = cli_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK,
-                    BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+  err = cli_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
 
   if (err) {
     return err;

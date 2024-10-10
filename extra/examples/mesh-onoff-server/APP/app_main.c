@@ -38,6 +38,7 @@ int main(void) {
 
   APP_DBG(VER_LIB);
   APP_DBG(VER_MESH_LIB);
+  APP_DBG(VER_MESH_FILE);
 
   CH58X_BLEInit();
   HAL_Init();
