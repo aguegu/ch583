@@ -190,11 +190,11 @@ extern "C" {
 #define CONFIG_MESH_RF_CHANNEL_38 (38)
 #define CONFIG_MESH_RF_CHANNEL_39 (39)
 
-#define APP_DBG(X...)                                                          \
-  if (1) {                                                                     \
-    printf("APP_DBG %s> ", __FUNCTION__);                                      \
-    printf(X);                                                                 \
-    printf("\n");                                                              \
+#define APP_DBG(X...)                     \
+  if (1) {                                \
+    printf("{\"level\":\"debug\", \"function\": \"%s\", \"msg\":\"", __FUNCTION__); \
+    printf(X);                            \
+    printf("\"}\n");                      \
   }
 
 void app_log(char *s, void * p, unsigned char len);
