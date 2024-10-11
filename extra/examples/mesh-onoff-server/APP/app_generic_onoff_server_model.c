@@ -17,7 +17,7 @@ void toggle_led_state(uint32_t led_pin) {
   GPIOB_InverseBits(led_pin);
 }
 
-static void gen_onoff_status(struct bt_mesh_model *model,
+static void generic_onoff_status(struct bt_mesh_model *model,
                              struct bt_mesh_msg_ctx *ctx) {
   NET_BUF_SIMPLE_DEFINE(msg, 32);
   int err;
@@ -37,14 +37,14 @@ static void gen_onoff_status(struct bt_mesh_model *model,
   }
 }
 
-static void gen_onoff_get(struct bt_mesh_model *model,
+static void generic_onoff_get(struct bt_mesh_model *model,
                           struct bt_mesh_msg_ctx *ctx,
                           struct net_buf_simple *buf) {
   APP_DBG(" ");
-  gen_onoff_status(model, ctx);
+  generic_onoff_status(model, ctx);
 }
 
-static void gen_onoff_set(struct bt_mesh_model *model,
+static void generic_onoff_set(struct bt_mesh_model *model,
                           struct bt_mesh_msg_ctx *ctx,
                           struct net_buf_simple *buf) {
   // APP_DBG("ttl: 0x%02x addr(from): 0x%04x recv_dst(me): 0x%04x rssi: %d",
@@ -54,10 +54,10 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 
   // data: OnOff, TID (not used), Transition(not used), Delay(not used)
   set_led_state(MSG_PIN, buf->data[0]);
-  gen_onoff_status(model, ctx);
+  generic_onoff_status(model, ctx);
 }
 
-static void gen_onoff_set_unack(struct bt_mesh_model *model,
+static void generic_onoff_set_unack(struct bt_mesh_model *model,
                                 struct bt_mesh_msg_ctx *ctx,
                                 struct net_buf_simple *buf) {
   // APP_DBG(" ");
@@ -72,9 +72,9 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
   }
 }
 
-const struct bt_mesh_model_op gen_onoff_op[] = {
-  {BLE_MESH_MODEL_OP_GEN_ONOFF_GET, 0, gen_onoff_get},  // 0x8201
-  {BLE_MESH_MODEL_OP_GEN_ONOFF_SET, 2, gen_onoff_set},  // 0x8202
-  {BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, 2, gen_onoff_set_unack},  // 0x8203
+const struct bt_mesh_model_op generic_onoff_op[] = {
+  {BLE_MESH_MODEL_OP_GEN_ONOFF_GET, 0, generic_onoff_get},  // 0x8201
+  {BLE_MESH_MODEL_OP_GEN_ONOFF_SET, 2, generic_onoff_set},  // 0x8202
+  {BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, 2, generic_onoff_set_unack},  // 0x8203
   BLE_MESH_MODEL_OP_END,
 };

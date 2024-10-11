@@ -62,19 +62,19 @@ uint16_t cfg_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASS
 uint16_t health_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
 uint16_t health_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
-uint16_t gen_onoff_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
-uint16_t gen_onoff_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
+uint16_t generic_onoff_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
+uint16_t generic_onoff_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
-int gen_onoff_srv_pub_update(struct bt_mesh_model *model) {
+int generic_onoff_srv_pub_update(struct bt_mesh_model *model) {
   APP_DBG("");
 }
 
-BLE_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub, gen_onoff_srv_pub_update, 12);
+BLE_MESH_MODEL_PUB_DEFINE(generic_onoff_srv_pub, generic_onoff_srv_pub_update, 12);
 
 static struct bt_mesh_model root_models[] = {
   BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
   BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv, &health_pub),
-  BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op, &gen_onoff_srv_pub, gen_onoff_srv_keys, gen_onoff_srv_groups, NULL),
+  BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, generic_onoff_op, &generic_onoff_srv_pub, generic_onoff_srv_keys, generic_onoff_srv_groups, NULL),
 };
 
 static struct bt_mesh_elem elements[] = {{
@@ -99,7 +99,6 @@ static const struct bt_mesh_prov app_prov = {
 };
 
 uint16_t delete_node_info_address = 0;
-uint8_t settings_load_over = FALSE;
 
 static void prov_enable(void) {
   if (bt_mesh_is_provisioned()) {
@@ -131,9 +130,6 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
  */
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
   APP_DBG("net_idx %x, addr %x", net_idx, addr);
-  if (settings_load_over || gen_onoff_srv_keys[0] == BLE_MESH_KEY_UNUSED) { // if no key binded to model, start all over
-    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, APP_WAIT_ADD_APPKEY_DELAY);
-  }
 }
 
 static void prov_reset(void) {
@@ -154,13 +150,27 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
     //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
-    APP_DBG("Vendor Model Binded");
+    APP_DBG("AppKey Binded");
     // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
     //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
-    APP_DBG("Vendor Model Subscription Set");
+    APP_DBG("Model Subscription Set");
     // tmos_stop_task(App_TaskID,
     //                APP_RESET_MESH_EVENT); // if not stopped, mesh would be reset
+  } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
+    APP_DBG("Model Publication Set");
+    APP_DBG("addr: 0x%04x", generic_onoff_srv_pub.addr);
+    APP_DBG("key: 0x%04x", generic_onoff_srv_pub.key);
+    APP_DBG("cred: 0x%02x", generic_onoff_srv_pub.cred);
+    APP_DBG("send_rel: 0x%02x", generic_onoff_srv_pub.send_rel);
+
+    APP_DBG("ttl: 0x%02x", generic_onoff_srv_pub.ttl);
+    APP_DBG("retransmit: 0x%02x", generic_onoff_srv_pub.retransmit);
+    APP_DBG("period: 0x%02x", generic_onoff_srv_pub.period);
+    APP_DBG("period_div: 0x%02x", generic_onoff_srv_pub.period_div);
+    APP_DBG("fast_period: 0x%02x", generic_onoff_srv_pub.fast_period);
+    APP_DBG("count: 0x%02x", generic_onoff_srv_pub.count);
+    APP_DBG("period_start: 0x%08lx", generic_onoff_srv_pub.period_start);
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
   }
@@ -168,6 +178,15 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
 
 void keyChange(HalKeyChangeEvent event) {
   APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
+
+  if (event.changed & 0x01) {
+    toggle_led_state(MSG_PIN);
+
+    // int err = bt_mesh_generic_onoff_status(netIndex, generic_onoff_srv_pub.key, generic_onoff_srv_pub.addr, &param);
+    // if (err) {
+    //   APP_DBG("send failed %d", err);
+    // }
+  }
 }
 
 void blemesh_on_sync(void) {
@@ -233,7 +252,6 @@ void blemesh_on_sync(void) {
 
 #if (CONFIG_BLE_MESH_SETTINGS)
   settings_load();
-  settings_load_over = TRUE;
 #endif
 
   if (bt_mesh_is_provisioned()) {
