@@ -10,7 +10,7 @@ extern "C" {
 
 BOOL read_led_state(uint32_t led_pin);
 
-extern const struct bt_mesh_model_op gen_onoff_op[];
+extern const struct bt_mesh_model_op generic_onoff_op[];
 
 void set_led_state(uint32_t led_pin, BOOL on);
 
