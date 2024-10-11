@@ -188,7 +188,7 @@ static void vendor_model_cli_rsp_handler(const vendor_model_cli_status_t *val) {
   }
 
   if (val->vendor_model_cli_Hdr.opcode == OP_VENDOR_MESSAGE_TRANSPARENT_MSG) {
-    printf("{\"level\": \"production\",\"source\": %d, \"keys\": [%d, %d]}\n",
+    printf("{\"level\": \"info\",\"source\": %d, \"keys\": [%d, %d]}\n",
       val->vendor_model_cli_Event.trans.addr,
       val->vendor_model_cli_Event.trans.pdata[0] & 0x01,
       (val->vendor_model_cli_Event.trans.pdata[0] & 0x02) >> 1

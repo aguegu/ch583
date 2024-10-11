@@ -55,7 +55,8 @@ static void generic_onoff_rsp_recv(generic_onoff_cli_status_t *val, u8_t status)
 }
 
 static int cli_wait(void) {
-  return tmos_start_task(generic_onoff_TaskID, GEN_ONOFF_SYNC_EVT, msg_timeout);
+  int err = tmos_start_task(generic_onoff_TaskID, GEN_ONOFF_SYNC_EVT, msg_timeout);
+  return err;
 }
 
 /*******************************************************************************
@@ -136,12 +137,6 @@ static uint16 generic_onoff_ProcessEvent(uint8 task_id, uint16 events) {
   return 0;
 }
 
-/*******************************************************************************
- * Function Name  : generic_onoff_status
- * Description    : 收到 onoff 的状态回复
- * Input          : None
- * Return         : None
- *******************************************************************************/
 static void generic_onoff_status(struct bt_mesh_model *model,
                              struct bt_mesh_msg_ctx *ctx,
                              struct net_buf_simple *buf) {
@@ -150,15 +145,17 @@ static void generic_onoff_status(struct bt_mesh_model *model,
   APP_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u", ctx->net_idx,
           ctx->app_idx, ctx->addr, buf->len);
 
-  if (generic_onoff_cli->op_pending != BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS) {
-    APP_DBG("Unexpected Status (0x%08x != 0x%08x)", generic_onoff_cli->op_pending,
-            BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
-    return;
+  if (generic_onoff_cli->op_pending == BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS) {
+    generic_onoff_cli_status.generic_onoff_Event.status.state = buf->data[0];
+    generic_onoff_cli_status.generic_onoff_Event.status.source = ctx->addr;
+    generic_onoff_rsp_recv(&generic_onoff_cli_status, SUCCESS);
+  } else if (generic_onoff_cli->op_pending == 0) {
+    generic_onoff_cli_status.generic_onoff_Event.status.state = buf->data[0];
+    generic_onoff_cli_status.generic_onoff_Event.status.source = ctx->addr;
+    generic_onoff_rsp_recv(&generic_onoff_cli_status, SUCCESS);
+  } else {
+    APP_DBG("Unexpected Status 0x%08x", generic_onoff_cli->op_pending);
   }
-
-  generic_onoff_cli_status.generic_onoff_Event.status.state = buf->data[0];
-
-  generic_onoff_rsp_recv(&generic_onoff_cli_status, SUCCESS);
 }
 
 const struct bt_mesh_model_op generic_onoff_cli_op[] = {
@@ -211,16 +208,17 @@ int bt_mesh_generic_onoff_set(u16_t net_idx, u16_t app_idx, u16_t addr,
                           struct bt_mesh_generic_onoff_set_val const *set) {
   NET_BUF_SIMPLE_DEFINE(msg, BLE_MESH_GEN_ONOFF_SET_MSG_LEN);
   struct bt_mesh_msg_ctx ctx = {
-      .net_idx = net_idx,
-      .app_idx = app_idx,
-      .addr = addr,
-      .send_ttl = BLE_MESH_TTL_DEFAULT,
+    .net_idx = net_idx,
+    .app_idx = app_idx,
+    .addr = addr,
+    .send_ttl = BLE_MESH_TTL_DEFAULT,
   };
 
   int err;
 
   err = cli_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_SET,
                     BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+
   if (err) {
     return err;
   }
@@ -240,7 +238,8 @@ int bt_mesh_generic_onoff_set(u16_t net_idx, u16_t app_idx, u16_t addr,
     return err;
   }
 
-  return cli_wait();
+  cli_wait();
+  return 0;
 }
 
 /*******************************************************************************
@@ -253,10 +252,10 @@ int bt_mesh_generic_onoff_set_unack(u16_t net_idx, u16_t app_idx, u16_t addr,
                                 struct bt_mesh_generic_onoff_set_val const *set) {
   NET_BUF_SIMPLE_DEFINE(msg, BLE_MESH_GEN_ONOFF_SET_MSG_LEN);
   struct bt_mesh_msg_ctx ctx = {
-      .net_idx = net_idx,
-      .app_idx = app_idx,
-      .addr = addr,
-      .send_ttl = 0,
+    .net_idx = net_idx,
+    .app_idx = app_idx,
+    .addr = addr,
+    .send_ttl = 0,
   };
 
   int err;
