@@ -22,7 +22,7 @@ static void generic_onoff_status(struct bt_mesh_model *model,
   NET_BUF_SIMPLE_DEFINE(msg, 32);
   int err;
 
-  bt_mesh_model_msg_init(&msg, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+  bt_mesh_model_msg_init(&msg, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS); // 0x8204
   net_buf_simple_add_u8(&msg, read_led_state(MSG_PIN));
 
   APP_DBG("ttl: 0x%02x recv_dst(me): 0x%04x, addr(from): 0x%04x", ctx->recv_ttl,
@@ -78,3 +78,15 @@ const struct bt_mesh_model_op generic_onoff_op[] = {
   {BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, 2, generic_onoff_set_unack},  // 0x8203
   BLE_MESH_MODEL_OP_END,
 };
+
+
+void bt_mesh_generic_onoff_status(struct bt_mesh_model *model, u16_t net_idx, u16_t app_idx, u16_t addr) {
+  struct bt_mesh_msg_ctx ctx = {
+    .net_idx = net_idx,
+    .app_idx = app_idx,
+    .addr = addr,
+    .send_ttl = BLE_MESH_TTL_DEFAULT,
+  };
+
+  generic_onoff_status(model, &ctx);
+}

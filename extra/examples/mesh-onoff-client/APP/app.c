@@ -179,7 +179,22 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
 }
 
 void generic_onoff_cli_rsp_handler(const generic_onoff_cli_status_t *val) {
+  APP_DBG("status 0x%02x", val->generic_onoff_Hdr.status);
   APP_DBG("opcode 0x%02x", val->generic_onoff_Hdr.opcode);
+  if (val->generic_onoff_Hdr.opcode == BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
+    if (val->generic_onoff_Hdr.status == 0xff) {
+      printf("{\"level\": \"warn\",\"msg\": \"ACK Timeout\", \"source\": \"BLE_MESH_MODEL_OP_GEN_ONOFF_SET\"}\n");
+    } else if (val->generic_onoff_Hdr.status == SUCCESS) {
+      printf("{\"level\": \"info\",\"state\": %d, \"source\": %d}\n", val->generic_onoff_Event.status.state, val->generic_onoff_Event.status.source);
+    } else {
+      APP_DBG("unknown status");
+    }
+  }
+
+  if (val->generic_onoff_Hdr.opcode == 0) {
+    APP_DBG("incoming status report");
+    printf("{\"level\": \"info\",\"state\": %d, \"source\": %d}\n", val->generic_onoff_Event.status.state, val->generic_onoff_Event.status.source);
+  }
 }
 
 void keyChange(HalKeyChangeEvent event) {
@@ -207,7 +222,7 @@ void blemesh_on_sync(void) {
   uint8_t flashMac[6];
 
   if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
-    PRINT("head file error...\n");
+    APP_DBG("head file error...");
     while (1);
   }
 

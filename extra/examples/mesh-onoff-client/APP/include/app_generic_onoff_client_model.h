@@ -11,6 +11,7 @@ extern "C" {
 
 struct bt_mesh_generic_onoff_status_data {
   u8_t state;
+  u16_t source;
 };
 
 struct generic_onoff_EventHdr {

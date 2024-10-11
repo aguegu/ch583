@@ -16,6 +16,8 @@ void set_led_state(uint32_t led_pin, BOOL on);
 
 void toggle_led_state(uint32_t led_pin);
 
+void bt_mesh_generic_onoff_status(struct bt_mesh_model *model, u16_t net_idx, u16_t app_idx, u16_t addr);
+
 #ifdef __cplusplus
 }
 #endif

@@ -14,11 +14,9 @@ __attribute__((noinline)) void Main_Circulation() {
 }
 
 uint8_t bt_mesh_lib_init(void) {
-  if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) ==
-      FALSE) {
-    PRINT("mesh head file error...\n");
-    while (1)
-      ;
+  if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
+    APP_DBG("mesh head file error...");
+    while (1);
   }
   uint8_t ret = RF_RoleInit();
   MeshTimer_Init();
@@ -36,8 +34,8 @@ int main(void) {
   UART1_DefInit();
 #endif
 
-  PRINT("%s\n", VER_LIB);
-  PRINT("%s\n", VER_MESH_LIB);
+  APP_DBG(VER_LIB);
+  APP_DBG(VER_MESH_LIB);
   CH58X_BLEInit();
   HAL_Init();
   bt_mesh_lib_init();

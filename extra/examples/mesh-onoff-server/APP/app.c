@@ -16,6 +16,7 @@ static uint8_t App_TaskID = 0;
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
 static __attribute__((aligned(4))) uint8_t dev_uuid[16];
+static uint16_t netIndex;
 
 #if (!CONFIG_BLE_MESH_PB_GATT)
 NET_BUF_SIMPLE_DEFINE_STATIC(rx_buf, 65);
@@ -130,6 +131,7 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
  */
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
   APP_DBG("net_idx %x, addr %x", net_idx, addr);
+  netIndex = net_idx;
 }
 
 static void prov_reset(void) {
@@ -180,12 +182,9 @@ void keyChange(HalKeyChangeEvent event) {
   APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
 
   if (event.changed & 0x01) {
-    toggle_led_state(MSG_PIN);
+    set_led_state(MSG_PIN, event.current & 0x01);
 
-    // int err = bt_mesh_generic_onoff_status(netIndex, generic_onoff_srv_pub.key, generic_onoff_srv_pub.addr, &param);
-    // if (err) {
-    //   APP_DBG("send failed %d", err);
-    // }
+    bt_mesh_generic_onoff_status(&root_models[2], netIndex, generic_onoff_srv_pub.key, generic_onoff_srv_pub.addr);
   }
 }
 
