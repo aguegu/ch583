@@ -15,7 +15,7 @@ static uint8_t App_TaskID = 0;
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
-static __attribute__((aligned(4))) uint8_t dev_uuid[16] = {};
+static __attribute__((aligned(4))) uint8_t dev_uuid[16];
 
 static uint16_t netIndex;
 
@@ -198,6 +198,7 @@ void generic_onoff_cli_rsp_handler(const generic_onoff_cli_status_t *val) {
 }
 
 void keyChange(HalKeyChangeEvent event) {
+  static uint32_t keyDownAt;
   APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
   if (event.changed & 0x01) {
     struct bt_mesh_generic_onoff_set_val param = {
@@ -212,6 +213,17 @@ void keyChange(HalKeyChangeEvent event) {
     int err = bt_mesh_generic_onoff_set(netIndex, generic_onoff_cli_pub.key, generic_onoff_cli_pub.addr, &param);
     if (err) {
       APP_DBG("send failed %d", err);
+    }
+  }
+
+  if (event.changed & 0x02) {
+    if (event.current & 0x02) {
+      keyDownAt = RTC_GetCycle32k();
+    } else {
+      if (RTC_GetCycle32k() - keyDownAt > 3200 * 60) { // about 6 seconds
+        APP_DBG("duration: %d, about to self unprovision", RTC_GetCycle32k() - keyDownAt);
+        tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, 3200);
+      }
     }
   }
 }

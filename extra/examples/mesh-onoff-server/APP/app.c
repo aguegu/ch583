@@ -179,12 +179,24 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
 }
 
 void keyChange(HalKeyChangeEvent event) {
+  static uint32_t keyDownAt;
   APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
 
   if (event.changed & 0x01) {
     set_led_state(MSG_PIN, event.current & 0x01);
 
     bt_mesh_generic_onoff_status(&root_models[2], netIndex, generic_onoff_srv_pub.key, generic_onoff_srv_pub.addr);
+  }
+
+  if (event.changed & 0x02) {
+    if (event.current & 0x02) {
+      keyDownAt = RTC_GetCycle32k();
+    } else {
+      if (RTC_GetCycle32k() - keyDownAt > 3200 * 60) { // about 6 seconds
+        APP_DBG("duration: %d, about to self unprovision", RTC_GetCycle32k() - keyDownAt);
+        tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, 3200);
+      }
+    }
   }
 }
 
