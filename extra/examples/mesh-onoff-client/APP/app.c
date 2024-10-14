@@ -64,23 +64,23 @@ uint16_t cfg_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASS
 uint16_t health_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
 uint16_t health_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
-uint16_t generic_onoff_cli_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
-uint16_t generic_onoff_cli_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
+uint16_t generic_onoff_client_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
+uint16_t generic_onoff_client_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
-void generic_onoff_cli_rsp_handler(const generic_onoff_cli_status_t *val);
+void generic_onoff_client_rsp_handler(const generic_onoff_client_status_t *val);
 
-struct bt_mesh_generic_onoff_cli generic_onoff_cli = {
-  .handler = generic_onoff_cli_rsp_handler,
+struct bt_mesh_generic_onoff_client generic_onoff_client = {
+  .handler = generic_onoff_client_rsp_handler,
 };
 
-int generic_onoff_cli_pub_update(struct bt_mesh_model *model) { APP_DBG(""); }
+int generic_onoff_client_pub_update(struct bt_mesh_model *model) { APP_DBG(""); }
 
-BLE_MESH_MODEL_PUB_DEFINE(generic_onoff_cli_pub, generic_onoff_cli_pub_update, 12);
+BLE_MESH_MODEL_PUB_DEFINE(generic_onoff_client_pub, generic_onoff_client_pub_update, 12);
 
 static struct bt_mesh_model root_models[] = {
   BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
   BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv, &health_pub),
-  BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, generic_onoff_cli_op, &generic_onoff_cli_pub, generic_onoff_cli_keys, generic_onoff_cli_groups, &generic_onoff_cli),
+  BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, generic_onoff_client_ops, &generic_onoff_client_pub, generic_onoff_client_keys, generic_onoff_client_groups, &generic_onoff_client),
 };
 
 static struct bt_mesh_elem elements[] = {{
@@ -162,24 +162,24 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("Model Subscription Set");
   } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
     APP_DBG("Model Publication Set");
-    APP_DBG("addr: 0x%04x", generic_onoff_cli_pub.addr);
-    APP_DBG("key: 0x%04x", generic_onoff_cli_pub.key);
-    APP_DBG("cred: 0x%02x", generic_onoff_cli_pub.cred);
-    APP_DBG("send_rel: 0x%02x", generic_onoff_cli_pub.send_rel);
+    APP_DBG("addr: 0x%04x", generic_onoff_client_pub.addr);
+    APP_DBG("key: 0x%04x", generic_onoff_client_pub.key);
+    APP_DBG("cred: 0x%02x", generic_onoff_client_pub.cred);
+    APP_DBG("send_rel: 0x%02x", generic_onoff_client_pub.send_rel);
 
-    APP_DBG("ttl: 0x%02x", generic_onoff_cli_pub.ttl);
-    APP_DBG("retransmit: 0x%02x", generic_onoff_cli_pub.retransmit);
-    APP_DBG("period: 0x%02x", generic_onoff_cli_pub.period);
-    APP_DBG("period_div: 0x%02x", generic_onoff_cli_pub.period_div);
-    APP_DBG("fast_period: 0x%02x", generic_onoff_cli_pub.fast_period);
-    APP_DBG("count: 0x%02x", generic_onoff_cli_pub.count);
-    APP_DBG("period_start: 0x%08lx", generic_onoff_cli_pub.period_start);
+    APP_DBG("ttl: 0x%02x", generic_onoff_client_pub.ttl);
+    APP_DBG("retransmit: 0x%02x", generic_onoff_client_pub.retransmit);
+    APP_DBG("period: 0x%02x", generic_onoff_client_pub.period);
+    APP_DBG("period_div: 0x%02x", generic_onoff_client_pub.period_div);
+    APP_DBG("fast_period: 0x%02x", generic_onoff_client_pub.fast_period);
+    APP_DBG("count: 0x%02x", generic_onoff_client_pub.count);
+    APP_DBG("period_start: 0x%08lx", generic_onoff_client_pub.period_start);
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
   }
 }
 
-void generic_onoff_cli_rsp_handler(const generic_onoff_cli_status_t *val) {
+void generic_onoff_client_rsp_handler(const generic_onoff_client_status_t *val) {
   APP_DBG("status 0x%02x", val->generic_onoff_Hdr.status);
   APP_DBG("opcode 0x%02x", val->generic_onoff_Hdr.opcode);
   if (val->generic_onoff_Hdr.opcode == BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
@@ -205,13 +205,13 @@ void keyChange(HalKeyChangeEvent event) {
     struct bt_mesh_generic_onoff_set_val param = {
       .op_en = FALSE,
       .onoff = event.current & 0x01,
-      .tid = cli_tid_get(),
+      .tid = client_tid_get(),
       .trans_time = 0,
       .delay = 0,
     };
 
-    // int err = bt_mesh_generic_onoff_set_unack(netIndex, generic_onoff_cli_pub.key, generic_onoff_cli_pub.addr, &param);
-    int err = bt_mesh_generic_onoff_set(netIndex, generic_onoff_cli_pub.key, generic_onoff_cli_pub.addr, &param);
+    // int err = bt_mesh_generic_onoff_set_unack(netIndex, generic_onoff_client_pub.key, generic_onoff_client_pub.addr, &param);
+    int err = bt_mesh_generic_onoff_set(netIndex, generic_onoff_client_pub.key, generic_onoff_client_pub.addr, &param);
     if (err) {
       APP_DBG("send failed %d", err);
     }
@@ -307,7 +307,7 @@ void blemesh_on_sync(void) {
 void App_Init() {
   App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
 
-  generic_onoff_cli_init(&root_models[2]);
+  generic_onoff_client_init(&root_models[2]);
   blemesh_on_sync();
   HAL_KeyInit();
   HAL_KeyConfig(keyChange);

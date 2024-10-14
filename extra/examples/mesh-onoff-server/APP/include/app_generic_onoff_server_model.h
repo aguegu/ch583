@@ -1,5 +1,5 @@
-#ifndef app_generic_onoff_server_model_H
-#define app_generic_onoff_server_model_H
+#ifndef APP_GENERIC_ONOFF_SERVER_MODEL_H
+#define APP_GENERIC_ONOFF_SERVER_MODEL_H
 
 #ifdef __cplusplus
 extern "C" {
