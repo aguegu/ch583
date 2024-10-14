@@ -29,7 +29,6 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason);
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags,
                           uint32_t iv_index);
 static void prov_reset(void);
-void generic_onoff_cli_rsp_handler(const generic_onoff_cli_status_t *val);
 
 static struct bt_mesh_cfg_srv cfg_srv = {
   .relay = BLE_MESH_RELAY_ENABLED,
@@ -67,6 +66,8 @@ uint16_t health_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UN
 
 uint16_t generic_onoff_cli_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
 uint16_t generic_onoff_cli_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
+
+void generic_onoff_cli_rsp_handler(const generic_onoff_cli_status_t *val);
 
 struct bt_mesh_generic_onoff_cli generic_onoff_cli = {
   .handler = generic_onoff_cli_rsp_handler,

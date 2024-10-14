@@ -6,15 +6,16 @@ extern "C" {
 #endif
 
 #include "MESH_LIB.h"
-#define MSG_PIN GPIO_Pin_18
 
-BOOL read_led_state(uint32_t led_pin);
+extern const struct bt_mesh_model_op generic_onoff_server_ops[];
 
-extern const struct bt_mesh_model_op generic_onoff_op[];
+typedef BOOL (*bt_mesh_generic_onoff_server_state_read_t)();
+typedef void (*bt_mesh_generic_onoff_server_state_write_t)(BOOL state);
 
-void set_led_state(uint32_t led_pin, BOOL on);
-
-void toggle_led_state(uint32_t led_pin);
+struct bt_mesh_generic_onoff_server {
+  bt_mesh_generic_onoff_server_state_read_t onReadState;
+  bt_mesh_generic_onoff_server_state_write_t onWriteState;
+};
 
 void bt_mesh_generic_onoff_status(struct bt_mesh_model *model, u16_t net_idx, u16_t app_idx, u16_t addr);
 

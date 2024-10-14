@@ -6,6 +6,8 @@
 
 #define APP_WAIT_ADD_APPKEY_DELAY 1600 * 10
 
+#define PIN_LED GPIO_Pin_18
+
 static uint8_t MESH_MEM[1024 * 2] = {0};
 
 extern const ble_mesh_cfg_t app_mesh_cfg;
@@ -25,8 +27,7 @@ NET_BUF_SIMPLE_DEFINE_STATIC(rx_buf, 65);
 static void cfg_srv_rsp_handler(const cfg_srv_status_t *val);
 static void link_open(bt_mesh_prov_bearer_t bearer);
 static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason);
-static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags,
-                          uint32_t iv_index);
+static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index);
 static void prov_reset(void);
 
 static struct bt_mesh_cfg_srv cfg_srv = {
@@ -72,10 +73,23 @@ int generic_onoff_srv_pub_update(struct bt_mesh_model *model) {
 
 BLE_MESH_MODEL_PUB_DEFINE(generic_onoff_srv_pub, generic_onoff_srv_pub_update, 12);
 
+BOOL onReadOnoffState() {
+  return (GPIOB_ReadPortPin(PIN_LED) > 0) ? 0 : 1;
+}
+
+void onWriteOnoffState(BOOL state) {
+  state ? GPIOB_ResetBits(PIN_LED) : GPIOB_SetBits(PIN_LED);
+}
+
+struct bt_mesh_generic_onoff_server generic_onoff_server = {
+  .onReadState = onReadOnoffState,
+  .onWriteState = onWriteOnoffState,
+};
+
 static struct bt_mesh_model root_models[] = {
   BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
   BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv, &health_pub),
-  BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, generic_onoff_op, &generic_onoff_srv_pub, generic_onoff_srv_keys, generic_onoff_srv_groups, NULL),
+  BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, generic_onoff_server_ops, &generic_onoff_srv_pub, generic_onoff_srv_keys, generic_onoff_srv_groups, &generic_onoff_server),
 };
 
 static struct bt_mesh_elem elements[] = {{
@@ -183,8 +197,8 @@ void keyChange(HalKeyChangeEvent event) {
   APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
 
   if (event.changed & 0x01) {
-    set_led_state(MSG_PIN, event.current & 0x01);
-
+    // set_led_state(PIN_LED, event.current & 0x01);
+    onWriteOnoffState(event.current & 0x01);
     bt_mesh_generic_onoff_status(&root_models[2], netIndex, generic_onoff_srv_pub.key, generic_onoff_srv_pub.addr);
   }
 
@@ -276,11 +290,13 @@ void blemesh_on_sync(void) {
 
 void App_Init() {
   App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
-
   blemesh_on_sync();
 
   HAL_KeyInit();
   HAL_KeyConfig(keyChange);
+
+  GPIOB_ModeCfg(PIN_LED, GPIO_ModeOut_PP_5mA);
+  onWriteOnoffState(FALSE);
 }
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
