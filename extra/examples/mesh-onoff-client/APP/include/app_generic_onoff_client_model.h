@@ -1,5 +1,5 @@
-#ifndef app_generic_onoff_model_cli_H
-#define app_generic_onoff_model_cli_H
+#ifndef APP_GENERIC_ONOFF_MODEL_CLIENT_H
+#define APP_GENERIC_ONOFF_MODEL_CLIENT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -7,7 +7,7 @@ extern "C" {
 
 #include "MESH_LIB.h"
 
-#define GEN_ONOFF_SYNC_EVT (1 << 0)
+#define GENERIC_ONOFF_SYNC_EVT (1 << 0)
 
 struct bt_mesh_generic_onoff_status_data {
   u8_t state;
@@ -26,21 +26,21 @@ union generic_onoff_Event_t {
 typedef struct {
   struct generic_onoff_EventHdr generic_onoff_Hdr;
   union generic_onoff_Event_t generic_onoff_Event;
-} generic_onoff_cli_status_t;
+} generic_onoff_client_status_t;
 
-typedef void (*generic_onoff_cli_rsp_handler_t)(const generic_onoff_cli_status_t *val);
+typedef void (*generic_onoff_client_rsp_handler_t)(const generic_onoff_client_status_t *val);
 
 /** gen onoff Model Context */
-struct bt_mesh_generic_onoff_cli {
+struct bt_mesh_generic_onoff_client {
   struct bt_mesh_model *model;
 
-  generic_onoff_cli_rsp_handler_t handler;
+  generic_onoff_client_rsp_handler_t handler;
 
   u32_t op_req;
   u32_t op_pending;
 };
 
-extern const struct bt_mesh_model_op generic_onoff_cli_op[];
+extern const struct bt_mesh_model_op generic_onoff_client_ops[];
 
 struct bt_mesh_generic_onoff_set_val {
   BOOL op_en;      /* Indicate whether optional parameters included */
@@ -56,9 +56,9 @@ int bt_mesh_generic_onoff_set(u16_t net_idx, u16_t app_idx, u16_t addr,
 int bt_mesh_generic_onoff_set_unack(u16_t net_idx, u16_t app_idx, u16_t addr,
                                 struct bt_mesh_generic_onoff_set_val const *set);
 
-uint8_t cli_tid_get(void);
+uint8_t client_tid_get(void);
 
-int generic_onoff_cli_init(struct bt_mesh_model *model);
+int generic_onoff_client_init(struct bt_mesh_model *model);
 
 #ifdef __cplusplus
 }

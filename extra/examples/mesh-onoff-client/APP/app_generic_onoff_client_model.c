@@ -4,9 +4,9 @@
 
 static uint8 generic_onoff_TaskID = 0; // Task ID for internal task/event processing
 
-static struct bt_mesh_generic_onoff_cli *generic_onoff_cli;
+static struct bt_mesh_generic_onoff_client *generic_onoff_client;
 static s32_t msg_timeout = K_SECONDS(2);
-static uint8_t cli_send_tid = 128;
+static uint8_t client_send_tid = 128;
 
 /** The following are the macro definitions of generic client
  *  model messages length, and a message is composed of three
@@ -18,19 +18,19 @@ static uint8_t cli_send_tid = 128;
 
 static uint16 generic_onoff_ProcessEvent(uint8 task_id, uint16 events);
 
-uint8_t cli_tid_get(void) {
-  cli_send_tid++;
-  if (cli_send_tid > 191)
-    cli_send_tid = 128;
-  return cli_send_tid;
+uint8_t client_tid_get(void) {
+  client_send_tid++;
+  if (client_send_tid > 191)
+    client_send_tid = 128;
+  return client_send_tid;
 }
 
-static void cli_reset(void) {
+static void client_reset(void) {
   APP_DBG("");
-  generic_onoff_cli->op_pending = 0U;
-  generic_onoff_cli->op_req = 0U;
+  generic_onoff_client->op_pending = 0U;
+  generic_onoff_client->op_req = 0U;
 
-  tmos_stop_task(generic_onoff_TaskID, GEN_ONOFF_SYNC_EVT);
+  tmos_stop_task(generic_onoff_TaskID, GENERIC_ONOFF_SYNC_EVT);
 }
 
 /*******************************************************************************
@@ -39,45 +39,45 @@ static void cli_reset(void) {
  * Input          : None
  * Return         : None
  *******************************************************************************/
-static void generic_onoff_rsp_recv(generic_onoff_cli_status_t *val, u8_t status) {
-  if (generic_onoff_cli == NULL) {
+static void generic_onoff_rsp_recv(generic_onoff_client_status_t *val, u8_t status) {
+  if (generic_onoff_client == NULL) {
     return;
   }
 
-  val->generic_onoff_Hdr.opcode = generic_onoff_cli->op_req;
+  val->generic_onoff_Hdr.opcode = generic_onoff_client->op_req;
   val->generic_onoff_Hdr.status = status;
 
-  cli_reset();
+  client_reset();
 
-  if (generic_onoff_cli->handler) {
-    generic_onoff_cli->handler(val);
+  if (generic_onoff_client->handler) {
+    generic_onoff_client->handler(val);
   }
 }
 
-static int cli_wait(void) {
-  int err = tmos_start_task(generic_onoff_TaskID, GEN_ONOFF_SYNC_EVT, msg_timeout);
+static int client_wait(void) {
+  int err = tmos_start_task(generic_onoff_TaskID, GENERIC_ONOFF_SYNC_EVT, msg_timeout);
   return err;
 }
 
 /*******************************************************************************
- * Function Name  : cli_prepare
+ * Function Name  : client_prepare
  * Description    :
  * Input          : None
  * Return         : None
  *******************************************************************************/
-static int cli_prepare(u32_t op_req, u32_t op) {
-  if (!generic_onoff_cli) {
+static int client_prepare(u32_t op_req, u32_t op) {
+  if (!generic_onoff_client) {
     APP_DBG("No available Configuration Client context!");
     return -EINVAL;
   }
 
-  if (generic_onoff_cli->op_pending) {
+  if (generic_onoff_client->op_pending) {
     APP_DBG("Another synchronous operation pending");
     return -EBUSY;
   }
 
-  generic_onoff_cli->op_req = op_req;
-  generic_onoff_cli->op_pending = op;
+  generic_onoff_client->op_req = op_req;
+  generic_onoff_client->op_pending = op;
 
   return 0;
 }
@@ -91,22 +91,22 @@ static int cli_prepare(u32_t op_req, u32_t op) {
 static void sync_handler(void) {
   APP_DBG("");
 
-  generic_onoff_cli_status_t generic_onoff_cli_status;
+  generic_onoff_client_status_t generic_onoff_client_status;
 
-  memset(&generic_onoff_cli_status, 0, sizeof(generic_onoff_cli_status_t));
+  memset(&generic_onoff_client_status, 0, sizeof(generic_onoff_client_status_t));
 
-  generic_onoff_cli_status.generic_onoff_Hdr.opcode = generic_onoff_cli->op_pending;
+  generic_onoff_client_status.generic_onoff_Hdr.opcode = generic_onoff_client->op_pending;
 
-  generic_onoff_rsp_recv(&generic_onoff_cli_status, 0xFF);
+  generic_onoff_rsp_recv(&generic_onoff_client_status, 0xFF);
 }
 
 /*******************************************************************************
- * Function Name  : generic_onoff_cli_init
+ * Function Name  : generic_onoff_client_init
  * Description    :
  * Input          : None
  * Return         : None
  *******************************************************************************/
-int generic_onoff_cli_init(struct bt_mesh_model *model) {
+int generic_onoff_client_init(struct bt_mesh_model *model) {
   // if (!bt_mesh_model_in_primary(model)) {
   //   BT_ERR("Configuration Client only allowed in primary element");
   //   return -EINVAL;
@@ -116,8 +116,8 @@ int generic_onoff_cli_init(struct bt_mesh_model *model) {
     return -EINVAL;
   }
 
-  generic_onoff_cli = model->user_data;
-  generic_onoff_cli->model = model;
+  generic_onoff_client = model->user_data;
+  generic_onoff_client->model = model;
 
   /* Configuration Model security is device-key based and both the local
    * and remote keys are allowed to access this model.
@@ -130,9 +130,9 @@ int generic_onoff_cli_init(struct bt_mesh_model *model) {
 }
 
 static uint16 generic_onoff_ProcessEvent(uint8 task_id, uint16 events) {
-  if (events & GEN_ONOFF_SYNC_EVT) {
+  if (events & GENERIC_ONOFF_SYNC_EVT) {
     sync_handler();
-    return (events ^ GEN_ONOFF_SYNC_EVT);
+    return (events ^ GENERIC_ONOFF_SYNC_EVT);
   }
   return 0;
 }
@@ -140,25 +140,25 @@ static uint16 generic_onoff_ProcessEvent(uint8 task_id, uint16 events) {
 static void generic_onoff_status(struct bt_mesh_model *model,
                              struct bt_mesh_msg_ctx *ctx,
                              struct net_buf_simple *buf) {
-  generic_onoff_cli_status_t generic_onoff_cli_status;
+  generic_onoff_client_status_t generic_onoff_client_status;
 
   APP_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u", ctx->net_idx,
           ctx->app_idx, ctx->addr, buf->len);
 
-  if (generic_onoff_cli->op_pending == BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS) {
-    generic_onoff_cli_status.generic_onoff_Event.status.state = buf->data[0];
-    generic_onoff_cli_status.generic_onoff_Event.status.source = ctx->addr;
-    generic_onoff_rsp_recv(&generic_onoff_cli_status, SUCCESS);
-  } else if (generic_onoff_cli->op_pending == 0) {
-    generic_onoff_cli_status.generic_onoff_Event.status.state = buf->data[0];
-    generic_onoff_cli_status.generic_onoff_Event.status.source = ctx->addr;
-    generic_onoff_rsp_recv(&generic_onoff_cli_status, SUCCESS);
+  if (generic_onoff_client->op_pending == BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS) {
+    generic_onoff_client_status.generic_onoff_Event.status.state = buf->data[0];
+    generic_onoff_client_status.generic_onoff_Event.status.source = ctx->addr;
+    generic_onoff_rsp_recv(&generic_onoff_client_status, SUCCESS);
+  } else if (generic_onoff_client->op_pending == 0) {
+    generic_onoff_client_status.generic_onoff_Event.status.state = buf->data[0];
+    generic_onoff_client_status.generic_onoff_Event.status.source = ctx->addr;
+    generic_onoff_rsp_recv(&generic_onoff_client_status, SUCCESS);
   } else {
-    APP_DBG("Unexpected Status 0x%08x", generic_onoff_cli->op_pending);
+    APP_DBG("Unexpected Status 0x%08x", generic_onoff_client->op_pending);
   }
 }
 
-const struct bt_mesh_model_op generic_onoff_cli_op[] = {
+const struct bt_mesh_model_op generic_onoff_client_ops[] = {
   { BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS, 1, generic_onoff_status },
   BLE_MESH_MODEL_OP_END,
 };
@@ -180,7 +180,7 @@ int bt_mesh_generic_onoff_get(u16_t net_idx, u16_t app_idx, u16_t addr) {
 
   int err;
 
-  err = cli_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_GET,
+  err = client_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_GET,
                     BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
   if (err) {
     return err;
@@ -188,14 +188,14 @@ int bt_mesh_generic_onoff_get(u16_t net_idx, u16_t app_idx, u16_t addr) {
 
   bt_mesh_model_msg_init(&msg, BLE_MESH_MODEL_OP_GEN_ONOFF_GET);
 
-  err = bt_mesh_model_send(generic_onoff_cli->model, &ctx, &msg, NULL, NULL);
+  err = bt_mesh_model_send(generic_onoff_client->model, &ctx, &msg, NULL, NULL);
   if (err) {
     APP_DBG("model_send() failed (err %d)", err);
-    cli_reset();
+    client_reset();
     return err;
   }
 
-  return cli_wait();
+  return client_wait();
 }
 
 /*******************************************************************************
@@ -216,7 +216,7 @@ int bt_mesh_generic_onoff_set(u16_t net_idx, u16_t app_idx, u16_t addr,
 
   int err;
 
-  err = cli_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_SET,
+  err = client_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_SET,
                     BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
 
   if (err) {
@@ -231,14 +231,14 @@ int bt_mesh_generic_onoff_set(u16_t net_idx, u16_t app_idx, u16_t addr,
     net_buf_simple_add_u8(&msg, set->delay);
   }
 
-  err = bt_mesh_model_send(generic_onoff_cli->model, &ctx, &msg, NULL, NULL);
+  err = bt_mesh_model_send(generic_onoff_client->model, &ctx, &msg, NULL, NULL);
   if (err) {
     APP_DBG("model_send() failed (err %d)", err);
-    cli_reset();
+    client_reset();
     return err;
   }
 
-  cli_wait();
+  client_wait();
   return 0;
 }
 
@@ -260,7 +260,7 @@ int bt_mesh_generic_onoff_set_unack(u16_t net_idx, u16_t app_idx, u16_t addr,
 
   int err;
 
-  err = cli_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+  err = client_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
 
   if (err) {
     return err;
@@ -274,8 +274,8 @@ int bt_mesh_generic_onoff_set_unack(u16_t net_idx, u16_t app_idx, u16_t addr,
     net_buf_simple_add_u8(&msg, set->delay);
   }
 
-  err = bt_mesh_model_send(generic_onoff_cli->model, &ctx, &msg, NULL, NULL);
+  err = bt_mesh_model_send(generic_onoff_client->model, &ctx, &msg, NULL, NULL);
 
-  cli_reset();
+  client_reset();
   return err;
 }
