@@ -3,7 +3,7 @@ BIN_PREFIX = riscv-none-embed
 
 OUTPUT_DIR = ./dist
 
-DEFINES := -DDEBUG=1 -DBLE_MEMHEAP_SIZE=4096 -DHAL_KEY=1 -DHAL_LED=0
+DEFINES := -DDEBUG=1 -DBLE_MEMHEAP_SIZE=4096
 
 TARGET     := $(addprefix $(OUTPUT_DIR)/, $(notdir $(CURDIR)))
 
@@ -22,7 +22,7 @@ StdPeriphDriver_OBJ = $(addprefix $(OUTPUT_DIR)/StdPeriphDriver/, $(StdPeriphDri
 
 HAL_ROOT	=	./HAL
 HAL_INC	 	= $(HAL_ROOT)/include
-HAL_SRC 	= MCU.c RTC.c SLEEP.c KEY.c LED.c
+HAL_SRC 	= MCU.c RTC.c
 HAL_OBJ 	= $(addprefix $(OUTPUT_DIR)/HAL/, $(HAL_SRC:.c=.o))
 
 APP_ROOT	= ./APP
