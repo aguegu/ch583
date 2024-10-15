@@ -162,6 +162,8 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("App Key Added");
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
     APP_DBG("AppKey Binded");
+  } else if (val->cfgHdr.opcode == OP_MOD_APP_UNBIND) {
+    APP_DBG("AppKey Unbinded");
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
     APP_DBG("Model Subscription Set");
   } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
@@ -270,6 +272,7 @@ void pinsInit() {
 
 void buttonsPoll() {
   static uint32_t pinResetPressedAt;
+  static BOOL pinResetPressed = FALSE;
   static uint32_t buttons = BUTTON_SWITCH | BUTTON_RESET;
   uint32_t buttonsNow = GPIOB_ReadPortPin(BUTTON_SWITCH | BUTTON_RESET);
 
@@ -281,16 +284,17 @@ void buttonsPoll() {
 
     if (((buttonsNow ^ buttons) & BUTTON_RESET) && !(buttonsNow & BUTTON_RESET) ) {
       APP_DBG("RESET pressed");
+      pinResetPressed = TRUE;
       pinResetPressedAt = TMOS_GetSystemClock();
     }
     APP_DBG("buttons: %08x", buttonsNow);
   }
 
-  if (!(buttonsNow & BUTTON_RESET)) {
+  if (pinResetPressed && !(buttonsNow & BUTTON_RESET)) {
     if (TMOS_GetSystemClock() - pinResetPressedAt > 9600) { // 9600 * 0.625 ms = 6s
       APP_DBG("duration: %d, about to self unprovision", TMOS_GetSystemClock() - pinResetPressedAt);
-      tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, 0);
-      pinResetPressedAt = TMOS_GetSystemClock();
+      tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, 160);
+      pinResetPressed = FALSE;
     }
   }
 
