@@ -4,8 +4,6 @@
 #include "app.h"
 #include "app_generic_onoff_server_model.h"
 
-#define APP_WAIT_ADD_APPKEY_DELAY 1600 * 10
-
 #define PIN_LED GPIO_Pin_18
 
 static uint8_t MESH_MEM[1024 * 2] = {0};
@@ -34,8 +32,8 @@ static struct bt_mesh_cfg_srv cfg_srv = {
   .relay = BLE_MESH_RELAY_ENABLED,
   .beacon = BLE_MESH_BEACON_ENABLED,
   .default_ttl = 3,
-  .net_transmit = BLE_MESH_TRANSMIT(7, 10), /* 底层发送数据重试7次，每次间隔10ms（不含内部随机数） */
-  .relay_retransmit = BLE_MESH_TRANSMIT(7, 10), /* 底层转发数据重试7次，每次间隔10ms（不含内部随机数） */
+  .net_transmit = BLE_MESH_TRANSMIT(7, 10),
+  .relay_retransmit = BLE_MESH_TRANSMIT(7, 10),
   .handler = cfg_srv_rsp_handler,
 };
 
@@ -135,14 +133,6 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
     APP_DBG("reason %x", reason);
 }
 
-/*********************************************************************
- * @fn      prov_complete
- * @brief   配网完成回调，重新开始广播
- * @param   net_idx     - 网络key的index
- * @param   addr        - link关闭原因网络地址
- * @param   flags       - 是否处于key refresh状态
- * @param   iv_index    - 当前网络iv的index
- */
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
   APP_DBG("net_idx %x, addr %x", net_idx, addr);
   netIndex = net_idx;
@@ -163,16 +153,10 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("Provision Reset successed");
   } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
     APP_DBG("App Key Added");
-    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
-    //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
     APP_DBG("AppKey Binded");
-    // tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT,
-    //                 APP_WAIT_ADD_APPKEY_DELAY);
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
     APP_DBG("Model Subscription Set");
-    // tmos_stop_task(App_TaskID,
-    //                APP_RESET_MESH_EVENT); // if not stopped, mesh would be reset
   } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
     APP_DBG("Model Publication Set");
     APP_DBG("addr: 0x%04x", generic_onoff_srv_pub.addr);
@@ -197,7 +181,6 @@ void keyChange(HalKeyChangeEvent event) {
   APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
 
   if (event.changed & 0x01) {
-    // set_led_state(PIN_LED, event.current & 0x01);
     onWriteOnoffState(event.current & 0x01);
     bt_mesh_generic_onoff_status(&root_models[2], netIndex, generic_onoff_srv_pub.key, generic_onoff_srv_pub.addr);
   }
