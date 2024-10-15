@@ -4,7 +4,12 @@
 #include "app.h"
 #include "app_generic_onoff_server_model.h"
 
-#define PIN_LED GPIO_Pin_18
+// LEDs are ON when pins are low
+#define PIN_LED1 GPIO_Pin_18
+#define PIN_LED2 GPIO_Pin_19
+
+#define BUTTON_SWITCH GPIO_Pin_22
+#define BUTTON_RESET  GPIO_Pin_4
 
 static uint8_t MESH_MEM[1024 * 2] = {0};
 
@@ -71,17 +76,17 @@ int generic_onoff_srv_pub_update(struct bt_mesh_model *model) {
 
 BLE_MESH_MODEL_PUB_DEFINE(generic_onoff_srv_pub, generic_onoff_srv_pub_update, 12);
 
-BOOL onReadOnoffState() {
-  return (GPIOB_ReadPortPin(PIN_LED) > 0) ? 0 : 1;
+BOOL ledRead() {
+  return !!GPIOB_ReadPortPin(PIN_LED1);
 }
 
-void onWriteOnoffState(BOOL state) {
-  state ? GPIOB_ResetBits(PIN_LED) : GPIOB_SetBits(PIN_LED);
+void ledWrite(BOOL state) {
+  state ? GPIOB_ResetBits(PIN_LED1) : GPIOB_SetBits(PIN_LED1);
 }
 
 struct bt_mesh_generic_onoff_server generic_onoff_server = {
-  .onReadState = onReadOnoffState,
-  .onWriteState = onWriteOnoffState,
+  .onReadState = ledRead,
+  .onWriteState = ledWrite,
 };
 
 static struct bt_mesh_model root_models[] = {
@@ -135,11 +140,13 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
 
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
   APP_DBG("net_idx %x, addr %x", net_idx, addr);
+  GPIOB_SetBits(PIN_LED2);
   netIndex = net_idx;
 }
 
 static void prov_reset(void) {
   APP_DBG("provision reset completed");
+  GPIOB_ResetBits(PIN_LED2);
   prov_enable();
 }
 
@@ -173,27 +180,6 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("period_start: 0x%08lx", generic_onoff_srv_pub.period_start);
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
-  }
-}
-
-void keyChange(HalKeyChangeEvent event) {
-  static uint32_t keyDownAt;
-  APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
-
-  if (event.changed & 0x01) {
-    onWriteOnoffState(event.current & 0x01);
-    bt_mesh_generic_onoff_status(&root_models[2], netIndex, generic_onoff_srv_pub.key, generic_onoff_srv_pub.addr);
-  }
-
-  if (event.changed & 0x02) {
-    if (event.current & 0x02) {
-      keyDownAt = TMOS_GetSystemClock();
-    } else {
-      if (TMOS_GetSystemClock() - keyDownAt > 9600) { // 9600 * 0.625 ms = 6s
-        APP_DBG("duration: %d, about to self unprovision", TMOS_GetSystemClock() - keyDownAt);
-        tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, 3200);
-      }
-    }
   }
 }
 
@@ -271,15 +257,52 @@ void blemesh_on_sync(void) {
   APP_DBG("Mesh initialized");
 }
 
+void pinsInit() {
+  GPIOB_ModeCfg(BUTTON_SWITCH, GPIO_ModeIN_PU);
+  GPIOB_ModeCfg(BUTTON_RESET, GPIO_ModeIN_PU);
+
+  GPIOB_ModeCfg(PIN_LED1, GPIO_ModeOut_PP_5mA);
+  GPIOB_ModeCfg(PIN_LED2, GPIO_ModeOut_PP_5mA);
+
+  ledWrite(FALSE);
+  GPIOB_ResetBits(PIN_LED2);
+}
+
+void buttonsPoll() {
+  static uint32_t pinResetPressedAt;
+  static uint32_t buttons = BUTTON_SWITCH | BUTTON_RESET;
+  uint32_t buttonsNow = GPIOB_ReadPortPin(BUTTON_SWITCH | BUTTON_RESET);
+
+  if (buttonsNow != buttons) {
+    if ((buttonsNow ^ buttons) & BUTTON_SWITCH) {
+      ledWrite(!(buttonsNow & BUTTON_SWITCH));
+      bt_mesh_generic_onoff_status(root_models + 2, netIndex, generic_onoff_srv_pub.key, generic_onoff_srv_pub.addr);
+    }
+
+    if (((buttonsNow ^ buttons) & BUTTON_RESET) && !(buttonsNow & BUTTON_RESET) ) {
+      APP_DBG("RESET pressed");
+      pinResetPressedAt = TMOS_GetSystemClock();
+    }
+    APP_DBG("buttons: %08x", buttonsNow);
+  }
+
+  if (!(buttonsNow & BUTTON_RESET)) {
+    if (TMOS_GetSystemClock() - pinResetPressedAt > 9600) { // 9600 * 0.625 ms = 6s
+      APP_DBG("duration: %d, about to self unprovision", TMOS_GetSystemClock() - pinResetPressedAt);
+      tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, 0);
+      pinResetPressedAt = TMOS_GetSystemClock();
+    }
+  }
+
+  buttons = buttonsNow;
+}
+
 void App_Init() {
   App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
+  pinsInit();
+
   blemesh_on_sync();
-
-  HAL_KeyInit();
-  HAL_KeyConfig(keyChange);
-
-  GPIOB_ModeCfg(PIN_LED, GPIO_ModeOut_PP_5mA);
-  onWriteOnoffState(FALSE);
+  tmos_start_task(App_TaskID, APP_BUTTON_POLL_EVENT, 0); /* Kick off polling */
 }
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
@@ -287,6 +310,12 @@ static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
     APP_DBG("Reset mesh, delete local node");
     bt_mesh_reset();
     return (events ^ APP_RESET_MESH_EVENT);
+  }
+
+  if (events & APP_BUTTON_POLL_EVENT) {
+    buttonsPoll();
+    tmos_start_task(App_TaskID, APP_BUTTON_POLL_EVENT, MS1_TO_SYSTEM_TIME(100));
+    return events ^ APP_BUTTON_POLL_EVENT;
   }
   return 0;
 }
