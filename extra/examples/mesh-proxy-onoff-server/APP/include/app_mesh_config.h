@@ -1,12 +1,3 @@
-/********************************** (C) COPYRIGHT
- ******************************** File Name          : app_mesh_config.h Author
- *: WCH Version            : V1.1 Date               : 2021/11/18 Description :
- *********************************************************************************
- * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
- * microcontroller manufactured by Nanjing Qinheng Microelectronics.
- *******************************************************************************/
-
 #ifndef APP_MESH_CONFIG_H
 #define APP_MESH_CONFIG_H
 

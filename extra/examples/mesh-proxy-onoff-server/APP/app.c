@@ -1,28 +1,15 @@
-/********************************** (C) COPYRIGHT
- ******************************** File Name          : app.c Author : WCH
- * Version            : V1.1
- * Date               : 2022/01/18
- * Description        :
- *********************************************************************************
- * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
- * microcontroller manufactured by Nanjing Qinheng Microelectronics.
- *******************************************************************************/
-
-/******************************************************************************/
-#include "app.h"
-#include "HAL.h"
 #include "MESH_LIB.h"
-#include "app_generic_onoff_server_model.h"
 #include "config.h"
+#include "HAL.h"
+#include "app.h"
+#include "app_generic_onoff_server_model.h"
 
-/*********************************************************************
- * GLOBAL TYPEDEFS
- */
+// LEDs are ON when pins are low
+#define PIN_LED1 GPIO_Pin_18
+#define PIN_LED2 GPIO_Pin_19
 
-/*********************************************************************
- * GLOBAL TYPEDEFS
- */
+#define BUTTON_SWITCH GPIO_Pin_22
+#define BUTTON_RESET  GPIO_Pin_4
 
 static uint8_t MESH_MEM[1024 * 2] = {0};
 
@@ -33,113 +20,77 @@ static uint8_t App_TaskID = 0; // Task ID for internal task/event processing
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
+static __attribute__((aligned(4))) uint8_t dev_uuid[16];
+static uint16_t netIndex;
+
 #if (!CONFIG_BLE_MESH_PB_GATT)
 NET_BUF_SIMPLE_DEFINE_STATIC(rx_buf, 65);
 #endif /* !PB_GATT */
 
-/*********************************************************************
- * LOCAL FUNCION
- */
-
 static void cfg_srv_rsp_handler(const cfg_srv_status_t *val);
 static void link_open(bt_mesh_prov_bearer_t bearer);
 static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason);
-static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags,
-                          uint32_t iv_index);
+static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index);
 static void prov_reset(void);
 
 static struct bt_mesh_cfg_srv cfg_srv = {
-    .relay = BLE_MESH_RELAY_ENABLED,
-    .beacon = BLE_MESH_BEACON_ENABLED,
-#if (CONFIG_BLE_MESH_FRIEND)
-    .frnd = BLE_MESH_FRIEND_ENABLED,
-#endif
+  .relay = BLE_MESH_RELAY_ENABLED,
+  .beacon = BLE_MESH_BEACON_ENABLED,
 #if (CONFIG_BLE_MESH_PROXY)
-    .gatt_proxy = BLE_MESH_GATT_PROXY_ENABLED,
+  .gatt_proxy = BLE_MESH_GATT_PROXY_ENABLED,
 #endif
-    /* 默认TTL为3 */
-    .default_ttl = 3,
-    /* 底层发送数据重试7次，每次间隔10ms（不含内部随机数） */
-    .net_transmit = BLE_MESH_TRANSMIT(7, 10),
-    /* 底层转发数据重试7次，每次间隔10ms（不含内部随机数） */
-    .relay_retransmit = BLE_MESH_TRANSMIT(7, 10),
-    .handler = cfg_srv_rsp_handler,
+  .default_ttl = 3,
+  .net_transmit = BLE_MESH_TRANSMIT(7, 10),
+  .relay_retransmit = BLE_MESH_TRANSMIT(7, 10),
+  .handler = cfg_srv_rsp_handler,
 };
 
 static struct bt_mesh_health_srv health_srv;
 
 BLE_MESH_HEALTH_PUB_DEFINE(health_pub, 8);
 
-uint16_t cfg_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {BLE_MESH_KEY_UNUSED};
-uint16_t cfg_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {
-    BLE_MESH_ADDR_UNASSIGNED};
+uint16_t cfg_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
+uint16_t cfg_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
-uint16_t health_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {BLE_MESH_KEY_UNUSED};
-uint16_t health_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {
-    BLE_MESH_ADDR_UNASSIGNED};
+uint16_t health_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
+uint16_t health_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
-uint16_t gen_onoff_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = {
-    BLE_MESH_KEY_UNUSED};
-uint16_t gen_onoff_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = {
-    BLE_MESH_ADDR_UNASSIGNED};
+uint16_t gen_onoff_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
+uint16_t gen_onoff_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
+int generic_onoff_srv_pub_update(struct bt_mesh_model *model) {
+  APP_DBG("");
+}
 
-// static struct bt_mesh_model_pub gen_onoff_pub;
-
-BLE_MESH_MODEL_PUB_DEFINE(gen_onoff_pub, NULL, 12);
+BLE_MESH_MODEL_PUB_DEFINE(generic_onoff_srv_pub, generic_onoff_srv_pub_update, 12);
 
 static struct bt_mesh_model root_models[] = {
-    BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
-    BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv,
-                              &health_pub),
-    BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op, &gen_onoff_pub,
-                   gen_onoff_srv_keys, gen_onoff_srv_groups, NULL),
+  BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
+  BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv, &health_pub),
+  BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op, &generic_onoff_srv_pub, gen_onoff_srv_keys, gen_onoff_srv_groups, NULL),
 };
 
 static struct bt_mesh_elem elements[] = {{
     /* Location Descriptor (GATT Bluetooth Namespace Descriptors) */
-    .loc = (0),
-    .model_count = ARRAY_SIZE(root_models),
-    .models = (root_models),
+  .loc = (0),
+  .model_count = ARRAY_SIZE(root_models),
+  .models = (root_models),
 }};
 
-static uint8_t dev_uuid[16] = {
-  0x1c, 0x72, 0x6b, 0x4a, 0x19, 0x3c, 0x4e, 0x6e, 0x96, 0xb8, 0x81, 0x23, 0xbf, 0x42, 0xbc, 0x92 };
-uint8_t MACAddr[6];
-
-// elements 构成 Node Composition
 const struct bt_mesh_comp app_comp = {
-    .cid = 0x07D7, // WCH 公司id
-    .elem = elements,
-    .elem_count = ARRAY_SIZE(elements),
+  .cid = 0x07D7, // WCH org id
+  .elem = elements,
+  .elem_count = ARRAY_SIZE(elements),
 };
 
-// uint8_t static_key[16] = {1,2,3,4};
-
-// 配网参数和回调
 static const struct bt_mesh_prov app_prov = {
-    .uuid = dev_uuid,
-
-    // .static_val = static_key,
-    // .static_val_len = ARRAY_SIZE(static_key),
-
-    .link_open = link_open,
-    .link_close = link_close,
-    .complete = prov_complete,
-    .reset = prov_reset,
+  .uuid = dev_uuid,
+  .link_open = link_open,
+  .link_close = link_close,
+  .complete = prov_complete,
+  .reset = prov_reset,
 };
 
-/*********************************************************************
- * GLOBAL TYPEDEFS
- */
-
-/*********************************************************************
- * @fn      prov_enable
- *
- * @brief   使能配网功能
- *
- * @return  none
- */
 static void prov_enable(void) {
   if (bt_mesh_is_provisioned()) {
     return;
@@ -153,77 +104,27 @@ static void prov_enable(void) {
   }
 }
 
-/*********************************************************************
- * @fn      link_open
- *
- * @brief   配网时后的link打开回调
- *
- * @param   bearer  - 当前link是PB_ADV还是PB_GATT
- *
- * @return  none
- */
 static void link_open(bt_mesh_prov_bearer_t bearer) { APP_DBG(" "); }
 
-/*********************************************************************
- * @fn      link_close
- *
- * @brief   配网后的link关闭回调
- *
- * @param   bearer  - 当前link是PB_ADV还是PB_GATT
- * @param   reason  - link关闭原因
- *
- * @return  none
- */
 static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
   APP_DBG("reason %x", reason);
 
   if (!bt_mesh_is_provisioned()) {
     prov_enable();
-  } else {
   }
 }
 
-/*********************************************************************
- * @fn      prov_complete
- *
- * @brief   配网完成回调，重新开始广播
- *
- * @param   net_idx     - 网络key的index
- * @param   addr        - link关闭原因网络地址
- * @param   flags       - 是否处于key refresh状态
- * @param   iv_index    - 当前网络iv的index
- *
- * @return  none
- */
-static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags,
-                          uint32_t iv_index) {
+static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
   APP_DBG(" ");
 }
 
-/*********************************************************************
- * @fn      prov_reset
- *
- * @brief   复位配网功能回调
- *
- * @return  none
- */
 static void prov_reset(void) {
-  APP_DBG("");
+  APP_DBG("provision reset completed");
   prov_enable();
 }
 
-/*********************************************************************
- * @fn      cfg_srv_rsp_handler
- *
- * @brief   config 模型服务回调
- *
- * @param   val     - 回调参数，包括命令类型、配置命令执行状态
- *
- * @return  none
- */
 static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
   if (val->cfgHdr.status) {
-    // 配置命令执行不成功
     APP_DBG("warning opcode 0x%02x", val->cfgHdr.opcode);
     return;
   }
@@ -232,102 +133,79 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("Provision Reset successed");
   } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
     APP_DBG("App Key Added");
+  } else if (val->cfgHdr.opcode == OP_APP_KEY_DEL) {
+    APP_DBG("App Key Deleted");
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
-    APP_DBG("Model Binded");
+    APP_DBG("AppKey Binded");
+  } else if (val->cfgHdr.opcode == OP_MOD_APP_UNBIND) {
+    APP_DBG("AppKey Unbinded");
   } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
     APP_DBG("Model Subscription Set");
   } else if (val->cfgHdr.opcode == OP_NET_TRANSMIT_SET) {
     APP_DBG("Net Transmit Set");
   } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
-    APP_DBG("Model Publication Set: 0x%04x", gen_onoff_pub.addr);
+    APP_DBG("Model Publication Set: 0x%04x", generic_onoff_srv_pub.addr);
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
   }
 }
 
-void keyPress(uint8_t keys) {
-  APP_DBG("keys %d ", keys);
-  switch (keys) {
-  default:
-    break;
-  }
-}
-
-/*********************************************************************
- * @fn      blemesh_on_sync
- *
- * @brief   同步mesh参数，启用对应功能，不建议修改
- *
- * @return  none
- */
 void blemesh_on_sync(void) {
   int err;
   mem_info_t info;
   uint8_t i;
 
-  if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) ==
-      FALSE) {
+  if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
     PRINT("head file error...\n");
-    while (1)
-      ;
+    while (1);
   }
 
   info.base_addr = MESH_MEM;
   info.mem_len = ARRAY_SIZE(MESH_MEM);
 
-#if (CONFIG_BLE_MESH_FRIEND)
-  friend_init_register(bt_mesh_friend_init, friend_state);
-#endif /* FRIEND */
-
-#if (CONFIG_BLE_MESH_LOW_POWER)
-  lpn_init_register(bt_mesh_lpn_init, lpn_state);
-#endif /* LPN */
-
-#if (defined(BLE_MAC)) && (BLE_MAC == TRUE)
-  for (i = 0; i < 6; i++)
-    MACAddr[i] = MacAddr[5 - i];
-  tmos_memcpy(dev_uuid, MACAddr, 6);
-#else
-  GetMACAddress(MACAddr);
-  uint8_t MacAddrReverse[6];
-  for (i = 0; i < 6; i++)
-    MacAddrReverse[i] = MACAddr[5 - i];
-  tmos_memcpy(dev_uuid + 10, MacAddrReverse, 6);
-#endif
-
-  err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, MACAddr, &info);
+  GetMACAddress(dev_uuid);
+  err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, dev_uuid, &info);
   if (err) {
     APP_DBG("Unable set configuration (err:%d)", err);
     return;
   }
+
+  for (uint8_t i = 0; i < 6; i++)
+    dev_uuid[15 - i] = dev_uuid[i];
+
+  FLASH_EEPROM_CMD(CMD_GET_UNIQUE_ID, 0, dev_uuid, 0);
+  dev_uuid[9] = dev_uuid[6];
+  dev_uuid[8] = R8_CHIP_ID; // 0x83 for ch583
+  dev_uuid[6] = 'G';
+  // https://git.kernel.org/pub/scm/libs/ell/ell.git/commit/?id=718d7ef1acb75bd171474a45801dacf43b67d3fe
+
   hal_rf_init();
   err = bt_mesh_comp_register(&app_comp);
 
 #if (CONFIG_BLE_MESH_RELAY)
   bt_mesh_relay_init();
-#endif /* RELAY  */
+#endif
 
 #if (CONFIG_BLE_MESH_PROXY || CONFIG_BLE_MESH_PB_GATT)
-#if (CONFIG_BLE_MESH_PROXY)
-  bt_mesh_proxy_beacon_init_register((void *)bt_mesh_proxy_beacon_init);
-  gatts_notify_register(bt_mesh_gatts_notify);
-  proxy_gatt_enable_register(bt_mesh_proxy_gatt_enable);
-#endif /* PROXY  */
-#if (CONFIG_BLE_MESH_PB_GATT)
-  proxy_prov_enable_register(bt_mesh_proxy_prov_enable);
-#endif /* PB_GATT  */
+  #if (CONFIG_BLE_MESH_PROXY)
+    bt_mesh_proxy_beacon_init_register((void *)bt_mesh_proxy_beacon_init);
+    gatts_notify_register(bt_mesh_gatts_notify);
+    proxy_gatt_enable_register(bt_mesh_proxy_gatt_enable);
+  #endif
+
+  #if (CONFIG_BLE_MESH_PB_GATT)
+    proxy_prov_enable_register(bt_mesh_proxy_prov_enable);
+  #endif
 
   bt_mesh_proxy_init();
-#endif /* PROXY || PB-GATT */
-
-#if (CONFIG_BLE_MESH_PROXY_CLI)
-  bt_mesh_proxy_client_init(cli); // 待添加
-#endif                            /* PROXY_CLI */
+#endif
 
   bt_mesh_prov_retransmit_init();
+
 #if (!CONFIG_BLE_MESH_PB_GATT)
   adv_link_rx_buf_register(&rx_buf);
-#endif /* !PB_GATT */
+#endif
+
   err = bt_mesh_prov_init(&app_prov);
 
   bt_mesh_mod_init();
@@ -337,8 +215,7 @@ void blemesh_on_sync(void) {
 
   bt_mesh_adv_init();
 
-#if ((CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_PROXY) ||                   \
-     (CONFIG_BLE_MESH_OTA))
+#if ((CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_OTA))
   bt_mesh_conn_adv_init();
 #endif /* PROXY || PB-GATT || OTA */
 
@@ -350,8 +227,7 @@ void blemesh_on_sync(void) {
   bt_mesh_proxy_cli_adapt_init();
 #endif /* PROXY_CLI */
 
-#if ((CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_PB_GATT) ||                   \
-     (CONFIG_BLE_MESH_PROXY_CLI) || (CONFIG_BLE_MESH_OTA))
+#if ((CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_PROXY_CLI) || (CONFIG_BLE_MESH_OTA))
   bt_mesh_adapt_init();
 #endif /* PROXY || PB-GATT || PROXY_CLI || OTA */
 
@@ -378,28 +254,8 @@ void App_Init() {
   App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
 
   blemesh_on_sync();
-  HAL_KeyInit();
-  HalKeyConfig(keyPress);
-  tmos_set_event(App_TaskID, APP_USER_EVT);
 }
 
-/*********************************************************************
- * @fn      App_ProcessEvent
- *
- * @brief   应用层事件处理函数
- *
- * @param   task_id  - The TMOS assigned task ID.
- * @param   events - events to process.  This is a bit map and can
- *                   contain more than one event.
- *
- * @return  events not processed
- */
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
-  if (events & APP_USER_EVT) {
-    return (events ^ APP_USER_EVT);
-  }
-  // Discard unknown events
   return 0;
 }
-
-/******************************** endfile @ main ******************************/
