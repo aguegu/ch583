@@ -157,21 +157,6 @@ tmosEvents HAL_ProcessEvent(tmosTaskID task_id, tmosEvents events) {
     return events ^ SYS_EVENT_MSG;
   }
 
-  if (events & LED_BLINK_EVENT) {
-#if(defined HAL_LED) && (HAL_LED == TRUE)
-    HalLedUpdate();
-#endif // HAL_LED
-    return events ^ LED_BLINK_EVENT;
-  }
-
-  if (events & HAL_KEY_EVENT) {
-#if(defined HAL_KEY) && (HAL_KEY == TRUE)
-    HAL_KeyPoll(); /* Check for keys */
-    tmos_start_task(halTaskID, HAL_KEY_EVENT, MS1_TO_SYSTEM_TIME(100));
-    return events ^ HAL_KEY_EVENT;
-#endif
-  }
-
   if (events & HAL_REG_INIT_EVENT) {
 #if(defined BLE_CALIBRATION_ENABLE) && (BLE_CALIBRATION_ENABLE == TRUE) // 校准任务，单次校准耗时小于10ms
     BLE_RegInit();                                                  // 校准RF
@@ -181,12 +166,6 @@ tmosEvents HAL_ProcessEvent(tmosTaskID task_id, tmosEvents events) {
     tmos_start_task(halTaskID, HAL_REG_INIT_EVENT, MS1_TO_SYSTEM_TIME(BLE_CALIBRATION_PERIOD));
     return events ^ HAL_REG_INIT_EVENT;
 #endif
-  }
-
-  if (events & HAL_TEST_EVENT) {
-    PRINT("* \n");
-    tmos_start_task(halTaskID, HAL_TEST_EVENT, MS1_TO_SYSTEM_TIME(1000));
-    return events ^ HAL_TEST_EVENT;
   }
 
   return 0;
@@ -204,18 +183,6 @@ tmosEvents HAL_ProcessEvent(tmosTaskID task_id, tmosEvents events) {
 void HAL_Init() {
   halTaskID = TMOS_ProcessEventRegister(HAL_ProcessEvent);
   HAL_TimeInit();
-
-#if(defined HAL_SLEEP) && (HAL_SLEEP == TRUE)
-  HAL_SleepInit();
-#endif
-
-#if(defined HAL_LED) && (HAL_LED == TRUE)
-  HAL_LedInit();
-#endif
-
-#if(defined HAL_KEY) && (HAL_KEY == TRUE)
-  HAL_KeyInit();
-#endif
 
 #if(defined BLE_CALIBRATION_ENABLE) && (BLE_CALIBRATION_ENABLE == TRUE)
   tmos_start_task(halTaskID, HAL_REG_INIT_EVENT, MS1_TO_SYSTEM_TIME(BLE_CALIBRATION_PERIOD)); // 添加校准任务，单次校准耗时小于10ms

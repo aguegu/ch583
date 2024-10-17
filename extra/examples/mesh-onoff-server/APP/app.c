@@ -23,10 +23,6 @@ static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 static __attribute__((aligned(4))) uint8_t dev_uuid[16];
 static uint16_t netIndex;
 
-#if (!CONFIG_BLE_MESH_PB_GATT)
-NET_BUF_SIMPLE_DEFINE_STATIC(rx_buf, 65);
-#endif
-
 static void cfg_srv_rsp_handler(const cfg_srv_status_t *val);
 static void link_open(bt_mesh_prov_bearer_t bearer);
 static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason);
@@ -77,7 +73,7 @@ int generic_onoff_srv_pub_update(struct bt_mesh_model *model) {
 BLE_MESH_MODEL_PUB_DEFINE(generic_onoff_srv_pub, generic_onoff_srv_pub_update, 12);
 
 BOOL ledRead() {
-  return !!GPIOB_ReadPortPin(PIN_LED1);
+  return !GPIOB_ReadPortPin(PIN_LED1);
 }
 
 void ledWrite(BOOL state) {
@@ -160,6 +156,8 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("Provision Reset successed");
   } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
     APP_DBG("App Key Added");
+  } else if (val->cfgHdr.opcode == OP_APP_KEY_DEL) {
+    APP_DBG("App Key Deleted");
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
     APP_DBG("AppKey Binded");
   } else if (val->cfgHdr.opcode == OP_MOD_APP_UNBIND) {
@@ -221,10 +219,6 @@ void blemesh_on_sync(void) {
 #endif
 
   bt_mesh_prov_retransmit_init();
-
-#if (!CONFIG_BLE_MESH_PB_GATT)
-  adv_link_rx_buf_register(&rx_buf);
-#endif
 
   err = bt_mesh_prov_init(&app_prov);
 
@@ -306,7 +300,7 @@ void App_Init() {
   pinsInit();
 
   blemesh_on_sync();
-  tmos_start_task(App_TaskID, APP_BUTTON_POLL_EVENT, 0); /* Kick off polling */
+  tmos_set_event(App_TaskID, APP_BUTTON_POLL_EVENT); /* Kick off polling */
 }
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {

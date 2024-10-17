@@ -150,6 +150,8 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("Provision Reset successed");
   } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
     APP_DBG("App Key Added");
+  } else if (val->cfgHdr.opcode == OP_APP_KEY_DEL) {
+    APP_DBG("App Key Deleted");
   } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
     APP_DBG("AppKey Binded");
   } else if (val->cfgHdr.opcode == OP_MOD_APP_UNBIND) {
@@ -193,37 +195,6 @@ void generic_onoff_client_rsp_handler(const generic_onoff_client_status_t *val) 
     printf("{\"level\": \"info\",\"state\": %d, \"source\": %d}\n", val->generic_onoff_Event.status.state, val->generic_onoff_Event.status.source);
   }
 }
-
-// void keyChange(HalKeyChangeEvent event) {
-//   static uint32_t keyDownAt;
-//   APP_DBG("current: %02x, changed: %02x", event.current, event.changed);
-//   if (event.changed & 0x01) {
-//     struct bt_mesh_generic_onoff_set_val param = {
-//       .op_en = FALSE,
-//       .onoff = event.current & 0x01,
-//       .tid = client_tid_get(),
-//       .trans_time = 0,
-//       .delay = 0,
-//     };
-//
-//     // int err = bt_mesh_generic_onoff_set_unack(netIndex, generic_onoff_client_pub.key, generic_onoff_client_pub.addr, &param);
-//     int err = bt_mesh_generic_onoff_set(netIndex, generic_onoff_client_pub.key, generic_onoff_client_pub.addr, &param);
-//     if (err) {
-//       APP_DBG("send failed %d", err);
-//     }
-//   }
-//
-//   if (event.changed & 0x02) {
-//     if (event.current & 0x02) {
-//       keyDownAt = TMOS_GetSystemClock();
-//     } else {
-//       if (TMOS_GetSystemClock() - keyDownAt > 9600) { // 9600 * 0.625 ms = 6s
-//         APP_DBG("duration: %d, about to self unprovision", TMOS_GetSystemClock() - keyDownAt);
-//         tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, 3200);
-//       }
-//     }
-//   }
-// }
 
 void blemesh_on_sync(void) {
   int err;
