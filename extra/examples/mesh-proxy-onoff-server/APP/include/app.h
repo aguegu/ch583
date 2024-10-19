@@ -5,8 +5,10 @@
 extern "C" {
 #endif
 
-void App_Init(void);
+#define APP_RESET_MESH_EVENT (1 << 0)
+#define APP_BUTTON_POLL_EVENT (1 << 1)
 
+void App_Init(void);
 
 #ifdef __cplusplus
 }
