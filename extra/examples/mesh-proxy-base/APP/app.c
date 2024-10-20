@@ -10,7 +10,7 @@ static uint8_t MESH_MEM[1024 * 2] = {0};
 extern const ble_mesh_cfg_t app_mesh_cfg;
 extern const struct device app_dev;
 
-static uint8_t App_TaskID = 0;
+static uint8_t App_TaskID = 0; // Task ID for internal task/event processing
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
@@ -18,7 +18,7 @@ static __attribute__((aligned(4))) uint8_t dev_uuid[16];
 
 #if (!CONFIG_BLE_MESH_PB_GATT)
 NET_BUF_SIMPLE_DEFINE_STATIC(rx_buf, 65);
-#endif
+#endif /* !PB_GATT */
 
 static void cfg_srv_rsp_handler(const cfg_srv_status_t *val);
 static void link_open(bt_mesh_prov_bearer_t bearer);
@@ -29,28 +29,16 @@ static void prov_reset(void);
 static struct bt_mesh_cfg_srv cfg_srv = {
   .relay = BLE_MESH_RELAY_ENABLED,
   .beacon = BLE_MESH_BEACON_ENABLED,
+#if (CONFIG_BLE_MESH_PROXY)
+  .gatt_proxy = BLE_MESH_GATT_PROXY_ENABLED,
+#endif
   .default_ttl = 3,
   .net_transmit = BLE_MESH_TRANSMIT(7, 10),
   .relay_retransmit = BLE_MESH_TRANSMIT(7, 10),
   .handler = cfg_srv_rsp_handler,
 };
 
-void app_prov_attn_on(struct bt_mesh_model *model) {
-  APP_DBG("app_prov_attn_on");
-}
-
-void app_prov_attn_off(struct bt_mesh_model *model) {
-  APP_DBG("app_prov_attn_off");
-}
-
-const struct bt_mesh_health_srv_cb health_srv_cb = {
-  .attn_on = app_prov_attn_on,
-  .attn_off = app_prov_attn_off,
-};
-
-static struct bt_mesh_health_srv health_srv = {
-  .cb = &health_srv_cb,
-};
+static struct bt_mesh_health_srv health_srv;
 
 BLE_MESH_HEALTH_PUB_DEFINE(health_pub, 8);
 
@@ -66,14 +54,14 @@ static struct bt_mesh_model root_models[] = {
 };
 
 static struct bt_mesh_elem elements[] = {{
-  /* Location Descriptor (GATT Bluetooth Namespace Descriptors) */
+    /* Location Descriptor (GATT Bluetooth Namespace Descriptors) */
   .loc = (0),
   .model_count = ARRAY_SIZE(root_models),
   .models = (root_models),
 }};
 
 const struct bt_mesh_comp app_comp = {
-  .cid = 0x07D7, // WCH 公司id
+  .cid = 0x07D7, // WCH org id
   .elem = elements,
   .elem_count = ARRAY_SIZE(elements),
 };
@@ -91,24 +79,28 @@ static void prov_enable(void) {
     return;
   }
 
-  bt_mesh_scan_enable();   // Make sure we're scanning for provisioning inviations
+  bt_mesh_scan_enable(); // Make sure we're scanning for provisioning inviations
   bt_mesh_beacon_enable(); // Enable unprovisioned beacon sending
-  APP_DBG("Sending Unprovisioned beacons");
+
+  if (CONFIG_BLE_MESH_PB_GATT) {
+    bt_mesh_proxy_prov_enable();
+  }
 }
 
-static void link_open(bt_mesh_prov_bearer_t bearer) {
-  APP_DBG("bearer: %x", bearer);
-}
+static void link_open(bt_mesh_prov_bearer_t bearer) { APP_DBG(" "); }
 
 static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
-  APP_DBG("bearer: %x", bearer);
-  if (reason != CLOSE_REASON_SUCCESS)
-    APP_DBG("reason %x", reason);
+  APP_DBG("reason %x", reason);
+
+  if (!bt_mesh_is_provisioned()) {
+    prov_enable();
+  }
 }
 
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
-  APP_DBG("net_idx %x, addr %x", net_idx, addr);
+  APP_DBG("net_idx %x, addr %x, iv_index %x", net_idx, addr, iv_index);
   GPIOB_SetBits(LED_UNPROVISION);
+  netIndex = net_idx;
 }
 
 static void prov_reset(void) {
@@ -133,6 +125,12 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     APP_DBG("AppKey Binded");
   } else if (val->cfgHdr.opcode == OP_MOD_APP_UNBIND) {
     APP_DBG("AppKey Unbinded");
+  } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
+    APP_DBG("Model Subscription Set");
+  } else if (val->cfgHdr.opcode == OP_NET_TRANSMIT_SET) {
+    APP_DBG("Net Transmit Set");
+  } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
+    APP_DBG("Model Publication Set");
   } else {
     APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
   }
@@ -141,6 +139,7 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
 void blemesh_on_sync(void) {
   int err;
   mem_info_t info;
+  uint8_t i;
 
   if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
     PRINT("head file error...\n");
@@ -173,6 +172,20 @@ void blemesh_on_sync(void) {
   bt_mesh_relay_init();
 #endif
 
+#if (CONFIG_BLE_MESH_PROXY || CONFIG_BLE_MESH_PB_GATT)
+  #if (CONFIG_BLE_MESH_PROXY)
+    bt_mesh_proxy_beacon_init_register((void *)bt_mesh_proxy_beacon_init);
+    gatts_notify_register(bt_mesh_gatts_notify);
+    proxy_gatt_enable_register(bt_mesh_proxy_gatt_enable);
+  #endif
+
+  #if (CONFIG_BLE_MESH_PB_GATT)
+    proxy_prov_enable_register(bt_mesh_proxy_prov_enable);
+  #endif
+
+  bt_mesh_proxy_init();
+#endif
+
   bt_mesh_prov_retransmit_init();
 
 #if (!CONFIG_BLE_MESH_PB_GATT)
@@ -188,9 +201,21 @@ void blemesh_on_sync(void) {
 
   bt_mesh_adv_init();
 
+#if ((CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_OTA))
+  bt_mesh_conn_adv_init();
+#endif /* PROXY || PB-GATT || OTA */
+
 #if (CONFIG_BLE_MESH_SETTINGS)
   bt_mesh_settings_init();
-#endif
+#endif /* SETTINGS */
+
+#if (CONFIG_BLE_MESH_PROXY_CLI)
+  bt_mesh_proxy_cli_adapt_init();
+#endif /* PROXY_CLI */
+
+#if ((CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_PROXY_CLI) || (CONFIG_BLE_MESH_OTA))
+  bt_mesh_adapt_init();
+#endif /* PROXY || PB-GATT || PROXY_CLI || OTA */
 
   if (err) {
     APP_DBG("Initializing mesh failed (err %d)", err);
@@ -201,14 +226,13 @@ void blemesh_on_sync(void) {
 
 #if (CONFIG_BLE_MESH_SETTINGS)
   settings_load();
-#endif
+#endif /* SETTINGS */
 
   if (bt_mesh_is_provisioned()) {
-    APP_DBG("Provisioned. Mesh network restored from flash");
+    APP_DBG("Mesh network restored from flash");
   } else {
     prov_enable();
   }
-
   APP_DBG("Mesh initialized");
 }
 
@@ -253,7 +277,7 @@ void App_Init() {
 }
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
-  if (events & APP_RESET_MESH_EVENT) {
+  if (events & APP_RESET_MESH_EVENT) { // 收到删除命令，删除自身网络信息
     APP_DBG("Reset mesh, delete local node");
     bt_mesh_reset();
     return (events ^ APP_RESET_MESH_EVENT);
@@ -261,7 +285,7 @@ static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
 
   if (events & APP_BUTTON_POLL_EVENT) {
     buttonsPoll();
-    tmos_start_task(App_TaskID, APP_BUTTON_POLL_EVENT, MS1_TO_SYSTEM_TIME(500));
+    tmos_start_task(App_TaskID, APP_BUTTON_POLL_EVENT, MS1_TO_SYSTEM_TIME(100));
     return events ^ APP_BUTTON_POLL_EVENT;
   }
   return 0;
