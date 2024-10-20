@@ -1,5 +1,4 @@
 #include "app_generic_onoff_server_model.h"
-#include "MESH_LIB.h"
 #include "app_mesh_config.h"
 #include "config.h"
 
