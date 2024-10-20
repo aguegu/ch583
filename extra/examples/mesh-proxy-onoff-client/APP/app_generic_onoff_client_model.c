@@ -33,12 +33,6 @@ static void client_reset(void) {
   tmos_stop_task(generic_onoff_TaskID, GENERIC_ONOFF_SYNC_EVT);
 }
 
-/*******************************************************************************
- * Function Name  : generic_onoff_rsp_recv
- * Description    : 调用应用层传入的回调
- * Input          : None
- * Return         : None
- *******************************************************************************/
 static void generic_onoff_rsp_recv(generic_onoff_client_status_t *val, u8_t status) {
   if (generic_onoff_client == NULL) {
     return;
@@ -59,12 +53,6 @@ static int client_wait(void) {
   return err;
 }
 
-/*******************************************************************************
- * Function Name  : client_prepare
- * Description    :
- * Input          : None
- * Return         : None
- *******************************************************************************/
 static int client_prepare(u32_t op_req, u32_t op) {
   if (!generic_onoff_client) {
     APP_DBG("No available Configuration Client context!");
@@ -82,12 +70,6 @@ static int client_prepare(u32_t op_req, u32_t op) {
   return 0;
 }
 
-/*******************************************************************************
- * Function Name  : sync_handler
- * Description    : 通知应用层当前op_code超时了
- * Input          : None
- * Return         : None
- *******************************************************************************/
 static void sync_handler(void) {
   APP_DBG("");
 
@@ -100,12 +82,6 @@ static void sync_handler(void) {
   generic_onoff_rsp_recv(&generic_onoff_client_status, 0xFF);
 }
 
-/*******************************************************************************
- * Function Name  : generic_onoff_client_init
- * Description    :
- * Input          : None
- * Return         : None
- *******************************************************************************/
 int generic_onoff_client_init(struct bt_mesh_model *model) {
   // if (!bt_mesh_model_in_primary(model)) {
   //   BT_ERR("Configuration Client only allowed in primary element");
@@ -137,13 +113,10 @@ static uint16 generic_onoff_ProcessEvent(uint8 task_id, uint16 events) {
   return 0;
 }
 
-static void generic_onoff_status(struct bt_mesh_model *model,
-                             struct bt_mesh_msg_ctx *ctx,
-                             struct net_buf_simple *buf) {
+static void generic_onoff_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf) {
   generic_onoff_client_status_t generic_onoff_client_status;
 
-  APP_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u", ctx->net_idx,
-          ctx->app_idx, ctx->addr, buf->len);
+  APP_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u", ctx->net_idx, ctx->app_idx, ctx->addr, buf->len);
 
   if (generic_onoff_client->op_pending == BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS) {
     generic_onoff_client_status.generic_onoff_Event.status.state = buf->data[0];
@@ -163,25 +136,18 @@ const struct bt_mesh_model_op generic_onoff_client_ops[] = {
   BLE_MESH_MODEL_OP_END,
 };
 
-/*******************************************************************************
- * Function Name  : bt_mesh_generic_onoff_get
- * Description    : {BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS, 1, generic_onoff_status}
- * Input          : None
- * Return         : None
- *******************************************************************************/
 int bt_mesh_generic_onoff_get(u16_t net_idx, u16_t app_idx, u16_t addr) {
   NET_BUF_SIMPLE_DEFINE(msg, BLE_MESH_GEN_ONOFF_GET_MSG_LEN);
   struct bt_mesh_msg_ctx ctx = {
-      .net_idx = net_idx,
-      .app_idx = app_idx,
-      .addr = addr,
-      .send_ttl = BLE_MESH_TTL_DEFAULT,
+    .net_idx = net_idx,
+    .app_idx = app_idx,
+    .addr = addr,
+    .send_ttl = BLE_MESH_TTL_DEFAULT,
   };
 
   int err;
 
-  err = client_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_GET,
-                    BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+  err = client_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_GET, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
   if (err) {
     return err;
   }
@@ -198,14 +164,7 @@ int bt_mesh_generic_onoff_get(u16_t net_idx, u16_t app_idx, u16_t addr) {
   return client_wait();
 }
 
-/*******************************************************************************
- * Function Name  : bt_mesh_generic_onoff_set
- * Description    : {BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS, 1, generic_onoff_status}
- * Input          : None
- * Return         : None
- *******************************************************************************/
-int bt_mesh_generic_onoff_set(u16_t net_idx, u16_t app_idx, u16_t addr,
-                          struct bt_mesh_generic_onoff_set_val const *set) {
+int bt_mesh_generic_onoff_set(u16_t net_idx, u16_t app_idx, u16_t addr, struct bt_mesh_generic_onoff_set_val const *set) {
   NET_BUF_SIMPLE_DEFINE(msg, BLE_MESH_GEN_ONOFF_SET_MSG_LEN);
   struct bt_mesh_msg_ctx ctx = {
     .net_idx = net_idx,
@@ -216,8 +175,7 @@ int bt_mesh_generic_onoff_set(u16_t net_idx, u16_t app_idx, u16_t addr,
 
   int err;
 
-  err = client_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_SET,
-                    BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+  err = client_prepare(BLE_MESH_MODEL_OP_GEN_ONOFF_SET, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS);
 
   if (err) {
     return err;
@@ -242,14 +200,7 @@ int bt_mesh_generic_onoff_set(u16_t net_idx, u16_t app_idx, u16_t addr,
   return 0;
 }
 
-/*******************************************************************************
- * Function Name  : bt_mesh_generic_onoff_set_unack
- * Description    : {BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS, 1, generic_onoff_status}
- * Input          : None
- * Return         : None
- *******************************************************************************/
-int bt_mesh_generic_onoff_set_unack(u16_t net_idx, u16_t app_idx, u16_t addr,
-                                struct bt_mesh_generic_onoff_set_val const *set) {
+int bt_mesh_generic_onoff_set_unack(u16_t net_idx, u16_t app_idx, u16_t addr, struct bt_mesh_generic_onoff_set_val const *set) {
   NET_BUF_SIMPLE_DEFINE(msg, BLE_MESH_GEN_ONOFF_SET_MSG_LEN);
   struct bt_mesh_msg_ctx ctx = {
     .net_idx = net_idx,
