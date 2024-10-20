@@ -12,10 +12,8 @@ static void generic_onoff_status(struct bt_mesh_model *model, struct bt_mesh_msg
     net_buf_simple_add_u8(&msg, ((struct bt_mesh_generic_onoff_server *)(model->user_data))->onReadState());
   }
 
-  APP_DBG("ttl: 0x%02x recv_dst(me): 0x%04x, addr(from): 0x%04x", ctx->recv_ttl,
-          ctx->recv_dst, ctx->addr);
-  APP_DBG("msg len: 0x%02x: %02x %02x %02x", msg.len, msg.data[0], msg.data[1],
-          msg.data[2]);
+  APP_DBG("ttl: 0x%02x recv_dst(me): 0x%04x, addr(from): 0x%04x", ctx->recv_ttl, ctx->recv_dst, ctx->addr);
+  APP_DBG("msg len: 0x%02x: %02x %02x %02x", msg.len, msg.data[0], msg.data[1], msg.data[2]);
 
   ctx->send_ttl = BLE_MESH_TTL_DEFAULT;
   err = bt_mesh_model_send(model, ctx, &msg, NULL, NULL);
