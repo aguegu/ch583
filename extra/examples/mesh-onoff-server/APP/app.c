@@ -23,6 +23,10 @@ static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 static __attribute__((aligned(4))) uint8_t dev_uuid[16];
 static uint16_t netIndex;
 
+#if (!CONFIG_BLE_MESH_PB_GATT)
+NET_BUF_SIMPLE_DEFINE_STATIC(rx_buf, 65);
+#endif
+
 static void cfg_srv_rsp_handler(const cfg_srv_status_t *val);
 static void link_open(bt_mesh_prov_bearer_t bearer);
 static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason);
@@ -219,6 +223,10 @@ void blemesh_on_sync(void) {
 #endif
 
   bt_mesh_prov_retransmit_init();
+
+#if (!CONFIG_BLE_MESH_PB_GATT)
+  adv_link_rx_buf_register(&rx_buf);
+#endif
 
   err = bt_mesh_prov_init(&app_prov);
 
