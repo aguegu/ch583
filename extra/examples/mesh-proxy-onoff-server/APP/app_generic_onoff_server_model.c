@@ -63,11 +63,11 @@ const struct bt_mesh_model_op generic_onoff_server_ops[] = {
   BLE_MESH_MODEL_OP_END,
 };
 
-void bt_mesh_generic_onoff_status(struct bt_mesh_model *model, u16_t net_idx, u16_t app_idx, u16_t addr) {
+void generic_onoff_status_publish(struct bt_mesh_model *model) {
   struct bt_mesh_msg_ctx ctx = {
-    .net_idx = net_idx,
-    .app_idx = app_idx,
-    .addr = addr,
+    .net_idx = bt_mesh_app_key_find(model->pub->key)->net_idx,
+    .app_idx = model->pub->key,
+    .addr = model->pub->addr,
     .send_ttl = BLE_MESH_TTL_DEFAULT,
   };
 

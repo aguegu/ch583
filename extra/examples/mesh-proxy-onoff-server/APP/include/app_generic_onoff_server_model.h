@@ -9,15 +9,12 @@ extern "C" {
 
 extern const struct bt_mesh_model_op generic_onoff_server_ops[];
 
-typedef BOOL (*bt_mesh_generic_onoff_server_state_read_t)();
-typedef void (*bt_mesh_generic_onoff_server_state_write_t)(BOOL state);
-
 struct bt_mesh_generic_onoff_server {
-  bt_mesh_generic_onoff_server_state_read_t onReadState;
-  bt_mesh_generic_onoff_server_state_write_t onWriteState;
+  BOOL (*onReadState)();
+  void (*onWriteState)(BOOL state);
 };
 
-void bt_mesh_generic_onoff_status(struct bt_mesh_model *model, u16_t net_idx, u16_t app_idx, u16_t addr);
+void generic_onoff_status_publish(struct bt_mesh_model *model);
 
 #ifdef __cplusplus
 }
