@@ -43,8 +43,8 @@ int main(void) {
   UART1_DefInit();
 #endif
 
-  APP_DBG("%s\n", VER_LIB);
-  APP_DBG("%s\n", VER_MESH_LIB);
+  APP_DBG("%s", VER_LIB);
+  APP_DBG("%s", VER_MESH_LIB);
 
   CH58X_BLEInit();
   HAL_Init();

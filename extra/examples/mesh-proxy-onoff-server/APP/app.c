@@ -6,13 +6,34 @@ static uint8_t App_TaskID = 0; // Task ID for internal task/event processing
 
 static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
-static uint16_t netIndex;
+static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
+  if (val->cfgHdr.status) {
+    APP_DBG("warning opcode 0x%02x", val->cfgHdr.opcode);
+    return;
+  }
 
-static void cfg_srv_rsp_handler(const cfg_srv_status_t *val);
-static void link_open(bt_mesh_prov_bearer_t bearer);
-static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason);
-static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index);
-static void prov_reset(void);
+  APP_DBG("model: 0x%04x", val->model->id)
+
+  if (val->cfgHdr.opcode == OP_NODE_RESET) {
+    APP_DBG("Provision Reset successed");
+  } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
+    APP_DBG("App Key Added");
+  } else if (val->cfgHdr.opcode == OP_APP_KEY_DEL) {
+    APP_DBG("App Key Deleted");
+  } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
+    APP_DBG("AppKey Binded");
+  } else if (val->cfgHdr.opcode == OP_MOD_APP_UNBIND) {
+    APP_DBG("AppKey Unbinded");
+  } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
+    APP_DBG("Model Subscription Set");
+  } else if (val->cfgHdr.opcode == OP_NET_TRANSMIT_SET) {
+    APP_DBG("Net Transmit Set");
+  } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
+    APP_DBG("Model Publication Set");
+  } else {
+    APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
+  }
+}
 
 static struct bt_mesh_cfg_srv cfg_srv = {
 #if(CONFIG_BLE_MESH_RELAY)
@@ -82,42 +103,12 @@ const struct bt_mesh_comp app_comp = {
   .elem_count = ARRAY_SIZE(elements),
 };
 
-static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
-  if (val->cfgHdr.status) {
-    APP_DBG("warning opcode 0x%02x", val->cfgHdr.opcode);
-    return;
-  }
-
-  if (val->cfgHdr.opcode == OP_NODE_RESET) {
-    APP_DBG("Provision Reset successed");
-  } else if (val->cfgHdr.opcode == OP_APP_KEY_ADD) {
-    APP_DBG("App Key Added");
-  } else if (val->cfgHdr.opcode == OP_APP_KEY_DEL) {
-    APP_DBG("App Key Deleted");
-  } else if (val->cfgHdr.opcode == OP_MOD_APP_BIND) {
-    APP_DBG("AppKey Binded");
-  } else if (val->cfgHdr.opcode == OP_MOD_APP_UNBIND) {
-    APP_DBG("AppKey Unbinded");
-  } else if (val->cfgHdr.opcode == OP_MOD_SUB_ADD) {
-    APP_DBG("Model Subscription Set");
-  } else if (val->cfgHdr.opcode == OP_NET_TRANSMIT_SET) {
-    APP_DBG("Net Transmit Set");
-  } else if (val->cfgHdr.opcode == OP_MOD_PUB_SET) {
-    APP_DBG("Model Publication Set: 0x%04x", generic_onoff_srv_pub.addr);
-  } else {
-    APP_DBG("Unknow opcode 0x%02x", val->cfgHdr.opcode);
-  }
-}
-
 void pinsInit() {
   GPIOB_ModeCfg(BTN_ONOFF, GPIO_ModeIN_PU);
   GPIOB_ModeCfg(BTN_UNPROVISION, GPIO_ModeIN_PU);
 
   GPIOB_ModeCfg(LED_ONOFF, GPIO_ModeOut_PP_5mA);
-
-
   ledWrite(FALSE);
-
 }
 
 void buttonsPoll() {
@@ -129,7 +120,8 @@ void buttonsPoll() {
   if (buttonsNow != buttons) {
     if ((buttonsNow ^ buttons) & BTN_ONOFF) {
       ledWrite(!(buttonsNow & BTN_ONOFF));
-      bt_mesh_generic_onoff_status(root_models + 2, netIndex, generic_onoff_srv_pub.key, generic_onoff_srv_pub.addr);
+      APP_DBG("%04x", bt_mesh_app_key_find(root_models[2].pub->key)->net_idx);
+      generic_onoff_status_publish(root_models + 2);
     }
 
     if (((buttonsNow ^ buttons) & BTN_UNPROVISION) && !(buttonsNow & BTN_UNPROVISION) ) {
