@@ -1,8 +1,6 @@
 #include "HAL.h"
-#include "MESH_LIB.h"
 #include "app.h"
 #include "app_mesh_config.h"
-#include "config.h"
 
 __attribute__((aligned(4))) uint32_t MEM_BUF[BLE_MEMHEAP_SIZE / 4];
 
