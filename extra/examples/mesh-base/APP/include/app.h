@@ -6,11 +6,13 @@ extern "C" {
 #endif
 
 #include "MESH_LIB.h"
+#include "config.h"
 
-#define APP_RESET_MESH_EVENT (1 << 0)
-#define APP_BUTTON_POLL_EVENT (1 << 1)
+// LEDs are ON when pins are low
+#define LED_UNPROVISION     GPIO_Pin_19
+#define BUTTON_UNPROVISION  GPIO_Pin_4
 
-void App_Init(void);
+void blemesh_on_sync(void);
 
 #ifdef __cplusplus
 }
