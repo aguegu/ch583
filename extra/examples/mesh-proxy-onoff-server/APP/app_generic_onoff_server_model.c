@@ -1,5 +1,4 @@
 #include "app_generic_onoff_server_model.h"
-#include "app_mesh_config.h"
 #include "config.h"
 
 static void generic_onoff_status(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx) {

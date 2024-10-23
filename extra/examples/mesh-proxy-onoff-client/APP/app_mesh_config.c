@@ -1,7 +1,21 @@
+/********************************** (C) COPYRIGHT
+ ******************************** File Name          : app_mesh_config.c Author
+ *: WCH Version            : V1.0 Date               : 2021/03/24 Description :
+ *********************************************************************************
+ * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
+ * Attention: This software (modified or not) and binary are used for
+ * microcontroller manufactured by Nanjing Qinheng Microelectronics.
+ *******************************************************************************/
+
+/******************************************************************************/
+/* 头文件包含 */
 #include "app_mesh_config.h"
 #include "MESH_LIB.h"
 #include "config.h"
 
+/*********************************************************************
+ * GLOBAL TYPEDEFS
+ */
 const ble_mesh_cfg_t app_mesh_cfg = {
     .common_cfg.adv_buf_count = CONFIG_MESH_ADV_BUF_COUNT_DEF,
     .common_cfg.rpl_count = CONFIG_MESH_RPL_COUNT_DEF,
@@ -48,13 +62,36 @@ const ble_mesh_cfg_t app_mesh_cfg = {
     .rf_cfg.rf_channel_39 = CONFIG_MESH_RF_CHANNEL_39,
 };
 
+/*********************************************************************
+ * @fn      read_flash
+ *
+ * @brief   read flash
+ *
+ * @param   offset  - 地址偏移
+ * @param   data    - 数据指针
+ * @param   len     - 长度
+ *
+ * @return  always success
+ */
 int read_flash(int offset, void *data, unsigned int len) {
   EEPROM_READ(offset, data, len);
   return 0;
 }
 
+/*********************************************************************
+ * @fn      write_flash
+ *
+ * @brief   write flash
+ *
+ * @param   offset  - 地址偏移
+ * @param   data    - 数据指针
+ * @param   len     - 长度
+ *
+ * @return  state
+ */
 int write_flash(int offset, const void *data, unsigned int len) {
   __attribute__((aligned(4))) uint8_t vec[64];
+
   if (len > sizeof(vec)) {
     return -E2BIG;
   }
@@ -62,10 +99,29 @@ int write_flash(int offset, const void *data, unsigned int len) {
   return EEPROM_WRITE(offset, (void *)vec, len);
 }
 
+/*********************************************************************
+ * @fn      erase_flash
+ *
+ * @brief   erase flash
+ *
+ * @param   offset  - 地址偏移
+ * @param   len     - 长度
+ *
+ * @return  state
+ */
 int erase_flash(int offset, unsigned int len) {
   return EEPROM_ERASE(offset, len);
 }
 
+/*********************************************************************
+ * @fn      flash_write_protection
+ *
+ * @brief   no used
+ *
+ * @param   enable  - no uesd
+ *
+ * @return  always success
+ */
 int flash_write_protection(BOOL enable) { return 0; }
 
 const struct device app_dev = {
@@ -84,3 +140,5 @@ const struct device app_dev = {
             .nvs_store_baddr = CONFIG_MESH_NVS_ADDR_DEF,
         },
 };
+
+/******************************** endfile @ main ******************************/

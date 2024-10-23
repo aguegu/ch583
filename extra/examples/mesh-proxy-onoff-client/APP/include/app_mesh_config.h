@@ -9,9 +9,9 @@ extern "C" {
 // relay功能
 #define CONFIG_BLE_MESH_RELAY 1
 // 代理功能
-#define CONFIG_BLE_MESH_PROXY 0
+#define CONFIG_BLE_MESH_PROXY 1
 // GATT层配网功能
-#define CONFIG_BLE_MESH_PB_GATT 0
+#define CONFIG_BLE_MESH_PB_GATT 1
 // FLASH存储功能
 #define CONFIG_BLE_MESH_SETTINGS 1
 // 朋友节点功能
@@ -65,7 +65,7 @@ extern "C" {
 
 // 可存储的模型密钥数量
 #define CONFIG_MESH_MOD_KEY_COUNT_MIN (1)
-#define CONFIG_MESH_MOD_KEY_COUNT_DEF (1)
+#define CONFIG_MESH_MOD_KEY_COUNT_DEF (2)
 #define CONFIG_MESH_MOD_KEY_COUNT_MAX (3)
 
 // 可存储的订阅地址数量
@@ -196,6 +196,8 @@ extern "C" {
     printf(X);                            \
     printf("\"}\n");                      \
   }
+
+/******************************************************************************/
 
 #ifdef __cplusplus
 }

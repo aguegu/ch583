@@ -1,6 +1,8 @@
 BIN     = ../../riscv-embedded-gcc/bin
 BIN_PREFIX = riscv-none-embed
 
+LINTER = clang-format --style=LLVM -i
+
 OUTPUT_DIR = ./dist
 
 DEFINES := -DDEBUG=1 -DBLE_MEMHEAP_SIZE=4096
@@ -34,8 +36,6 @@ APP_HEADERS = $(addprefix $(APP_INC)/, $(notdir $(wildcard $(APP_INC)/*.h)))
 VPATH = $(Startup_ROOT):$(RVMSIS_ROOT):$(StdPeriphDriver_ROOT):$(HAL_ROOT):$(Profile_ROOT):$(APP_ROOT)
 
 LIBS := -lISP583 -lCH58xBLE -lMESH
-
-LINTER = clang-format --style=LLVM -i
 
 $(OUTPUT_DIR)/Startup/%.o: %.S
 	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g -x assembler-with-cpp -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
