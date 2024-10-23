@@ -6,7 +6,7 @@
  * Description        : RTC配置及其初始化
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
+ * Attention: This software (modified or not) and binary are used for 
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -85,7 +85,7 @@ void HAL_TimeInit(void)
     R8_CK32K_CONFIG |= RB_CLK_OSC32K_XT | RB_CLK_INT32K_PON | RB_CLK_XT32K_PON;
     sys_safe_access_disable();
 #endif
-    RTC_InitTime(2024, 1, 1, 0, 0, 0); //RTC时钟初始化当前时间
+    RTC_InitTime(2020, 1, 1, 0, 0, 0); //RTC时钟初始化当前时间
     TMOS_TimerInit(0);
 }
 

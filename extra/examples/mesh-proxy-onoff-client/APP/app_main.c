@@ -14,14 +14,23 @@ __attribute__((noinline)) void Main_Circulation() {
 }
 
 uint8_t bt_mesh_lib_init(void) {
+  uint8_t ret;
+
   if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
-    APP_DBG("mesh head file error...");
+    PRINT("mesh head file error...\n");
     while (1);
   }
-  uint8_t ret = RF_RoleInit();
+
+  ret = RF_RoleInit();
+
+#if ((CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_OTA))
+  ret = GAPRole_PeripheralInit();
+#endif
+
   MeshTimer_Init();
   MeshDeamon_Init();
   ble_sm_alg_ecc_init();
+
   return ret;
 }
 
@@ -34,8 +43,9 @@ int main(void) {
   UART1_DefInit();
 #endif
 
-  APP_DBG(VER_LIB);
-  APP_DBG(VER_MESH_LIB);
+  APP_DBG("%s", VER_LIB);
+  APP_DBG("%s", VER_MESH_LIB);
+
   CH58X_BLEInit();
   HAL_Init();
   bt_mesh_lib_init();
