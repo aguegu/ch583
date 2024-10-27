@@ -3,6 +3,7 @@
 #include "app.h"
 #include "app_mesh_config.h"
 #include "config.h"
+#include "ringbuffer.h"
 
 __attribute__((aligned(4))) uint32_t MEM_BUF[BLE_MEMHEAP_SIZE / 4];
 
@@ -34,14 +35,34 @@ uint8_t bt_mesh_lib_init(void) {
   return ret;
 }
 
+RingBuffer txBuffer;
+
+int _write(int fd, char *buf, int size) {
+  for (int i = 0; i < size; i++) {
+    ringbuffer_put(&txBuffer, *buf++, TRUE);
+    if (R8_UART1_LSR & RB_LSR_TX_ALL_EMP) {
+      R8_UART1_THR = ringbuffer_get(&txBuffer);
+    }
+  }
+  return size;
+}
+
 int main(void) {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
 
-#ifdef DEBUG
-  GPIOA_SetBits(bTXD1);
-  GPIOA_ModeCfg(bTXD1, GPIO_ModeOut_PP_5mA);
-  UART1_DefInit();
-#endif
+// #ifdef DEBUG
+//   GPIOA_SetBits(bTXD1);
+//   GPIOA_ModeCfg(bTXD1, GPIO_ModeOut_PP_5mA);
+//   UART1_DefInit();
+// #endif
+
+  ringbuffer_init(&txBuffer, 64);
+
+  GPIOA_SetBits(GPIO_Pin_9);
+  GPIOA_ModeCfg(GPIO_Pin_9, GPIO_ModeOut_PP_5mA); // TXD: PA9, pushpull, but set it high beforehand
+  UART1_DefInit();  // default baudrate 115200
+  UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY);
+  PFIC_EnableIRQ(UART1_IRQn);
 
   APP_DBG("%s", VER_LIB);
   APP_DBG("%s", VER_MESH_LIB);
@@ -51,4 +72,16 @@ int main(void) {
   bt_mesh_lib_init();
   App_Init();
   Main_Circulation();
+}
+
+__INTERRUPT
+__HIGH_CODE
+void UART1_IRQHandler(void) {
+  switch (UART1_GetITFlag()) {
+    case UART_II_THR_EMPTY: // trigger when THR and FIFOtx all empty
+      while (ringbuffer_available(&txBuffer) && R8_UART1_TFC < UART_FIFO_SIZE) {
+        R8_UART1_THR = ringbuffer_get(&txBuffer);
+      }
+      break;
+  }
 }

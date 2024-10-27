@@ -5,7 +5,7 @@ LINTER = clang-format --style=LLVM -i
 
 OUTPUT_DIR = ./dist
 
-DEFINES := -DDEBUG=1 -DBLE_MEMHEAP_SIZE=4096
+DEFINES := -DBLE_MEMHEAP_SIZE=4096
 
 TARGET     := $(addprefix $(OUTPUT_DIR)/, $(notdir $(CURDIR)))
 

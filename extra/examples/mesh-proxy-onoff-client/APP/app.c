@@ -79,10 +79,6 @@ void logStatus(uint16_t address, BOOL state) {
   printf("{\"level\": \"info\", \"source\": %04x, \"state\": %d}\n", address, state);
 }
 
-void waitForAck() {
-
-}
-
 struct bt_mesh_generic_onoff_client generic_onoff_client = {
   .tid = 128,
   .readState = readButton,
