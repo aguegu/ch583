@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include "HAL.h"
 #include "MESH_LIB.h"
 #include "app.h"
@@ -47,14 +48,28 @@ int _write(int fd, char *buf, int size) {
   return size;
 }
 
+// log levels:
+//  10: 'trace',
+//  20: 'debug',
+//  30: 'info',
+//  40: 'warn',
+//  50: 'error',
+//  60: 'fatal'
+void app_log(char level, const char* func, char *format, ...) {
+  printf("{\"lvl\": %d", level);
+  if (func) {
+    printf(", \"func\": \"%s\"", func);
+  }
+  printf(", \"msg\": \"");
+  va_list args; // Declare a variable of type va_list
+  va_start(args, format);
+  vprintf(format, args);
+  va_end(args);
+  printf("\"}\n");
+}
+
 int main(void) {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
-
-// #ifdef DEBUG
-//   GPIOA_SetBits(bTXD1);
-//   GPIOA_ModeCfg(bTXD1, GPIO_ModeOut_PP_5mA);
-//   UART1_DefInit();
-// #endif
 
   ringbuffer_init(&txBuffer, 64);
 
@@ -64,13 +79,11 @@ int main(void) {
   UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY);
   PFIC_EnableIRQ(UART1_IRQn);
 
-  APP_DBG("%s", VER_LIB);
-  APP_DBG("%s", VER_MESH_LIB);
-
   CH58X_BLEInit();
   HAL_Init();
   bt_mesh_lib_init();
   App_Init();
+
   Main_Circulation();
 }
 

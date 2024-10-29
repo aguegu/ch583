@@ -1,6 +1,5 @@
 #include "ringbuffer.h"
 
-
 void ringbuffer_init(RingBuffer * rb, uint16_t size) {
   rb->buffer = (uint8_t *)malloc(size);
   rb->indexIn = 0;

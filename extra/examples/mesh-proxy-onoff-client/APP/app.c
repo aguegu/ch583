@@ -12,7 +12,7 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
     return;
   }
 
-  APP_DBG("model: 0x%04x", val->model->id)
+  APP_DBG("model: 0x%04x", val->model->id);
 
   if (val->cfgHdr.opcode == OP_NODE_RESET) {
     APP_DBG("Provision Reset successed");
