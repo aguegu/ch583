@@ -5,3 +5,6 @@ MRS_Toolchain_Linux_x64_*/
 
 YT-583/
 rsc/
+
+*.tar.xz
+

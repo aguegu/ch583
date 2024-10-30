@@ -18,7 +18,7 @@ Download *MRS_Toolchain_Linux_x64_V1.92.tar.xz* from [Mounriver](http://mounrive
 ```
 cd extra/
 wget http://file-oss.mounriver.com/tools/MRS_Toolchain_Linux_x64_V1.92.tar.xz
-tar xJf MRS_Toolchain_Linux_x64_V1.92.tar.xz`
+tar xJf MRS_Toolchain_Linux_x64_V1.92.tar.xz
 ln -s MRS_Toolchain_Linux_x64_V1.92/RISC-V_Embedded_GCC riscv-embedded-gcc
 ```
 
@@ -27,7 +27,7 @@ ln -s MRS_Toolchain_Linux_x64_V1.92/RISC-V_Embedded_GCC riscv-embedded-gcc
 *isp/WCHISPTool_CMD* folder comes from [WCHISPTool_CMD_ZIP](https://www.wch.cn/downloads/WCHISPTool_CMD_ZIP.html) (Linux x64)
 *isp/config.ini* is exported from [WCHISPTool on Windows](https://www.wch.cn/downloads/WCHISPTool_Setup_exe.html)
 
-It requires `linux-headers` of current kernel to build
+It requires `linux-headers` package of current kernel (like `linux610-headers`) to build
 
 ```
 cd isp/driver
