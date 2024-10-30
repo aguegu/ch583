@@ -28,7 +28,7 @@ RingBuffer txBuffer, rxBuffer;
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
     ringbuffer_put(&txBuffer, *buf++, TRUE);
-    if (R8_UART0_LSR & RB_LSR_TX_ALL_EMP) {
+    if (R8_UART0_LSR & RB_LSR_TX_FIFO_EMP) {
       R8_UART0_THR = ringbuffer_get(&txBuffer);
       GPIOB_ResetBits(LED);
     }
@@ -38,7 +38,7 @@ int _write(int fd, char *buf, int size) {
 
 void flushUart0Tx() {
   // while (ringbuffer_available(&txBuffer));
-  while (!(R8_UART0_LSR & RB_LSR_TX_ALL_EMP));
+  while (!(R8_UART0_LSR & RB_LSR_TX_FIFO_EMP));
 }
 
 int main() {
@@ -103,7 +103,7 @@ int main() {
 
     for (uint8_t i = 0; i < 8; i++) {
       ringbuffer_put(&txBuffer, command[i], TRUE);
-      if (R8_UART0_LSR & RB_LSR_TX_ALL_EMP) {
+      if (R8_UART0_LSR & RB_LSR_TX_FIFO_EMP) {
         R8_UART0_THR = ringbuffer_get(&txBuffer);
         GPIOB_ResetBits(LED);
       }
@@ -144,11 +144,11 @@ void UART0_IRQHandler(void) {
   }
 }
 
-01 04 20 00 00 02 7a 0b
-01 04 04 43 65 e6 66 34 55
-
-
-<Buffer 01 04 20 00 00 02 7a 0b>
-<Buffer 01 04 20 00 00 02 7a 0b>
-<Buffer 01 04 04 43 65 19 9a 75 e4>
-<Buffer 01 04 04 43 65 19 9a 75 e4>
+// 01 04 20 00 00 02 7a 0b
+// 01 04 04 43 65 e6 66 34 55
+//
+//
+// <Buffer 01 04 20 00 00 02 7a 0b>
+// <Buffer 01 04 20 00 00 02 7a 0b>
+// <Buffer 01 04 04 43 65 19 9a 75 e4>
+// <Buffer 01 04 04 43 65 19 9a 75 e4>

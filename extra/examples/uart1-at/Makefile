@@ -9,6 +9,7 @@ OUTPUT_DIR = ./dist
 TARGET     := $(addprefix $(OUTPUT_DIR)/, $(notdir $(CURDIR)))
 
 Project_ROOT    = .
+Project_INC		= $(Project_ROOT)/include
 Project_SRC_DIR = $(Project_ROOT)
 Project_SOURCE  = $(notdir $(wildcard $(Project_SRC_DIR)/*.c))
 Project_OBJECTS := $(addprefix $(OUTPUT_DIR)/, $(Project_SOURCE:.c=.o))
@@ -29,7 +30,7 @@ Startup_OBJECTS := $(addprefix $(OUTPUT_DIR)/asm/, $(Startup_SOURCE:.S=.o))
 
 LINK_FILE = ../../EVT/EXAM/SRC/Ld/Link.ld
 
-INCLUDE = -I $(StdPeriphDriver_INC_DIR) -I $(RVMSIS_ROOT)
+INCLUDE = -I $(StdPeriphDriver_INC_DIR) -I $(RVMSIS_ROOT) -I $(Project_INC)
 
 VPATH=$(StdPeriphDriver_SRC_DIR):$(RVMSIS_ROOT):$(Startup_ROOT)
 

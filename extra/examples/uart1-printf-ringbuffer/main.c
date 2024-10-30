@@ -20,7 +20,7 @@ void delayInJiffy(uint32_t t) {
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
     ringbuffer_put(&txBuffer, *buf++, TRUE);
-    if (R8_UART1_LSR & RB_LSR_TX_ALL_EMP) {
+    if (R8_UART1_LSR & RB_LSR_TX_FIFO_EMP) {
       R8_UART1_THR = ringbuffer_get(&txBuffer);
       GPIOB_ResetBits(LED);
     }
@@ -30,7 +30,7 @@ int _write(int fd, char *buf, int size) {
 
 void flushUart1Tx() {
   // while (ringbuffer_available(&txBuffer));
-  while (!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
+  while (!(R8_UART1_LSR & RB_LSR_TX_FIFO_EMP));
 }
 
 int main() {

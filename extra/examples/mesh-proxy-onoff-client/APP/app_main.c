@@ -41,7 +41,7 @@ RingBuffer txBuffer;
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
     ringbuffer_put(&txBuffer, *buf++, TRUE);
-    if (R8_UART1_LSR & RB_LSR_TX_ALL_EMP) {
+    if (R8_UART1_LSR & RB_LSR_TX_FIFO_EMP) {
       R8_UART1_THR = ringbuffer_get(&txBuffer);
     }
   }

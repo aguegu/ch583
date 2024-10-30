@@ -29,7 +29,7 @@ RingBuffer tx1Buffer, rx1Buffer;
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
     ringbuffer_put(&tx1Buffer, *buf++, TRUE);
-    if (R8_UART1_LSR & RB_LSR_TX_ALL_EMP) {
+    if (R8_UART1_LSR & RB_LSR_TX_FIFO_EMP) {
       R8_UART1_THR = ringbuffer_get(&tx1Buffer);
     }
   }
@@ -38,7 +38,7 @@ int _write(int fd, char *buf, int size) {
 
 void flushUart0Tx() {
   // while (ringbuffer_available(&tx0Buffer));
-  while (!(R8_UART0_LSR & RB_LSR_TX_ALL_EMP));
+  while (!(R8_UART0_LSR & RB_LSR_TX_FIFO_EMP));
 }
 
 int main() {
@@ -93,7 +93,7 @@ int main() {
 
     for (uint8_t i = 0; i < 8; i++) {
       ringbuffer_put(&tx0Buffer, tx0Package[i], TRUE);
-      if (R8_UART0_LSR & RB_LSR_TX_ALL_EMP) {
+      if (R8_UART0_LSR & RB_LSR_TX_FIFO_EMP) {
         R8_UART0_THR = ringbuffer_get(&tx0Buffer);
         GPIOB_ResetBits(LED);
       }
