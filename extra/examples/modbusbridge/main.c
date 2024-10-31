@@ -29,7 +29,7 @@ RingBuffer tx1Buffer, rx1Buffer;
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
     ringbuffer_put(&tx1Buffer, *buf++, TRUE);
-    if (R8_UART1_LSR & RB_LSR_TX_FIFO_EMP) {
+    if (R8_UART1_LSR & RB_LSR_TX_ALL_EMP) {
       R8_UART1_THR = ringbuffer_get(&tx1Buffer);
     }
   }
@@ -38,7 +38,7 @@ int _write(int fd, char *buf, int size) {
 
 void flushUart0Tx() {
   // while (ringbuffer_available(&tx0Buffer));
-  while (!(R8_UART0_LSR & RB_LSR_TX_FIFO_EMP));
+  while (!(R8_UART0_LSR & RB_LSR_TX_ALL_EMP));
 }
 
 int main() {
@@ -77,6 +77,7 @@ int main() {
   GPIOA_SetBits(GPIO_Pin_9);
   GPIOA_ModeCfg(GPIO_Pin_9, GPIO_ModeOut_PP_5mA); // TXD: PA9, pushpull, but set it high beforehand
   UART1_DefInit();  // default baudrate 115200
+  UART1_ByteTrigCfg(UART_7BYTE_TRIG);
   UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY);
   PFIC_EnableIRQ(UART1_IRQn);
 
@@ -93,7 +94,7 @@ int main() {
 
     for (uint8_t i = 0; i < 8; i++) {
       ringbuffer_put(&tx0Buffer, tx0Package[i], TRUE);
-      if (R8_UART0_LSR & RB_LSR_TX_FIFO_EMP) {
+      if (R8_UART0_LSR & RB_LSR_TX_ALL_EMP) {
         R8_UART0_THR = ringbuffer_get(&tx0Buffer);
         GPIOB_ResetBits(LED);
       }

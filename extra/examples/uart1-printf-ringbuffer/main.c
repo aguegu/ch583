@@ -20,7 +20,7 @@ void delayInJiffy(uint32_t t) {
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
     ringbuffer_put(&txBuffer, *buf++, TRUE);
-    if (R8_UART1_LSR & RB_LSR_TX_FIFO_EMP) {
+    if (R8_UART1_LSR & RB_LSR_TX_ALL_EMP) {
       R8_UART1_THR = ringbuffer_get(&txBuffer);
       GPIOB_ResetBits(LED);
     }
@@ -30,7 +30,7 @@ int _write(int fd, char *buf, int size) {
 
 void flushUart1Tx() {
   // while (ringbuffer_available(&txBuffer));
-  while (!(R8_UART1_LSR & RB_LSR_TX_FIFO_EMP));
+  while (!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
 }
 
 int main() {
@@ -45,6 +45,7 @@ int main() {
   GPIOA_SetBits(GPIO_Pin_9);
   GPIOA_ModeCfg(GPIO_Pin_9, GPIO_ModeOut_PP_5mA); // TXD: PA9, pushpull, but set it high beforehand
   UART1_DefInit();  // default baudrate 115200
+  UART1_ByteTrigCfg(UART_7BYTE_TRIG);
   UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY);
   PFIC_EnableIRQ(UART1_IRQn);
 
