@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "CH58x_common.h"
 #include "ringbuffer.h"
-#include "at.h"
 
 #define LED  GPIO_Pin_19
 RingBuffer txBuffer, rxBuffer;
@@ -13,7 +12,7 @@ int _write(int fd, char *buf, int size) {
     ringbuffer_put(&txBuffer, *buf++, TRUE);
     if (R8_UART1_LSR & RB_LSR_TX_FIFO_EMP) {
       R8_UART1_THR = ringbuffer_get(&txBuffer);
-      // GPIOB_ResetBits(LED);
+      GPIOB_ResetBits(LED);
     }
   }
   return size;
@@ -34,57 +33,13 @@ void delayInJiffy(uint32_t t) {
 }
 
 void flushUart1Tx() {
-  while (!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
+  // while (ringbuffer_available(&txBuffer));
+  while (!(R8_UART1_LSR & RB_LSR_TX_FIFO_EMP));
 }
-
-void handleAT(uint8_t * payload, uint8_t len) {
-  sendOK();
-}
-
-void handleATMAC(uint8_t * payload, uint8_t len) {
-  uint8_t mac[6];
-  GetMACAddress(mac);
-  for (uint8_t i = 6; i--;) {
-    printf("%02X", mac[i]);
-  }
-  sendOK();
-}
-
-void handleATID(uint8_t * payload, uint8_t len) {
-  uint8_t id[8];
-  FLASH_EEPROM_CMD(CMD_GET_UNIQUE_ID, 0, id, 0);
-  for (uint8_t i = 0; i < 8; i++) {
-    printf("%02X", id[i]);
-  }
-  sendOK();
-}
-
-void handleATRESET(uint8_t * payload, uint8_t len) {
-  sendOK();
-  flushUart1Tx();
-  SYS_ResetExecute();
-}
-
-void handleATECHO(uint8_t * payload, uint8_t len) {
-  for (uint8_t i = 0; i < len; i++) {
-    printf("%02X", payload[i]);
-  }
-  sendOK();
-}
-
-const static CommandHandler atHandlers[] = {
-  { "AT", TRUE, handleAT },
-  { "AT+MAC", TRUE, handleATMAC },
-  { "AT+ID", TRUE, handleATID },
-  { "AT+RESET", TRUE, handleATRESET },
-  { "AT+ECHO=", FALSE, handleATECHO },
-  { NULL, TRUE, NULL}  // End marker
-};
 
 BOOL athandler() {
   static uint8_t command[256];
   static uint8_t l = 0;
-  static uint8_t content[128];
   BOOL LFrecevied = FALSE;
 
   while (ringbuffer_available(&rxBuffer)) {
@@ -98,31 +53,11 @@ BOOL athandler() {
   }
 
   if (LFrecevied) {
-    BOOL handled = FALSE;
-    if (command[l - 1] == '\r') {
-      command[l - 1] = 0;
-
-      for (uint8_t i = 0; atHandlers[i].command != NULL; i++) {
-        if (atHandlers[i].isEqual && strcmp(command, atHandlers[i].command) == 0) {
-          atHandlers[i].handler(NULL, 0);
-          handled = TRUE;
-          break;
-        }
-
-        if (!atHandlers[i].isEqual && startsWith(command, atHandlers[i].command)) {
-          uint8_t len = genPayload(command + strlen(atHandlers[i].command), content);
-          atHandlers[i].handler(content, len);
-          handled = TRUE;
-          break;
-        }
-      }
+    for (uint8_t i = 0; i < l; i++) {
+      putchar(command[i]);
     }
-
-    if (!handled) {
-      sendError();
-    }
-
     l = 0;
+    putchar('\n');
     flushUart1Tx();
   }
   return LFrecevied;
