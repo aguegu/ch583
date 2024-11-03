@@ -111,3 +111,22 @@ void appendCrc16(uint8_t *p, uint8_t l) {
 	*p++ = lo;
 	*p = hi;
 }
+
+
+// uint8_t tx0Package[32];
+// uint8_t rx0Package[32];
+//
+// tx0Package[0] = 0x01;
+// tx0Package[1] = 0x04;
+// *(uint16_t *)(tx0Package + 2) = __bswap_16(0x2000);
+// *(uint16_t *)(tx0Package + 4) = __bswap_16(0x0002);
+//
+// appendCrc16(tx0Package, 6);
+//
+// for (uint8_t i = 0; i < 8; i++) {
+//   ringbuffer_put(&tx0Buffer, tx0Package[i], TRUE);
+//   if (R8_UART0_LSR & RB_LSR_TX_ALL_EMP) {
+//     R8_UART0_THR = ringbuffer_get(&tx0Buffer);
+//     GPIOB_ResetBits(LED);
+//   }
+// }

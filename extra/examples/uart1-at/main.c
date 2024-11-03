@@ -146,10 +146,6 @@ int main() {
   UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY | RB_IER_RECV_RDY);
   PFIC_EnableIRQ(UART1_IRQn);
 
-  uint8_t command[256];
-  uint8_t l = 0;
-  BOOL LFrecevied = FALSE;
-
   while (1) {
     if (!athandler()) {
       __WFI();

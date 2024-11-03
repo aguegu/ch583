@@ -2,6 +2,7 @@
 #include "CH58x_common.h"
 #include "crc16.h"
 #include "ringbuffer.h"
+#include "at.h"
 
 // UART0: PB4: RXD0; RB7: TXD0; PB5: DTR
 // UART1: PA8: RXD1; PA9: TXD1
@@ -12,6 +13,7 @@
 #define LED  GPIO_Pin_19
 
 volatile uint32_t jiffies = 0;
+volatile uint32_t lastReceivedAt = 0;
 
 void delayInJiffy(uint32_t t) {
   uint32_t start = jiffies;
@@ -19,6 +21,10 @@ void delayInJiffy(uint32_t t) {
     if (jiffies != start) {
       t--;
       start++;
+    } else {
+      __WFI();
+      __nop();
+      __nop();
     }
   }
 }
@@ -41,9 +47,137 @@ void flushUart0Tx() {
   while (!(R8_UART0_LSR & RB_LSR_TX_ALL_EMP));
 }
 
+void flushUart1Tx() {
+  while (!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
+}
+
+void handleAT(uint8_t * payload, uint8_t len) {
+  sendOK();
+}
+
+void handleATMAC(uint8_t * payload, uint8_t len) {
+  uint8_t mac[6];
+  GetMACAddress(mac);
+  for (uint8_t i = 6; i--;) {
+    printf("%02X", mac[i]);
+  }
+  sendOK();
+}
+
+void handleATID(uint8_t * payload, uint8_t len) {
+  uint8_t id[8];
+  FLASH_EEPROM_CMD(CMD_GET_UNIQUE_ID, 0, id, 0);
+  for (uint8_t i = 0; i < 8; i++) {
+    printf("%02X", id[i]);
+  }
+  sendOK();
+}
+
+void handleATRESET(uint8_t * payload, uint8_t len) {
+  sendOK();
+  flushUart1Tx();
+  SYS_ResetExecute();
+}
+
+void handleATECHO(uint8_t * payload, uint8_t len) {
+  for (uint8_t i = 0; i < len; i++) {
+    printf("%02X", payload[i]);
+  }
+  sendOK();
+}
+
+void handleATFWD(uint8_t * payload, uint8_t len) {
+  for (uint8_t i = 0; i < len; i++) {
+    ringbuffer_put(&tx0Buffer, payload[i], TRUE);
+    if (R8_UART0_LSR & RB_LSR_TX_ALL_EMP) {
+      R8_UART0_THR = ringbuffer_get(&tx0Buffer);
+      GPIOB_ResetBits(LED);
+    }
+  }
+
+  flushUart0Tx();
+  lastReceivedAt = jiffies;
+  GPIOB_SetBits(LED);
+
+  while (jiffies != (uint32_t)(lastReceivedAt + 2)) {
+    __WFI();
+    __nop();
+    __nop();
+  }
+
+  while (ringbuffer_available(&rx0Buffer)) {
+    printf("%02X", ringbuffer_get(&rx0Buffer));
+  }
+
+  sendOK();
+}
+
+const static CommandHandler atHandlers[] = {
+  { "AT", TRUE, handleAT },
+  { "AT+MAC", TRUE, handleATMAC },
+  { "AT+ID", TRUE, handleATID },
+  { "AT+RESET", TRUE, handleATRESET },
+  { "AT+ECHO=", FALSE, handleATECHO },
+  { "AT+FWD=", FALSE, handleATFWD},
+  { NULL, TRUE, NULL}  // End marker
+};
+
+BOOL athandler() {
+  static uint8_t command[256];
+  static uint8_t l = 0;
+  static uint8_t content[128];
+  BOOL LFrecevied = FALSE;
+
+  while (ringbuffer_available(&rx1Buffer)) {
+    uint8_t temp = ringbuffer_get(&rx1Buffer);
+    if (temp == '\n') {
+      LFrecevied = TRUE;
+      break;
+    } else {
+      command[l++] = temp;
+    }
+  }
+
+  if (LFrecevied) {
+    BOOL handled = FALSE;
+    if (command[l - 1] == '\r') {
+      command[l - 1] = 0;
+
+      for (uint8_t i = 0; atHandlers[i].command != NULL; i++) {
+        if (atHandlers[i].isEqual && strcmp(command, atHandlers[i].command) == 0) {
+          atHandlers[i].handler(NULL, 0);
+          handled = TRUE;
+          break;
+        }
+
+        if (!atHandlers[i].isEqual && startsWith(command, atHandlers[i].command)) {
+          uint8_t len = genPayload(command + strlen(atHandlers[i].command), content);
+          atHandlers[i].handler(content, len);
+          handled = TRUE;
+          break;
+        }
+      }
+    }
+
+    if (!handled) {
+      sendError();
+    }
+
+    l = 0;
+    flushUart1Tx();
+  }
+  return LFrecevied;
+}
+
 int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
   SysTick_Config(GetSysClock() / 60); // 60Hz
+
+  ringbuffer_init(&tx0Buffer, 64);
+  ringbuffer_init(&rx0Buffer, 128);
+
+  ringbuffer_init(&tx1Buffer, 64);
+  ringbuffer_init(&rx1Buffer, 128);
 
   GPIOB_ModeCfg(LED, GPIO_ModeOut_PP_5mA);
   GPIOB_SetBits(LED);
@@ -56,12 +190,6 @@ int main() {
   GPIOB_ModeCfg(GPIO_Pin_5, GPIO_ModeOut_PP_5mA); // DTR: PB5, pushpull
   GPIOB_ModeCfg(GPIO_Pin_4, GPIO_ModeIN_PU);      // RXD: RB4, in with pullup
 
-  ringbuffer_init(&tx0Buffer, 64);
-  ringbuffer_init(&rx0Buffer, 128);
-
-  ringbuffer_init(&tx1Buffer, 64);
-  ringbuffer_init(&rx1Buffer, 128);
-
   UART0_BaudRateCfg(9600);
 
   R8_UART0_MCR = RB_MCR_HALF | RB_MCR_TNOW;
@@ -71,45 +199,22 @@ int main() {
 
   R8_UART0_IER = RB_IER_TXD_EN | RB_IER_DTR_EN;
   UART0_INTCfg(ENABLE, RB_IER_THR_EMPTY | RB_IER_RECV_RDY);
-
   PFIC_EnableIRQ(UART0_IRQn);
 
   GPIOA_SetBits(GPIO_Pin_9);
   GPIOA_ModeCfg(GPIO_Pin_9, GPIO_ModeOut_PP_5mA); // TXD: PA9, pushpull, but set it high beforehand
+  GPIOA_ModeCfg(GPIO_Pin_8, GPIO_ModeIN_PU);      // RXD: PA8, in with pullup
   UART1_DefInit();  // default baudrate 115200
   UART1_ByteTrigCfg(UART_7BYTE_TRIG);
-  UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY);
+  UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY | RB_IER_RECV_RDY);
   PFIC_EnableIRQ(UART1_IRQn);
 
-  uint8_t tx0Package[128];
-  // uint8_t rx0Package[128];
-
   while(1) {
-    tx0Package[0] = 0x01;
-    tx0Package[1] = 0x04;
-    *(uint16_t *)(tx0Package + 2) = __bswap_16(0x2000);
-    *(uint16_t *)(tx0Package + 4) = __bswap_16(0x0002);
-
-    appendCrc16(tx0Package, 6);
-
-    for (uint8_t i = 0; i < 8; i++) {
-      ringbuffer_put(&tx0Buffer, tx0Package[i], TRUE);
-      if (R8_UART0_LSR & RB_LSR_TX_ALL_EMP) {
-        R8_UART0_THR = ringbuffer_get(&tx0Buffer);
-        GPIOB_ResetBits(LED);
-      }
+    if (!athandler()) {
+      __WFI();
+      __nop();
+      __nop();
     }
-
-    flushUart0Tx();
-    GPIOB_ResetBits(GPIO_Pin_3);
-    GPIOB_SetBits(LED);
-
-    delayInJiffy(60);
-
-    while (ringbuffer_available(&rx0Buffer)) {
-      printf("%02x ", ringbuffer_get(&rx0Buffer));
-    }
-    printf("\n");
   }
 }
 
@@ -133,6 +238,7 @@ void UART0_IRQHandler(void) {
     case UART_II_RECV_TOUT: // Rx FIFO is not full, but there is something when no new data comming in within timeout
       while (R8_UART0_RFC) {
         ringbuffer_put(&rx0Buffer, R8_UART0_RBR, FALSE);
+        lastReceivedAt = jiffies;
       }
       break;
   }
@@ -147,14 +253,14 @@ void UART1_IRQHandler(void) {
         R8_UART1_THR = ringbuffer_get(&tx1Buffer);
       }
       break;
+    case UART_II_RECV_RDY: // Rx FIFO is full
+    case UART_II_RECV_TOUT: // Rx FIFO is not full, but there is something when no new data comming in within timeout
+      while (R8_UART1_RFC) {
+        ringbuffer_put(&rx1Buffer, R8_UART1_RBR, FALSE);
+      }
+      break;
   }
 }
 
 // 01 04 20 00 00 02 7a 0b
 // 01 04 04 43 65 e6 66 34 55
-//
-//
-// <Buffer 01 04 20 00 00 02 7a 0b>
-// <Buffer 01 04 20 00 00 02 7a 0b>
-// <Buffer 01 04 04 43 65 19 9a 75 e4>
-// <Buffer 01 04 04 43 65 19 9a 75 e4>
