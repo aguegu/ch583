@@ -20,10 +20,12 @@
 #define KEYBOARD_SET GPIO_Pin_1
 #define KEYBOARD_RST GPIO_Pin_0
 
-#define __bswap_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
-
 #define LED1 GPIO_Pin_18
 #define LED2 GPIO_Pin_19
+
+#define __bswap_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
+
+volatile uint32_t jiffies = 0;
 
 typedef void (*TaskFunction)(void);
 
@@ -50,15 +52,21 @@ RingBuffer tx1Buffer, rx1Buffer;
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
     ringbufferPut(&tx1Buffer, *buf++, TRUE);
-    if (R8_UART1_LSR & RB_LSR_TX_ALL_EMP) {
-      R8_UART1_THR = ringbufferGet(&tx1Buffer);
+    if (R8_UART1_LSR & RB_LSR_TX_FIFO_EMP) {
+      while (ringbufferAvailable(&tx1Buffer) && R8_UART1_TFC < UART_FIFO_SIZE) {
+        R8_UART1_THR = ringbufferGet(&tx1Buffer);
+      }
     }
   }
   return size;
 }
 
 void flushUart0Tx() {
-  while (!(R8_UART0_LSR & RB_LSR_TX_FIFO_EMP));
+  while (!(R8_UART0_LSR & RB_LSR_TX_FIFO_EMP)) {
+    __WFI();
+    __nop();
+    __nop();
+  };
 }
 
 void flushUart1Tx() {
@@ -105,27 +113,38 @@ void handleATECHO(uint8_t * payload, uint8_t len) {
   sendOK();
 }
 
-void handleATFWD(uint8_t * payload, uint8_t len) {
+uint8_t transmitCommands(uint8_t * tx, uint8_t len, uint8_t *rx) {
   for (uint8_t i = 0; i < len; i++) {
-    ringbufferPut(&tx0Buffer, payload[i], TRUE);
+    ringbufferPut(&tx0Buffer, tx[i], TRUE);
     if (R8_UART0_LSR & RB_LSR_TX_FIFO_EMP) {
-      R8_UART0_THR = ringbufferGet(&tx0Buffer);
-      GPIOB_ResetBits(LED2);
+      while (ringbufferAvailable(&tx0Buffer) && R8_UART0_TFC < UART_FIFO_SIZE) {
+        R8_UART0_THR = ringbufferGet(&tx0Buffer);
+      }
     }
   }
 
   flushUart0Tx();
-  // lastReceivedAt = jiffies;
-  GPIOB_SetBits(LED2);
+  uint32_t lastReceivedAt = jiffies;
 
-  // while (jiffies != (uint32_t)(lastReceivedAt + 2)) {
-  //   __WFI();
-  //   __nop();
-  //   __nop();
-  // }
+  while (jiffies != (uint32_t)(lastReceivedAt + 4)) {
+    __WFI();
+  }
 
+  uint8_t j = 0;
   while (ringbufferAvailable(&rx0Buffer)) {
-    printf("%02X", ringbufferGet(&rx0Buffer));
+    rx[j++] = ringbufferGet(&rx0Buffer);
+
+  }
+  return j;
+}
+
+void handleATFWD(uint8_t * payload, uint8_t len) {
+  static uint8_t rx[64];
+
+  uint8_t l = transmitCommands(payload, len, rx);
+
+  for (uint8_t i = 0; i < l; i++) {
+    printf("%02X", rx[i]);
   }
 
   sendOK();
@@ -199,11 +218,74 @@ void keyboardInit() {
 }
 
 void taskKeyboardPool() {
-  uint32_t directions = GPIOB_ReadPortPin(KEYBOARD_UP | KEYBOARD_DOWN | KEYBOARD_LEFT | KEYBOARD_RIGHT);
-  uint32_t buttons = GPIOA_ReadPortPin(KEYBOARD_MID | KEYBOARD_RST | KEYBOARD_SET);
+  static uint8_t rx[64];
+  static uint8_t tx[16];
+  static uint32_t directionsLast = 0, buttonsLast = 0;
+
+  uint32_t directions = GPIOB_ReadPortPin(KEYBOARD_UP | KEYBOARD_DOWN | KEYBOARD_LEFT | KEYBOARD_RIGHT) ^ (KEYBOARD_UP | KEYBOARD_DOWN | KEYBOARD_LEFT | KEYBOARD_RIGHT);
+  uint32_t buttons = GPIOA_ReadPortPin(KEYBOARD_MID | KEYBOARD_RST | KEYBOARD_SET) ^ (KEYBOARD_MID | KEYBOARD_RST | KEYBOARD_SET);
 
   // (buttons & KEYBOARD_MID) ? GPIOB_SetBits(LED2) : GPIOB_ResetBits(LED2);
-  (directions & KEYBOARD_RIGHT) ? GPIOB_SetBits(LED2) : GPIOB_ResetBits(LED2);
+  // (directions & KEYBOARD_RIGHT) ? GPIOB_SetBits(LED2) : GPIOB_ResetBits(LED2);
+
+  if (directions == directionsLast && buttons == buttonsLast) {
+    return;
+  }
+
+  switch (directions & (KEYBOARD_DOWN | KEYBOARD_UP)) {
+    case KEYBOARD_UP:
+      memcpy(tx, (uint8_t []){ 0x02, 0xFB, 0x00, 0x02, 0x58, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x6B }, 12);
+      transmitCommands(tx, 12, rx);
+      break;
+    case KEYBOARD_DOWN:
+      memcpy(tx, (uint8_t []){ 0x02, 0xFB, 0x00, 0x02, 0x58, 0x00, 0x00, 0x3e, 0x80, 0x01, 0x02, 0x6B }, 12);
+      transmitCommands(tx, 12, rx);
+      break;
+    case 0:
+      memcpy(tx, (uint8_t []){ 0x02, 0xFE, 0x98, 0x01, 0x6B }, 5);
+      transmitCommands(tx, 5, rx);
+      break;
+  }
+
+  switch (directions & (KEYBOARD_LEFT | KEYBOARD_RIGHT)) {
+    case KEYBOARD_LEFT:
+      memcpy(tx, (uint8_t []){ 0x01, 0xFB, 0x01, 0x02, 0x58, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x6B }, 12);
+      transmitCommands(tx, 12, rx);
+      break;
+    case KEYBOARD_RIGHT:
+      memcpy(tx, (uint8_t []){ 0x01, 0xFB, 0x01, 0x02, 0x58, 0x00, 0x00, 0x75, 0x30, 0x01, 0x00, 0x6B }, 12);
+      transmitCommands(tx, 12, rx);
+      break;
+    case 0:
+      memcpy(tx, (uint8_t []){ 0x01, 0xFE, 0x98, 0x01, 0x6B }, 5);
+      transmitCommands(tx, 5, rx);
+      break;
+  }
+
+  if (buttons & KEYBOARD_SET) {
+    memcpy(tx, (uint8_t []){ 0x01, 0x0A, 0x6D, 0x6B }, 4);
+    transmitCommands(tx, 4, rx);
+    memcpy(tx, (uint8_t []){ 0x02, 0x0A, 0x6D, 0x6B }, 4);
+    transmitCommands(tx, 4, rx);
+
+    memcpy(tx, (uint8_t []){ 0x01, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6);
+    transmitCommands(tx, 6, rx);
+    memcpy(tx, (uint8_t []){ 0x02, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6);
+    transmitCommands(tx, 6, rx);
+  }
+
+  if (buttons & KEYBOARD_RST) {
+    memcpy(tx, (uint8_t []){ 0x01, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6);
+    transmitCommands(tx, 6, rx);
+    memcpy(tx, (uint8_t []){ 0x02, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6);
+    transmitCommands(tx, 6, rx);
+  }
+
+  memcpy(tx, (uint8_t []){ 0x00, 0xFF, 0x66, 0x6B }, 4);
+  transmitCommands(tx, 4, rx);
+
+  directionsLast = directions;
+  buttonsLast = buttons;
 }
 
 void dispatchTasks(void) {
@@ -230,7 +312,7 @@ void taskBlink(void) {
 
 int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
-  SysTick_Config(GetSysClock() / 1800); // 60Hz
+  SysTick_Config(GetSysClock() / 1800); // 1800Hz
 
   keyboardInit();
 
@@ -284,6 +366,7 @@ int main() {
 __INTERRUPT
 __HIGH_CODE
 void SysTick_Handler(void) {
+  jiffies++;
   static volatile uint8_t i;
   for (i = 0; i < TASK_LEN; i++) {
     if (taskList[i].delay == 0) {
@@ -310,7 +393,6 @@ void UART0_IRQHandler(void) {
     case UART_II_RECV_TOUT: // Rx FIFO is not full, but there is something when no new data comming in within timeout
       while (R8_UART0_RFC) {
         ringbufferPut(&rx0Buffer, R8_UART0_RBR, FALSE);
-        // lastReceivedAt = jiffies;
       }
       break;
   }
@@ -334,5 +416,5 @@ void UART1_IRQHandler(void) {
   }
 }
 
-// 01 04 20 00 00 02 7a 0b
-// 01 04 04 43 65 e6 66 34 55
+// > 02 39 6B
+// < 02 39 00 16 6B
