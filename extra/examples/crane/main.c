@@ -20,6 +20,11 @@
 #define KEYBOARD_SET GPIO_Pin_1
 #define KEYBOARD_RST GPIO_Pin_0
 
+#define ONBOARD_KEY GPIO_Pin_4
+#define ONBOARD_DOWNLOAD GPIO_Pin_22
+
+#define CLAW  GPIO_Pin_2
+
 #define LED1 GPIO_Pin_18
 #define LED2 GPIO_Pin_19
 
@@ -130,10 +135,13 @@ uint8_t transmitCommands(uint8_t * tx, uint8_t len, uint8_t *rx) {
     __WFI();
   }
 
-  uint8_t j = 0;
+  uint8_t j = 0, t;
   while (ringbufferAvailable(&rx0Buffer)) {
-    rx[j++] = ringbufferGet(&rx0Buffer);
-
+    t = ringbufferGet(&rx0Buffer);;
+    if (rx) {
+      rx[j] = t;
+    }
+    j++;
   }
   return j;
 }
@@ -157,6 +165,7 @@ const static CommandHandler atHandlers[] = {
   { "AT+RESET", TRUE, handleATRESET },
   { "AT+ECHO=", FALSE, handleATECHO },
   { "AT+FWD=", FALSE, handleATFWD},
+  // { "AT+", FALSE, },
   { NULL, TRUE, NULL}  // End marker
 };
 
@@ -212,80 +221,88 @@ void keyboardInit() {
   GPIOB_ModeCfg(KEYBOARD_LEFT, GPIO_ModeIN_PU);
   GPIOB_ModeCfg(KEYBOARD_RIGHT, GPIO_ModeIN_PU);
 
+  GPIOB_ModeCfg(ONBOARD_KEY, GPIO_ModeIN_PU);
+  GPIOB_ModeCfg(ONBOARD_DOWNLOAD, GPIO_ModeIN_PU);
+
   GPIOA_ModeCfg(KEYBOARD_MID, GPIO_ModeIN_PU);
   GPIOA_ModeCfg(KEYBOARD_SET, GPIO_ModeIN_PU);
   GPIOA_ModeCfg(KEYBOARD_RST, GPIO_ModeIN_PU);
 }
 
+static const uint32_t btnsBMask = KEYBOARD_UP | KEYBOARD_DOWN | KEYBOARD_LEFT | KEYBOARD_RIGHT | ONBOARD_KEY | ONBOARD_DOWNLOAD;
+static const uint32_t btnsAMask = KEYBOARD_MID | KEYBOARD_RST | KEYBOARD_SET;
+
 void taskKeyboardPool() {
-  static uint8_t rx[64];
-  static uint8_t tx[16];
-  static uint32_t directionsLast = 0, buttonsLast = 0;
+  // static uint8_t rx[64];
+  static uint32_t btnsBLast = 0, btnsALast = 0;
 
-  uint32_t directions = GPIOB_ReadPortPin(KEYBOARD_UP | KEYBOARD_DOWN | KEYBOARD_LEFT | KEYBOARD_RIGHT) ^ (KEYBOARD_UP | KEYBOARD_DOWN | KEYBOARD_LEFT | KEYBOARD_RIGHT);
-  uint32_t buttons = GPIOA_ReadPortPin(KEYBOARD_MID | KEYBOARD_RST | KEYBOARD_SET) ^ (KEYBOARD_MID | KEYBOARD_RST | KEYBOARD_SET);
+  uint32_t btnsB = GPIOB_ReadPortPin(btnsBMask) ^ (btnsBMask);
+  uint32_t btnsA = GPIOA_ReadPortPin(btnsAMask) ^ (btnsAMask);
 
-  // (buttons & KEYBOARD_MID) ? GPIOB_SetBits(LED2) : GPIOB_ResetBits(LED2);
-  // (directions & KEYBOARD_RIGHT) ? GPIOB_SetBits(LED2) : GPIOB_ResetBits(LED2);
-
-  if (directions == directionsLast && buttons == buttonsLast) {
+  if (btnsB == btnsBLast && btnsA == btnsALast) {
     return;
   }
 
-  switch (directions & (KEYBOARD_DOWN | KEYBOARD_UP)) {
+  switch (btnsB & (KEYBOARD_DOWN | KEYBOARD_UP)) {
     case KEYBOARD_UP:
-      memcpy(tx, (uint8_t []){ 0x02, 0xFB, 0x00, 0x02, 0x58, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x6B }, 12);
-      transmitCommands(tx, 12, rx);
+      transmitCommands((uint8_t []){ 0x02, 0xFB, 0x00, 0x02, 0x58, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x6B }, 12, NULL);
       break;
     case KEYBOARD_DOWN:
-      memcpy(tx, (uint8_t []){ 0x02, 0xFB, 0x00, 0x02, 0x58, 0x00, 0x00, 0x3e, 0x80, 0x01, 0x02, 0x6B }, 12);
-      transmitCommands(tx, 12, rx);
+      transmitCommands((uint8_t []){ 0x02, 0xFB, 0x00, 0x02, 0x58, 0x00, 0x00, 0x3e, 0x80, 0x01, 0x02, 0x6B }, 12, NULL);
       break;
     case 0:
-      memcpy(tx, (uint8_t []){ 0x02, 0xFE, 0x98, 0x01, 0x6B }, 5);
-      transmitCommands(tx, 5, rx);
+      transmitCommands((uint8_t []){ 0x02, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
       break;
   }
 
-  switch (directions & (KEYBOARD_LEFT | KEYBOARD_RIGHT)) {
+  switch (btnsB & (KEYBOARD_LEFT | KEYBOARD_RIGHT)) {
     case KEYBOARD_LEFT:
-      memcpy(tx, (uint8_t []){ 0x01, 0xFB, 0x01, 0x02, 0x58, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x6B }, 12);
-      transmitCommands(tx, 12, rx);
+      transmitCommands((uint8_t []){ 0x01, 0xFB, 0x01, 0x02, 0x58, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x6B }, 12, NULL);
       break;
     case KEYBOARD_RIGHT:
-      memcpy(tx, (uint8_t []){ 0x01, 0xFB, 0x01, 0x02, 0x58, 0x00, 0x00, 0x75, 0x30, 0x01, 0x00, 0x6B }, 12);
-      transmitCommands(tx, 12, rx);
+      transmitCommands((uint8_t []){ 0x01, 0xFB, 0x01, 0x02, 0x58, 0x00, 0x00, 0x75, 0x30, 0x01, 0x00, 0x6B }, 12, NULL);
       break;
     case 0:
-      memcpy(tx, (uint8_t []){ 0x01, 0xFE, 0x98, 0x01, 0x6B }, 5);
-      transmitCommands(tx, 5, rx);
+      transmitCommands((uint8_t []){ 0x01, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
       break;
   }
 
-  if (buttons & KEYBOARD_SET) {
-    memcpy(tx, (uint8_t []){ 0x01, 0x0A, 0x6D, 0x6B }, 4);
-    transmitCommands(tx, 4, rx);
-    memcpy(tx, (uint8_t []){ 0x02, 0x0A, 0x6D, 0x6B }, 4);
-    transmitCommands(tx, 4, rx);
+  const uint16_t z = 24000;
 
-    memcpy(tx, (uint8_t []){ 0x01, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6);
-    transmitCommands(tx, 6, rx);
-    memcpy(tx, (uint8_t []){ 0x02, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6);
-    transmitCommands(tx, 6, rx);
+  switch (btnsA & (KEYBOARD_SET | KEYBOARD_RST)) {
+    case KEYBOARD_SET:
+      transmitCommands((uint8_t []){ 0x03, 0xFB, 0x01, 0x02, 0x58, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x6B }, 12, NULL);
+      break;
+    case KEYBOARD_RST:
+      transmitCommands((uint8_t []){ 0x03, 0xFB, 0x01, 0x02, 0x58, 0x00, 0x00, z >> 8, z & 0xff, 0x01, 0x00, 0x6B }, 12, NULL);
+      break;
+    case 0:
+      transmitCommands((uint8_t []){ 0x03, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
+      break;
   }
 
-  if (buttons & KEYBOARD_RST) {
-    memcpy(tx, (uint8_t []){ 0x01, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6);
-    transmitCommands(tx, 6, rx);
-    memcpy(tx, (uint8_t []){ 0x02, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6);
-    transmitCommands(tx, 6, rx);
+  btnsA & KEYBOARD_MID ? GPIOA_SetBits(CLAW) : GPIOA_ResetBits(CLAW);
+
+  if (btnsB & ONBOARD_KEY) {  // reset coordinates & activate
+    transmitCommands((uint8_t []){ 0x01, 0x0A, 0x6D, 0x6B }, 4, NULL);
+    transmitCommands((uint8_t []){ 0x02, 0x0A, 0x6D, 0x6B }, 4, NULL);
+    transmitCommands((uint8_t []){ 0x03, 0x0A, 0x6D, 0x6B }, 4, NULL);
+
+    transmitCommands((uint8_t []){ 0x01, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6, NULL);
+    transmitCommands((uint8_t []){ 0x02, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6, NULL);
+    transmitCommands((uint8_t []){ 0x03, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6, NULL);
   }
 
-  memcpy(tx, (uint8_t []){ 0x00, 0xFF, 0x66, 0x6B }, 4);
-  transmitCommands(tx, 4, rx);
+  if (btnsB & ONBOARD_DOWNLOAD) { // deactive
+    transmitCommands((uint8_t []){ 0x01, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
+    transmitCommands((uint8_t []){ 0x02, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
+    transmitCommands((uint8_t []){ 0x03, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
+  }
 
-  directionsLast = directions;
-  buttonsLast = buttons;
+  transmitCommands((uint8_t []){ 0x00, 0xFF, 0x66, 0x6B }, 4, NULL);
+
+  btnsBLast = btnsB;
+  btnsALast = btnsA;
 }
 
 void dispatchTasks(void) {
@@ -315,6 +332,9 @@ int main() {
   SysTick_Config(GetSysClock() / 1800); // 1800Hz
 
   keyboardInit();
+
+  GPIOB_ResetBits(CLAW);
+  GPIOA_ModeCfg(CLAW, GPIO_ModeOut_PP_20mA);
 
   ringbufferInit(&tx0Buffer, 64);
   ringbufferInit(&rx0Buffer, 128);

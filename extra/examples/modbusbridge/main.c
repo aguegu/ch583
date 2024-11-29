@@ -34,21 +34,31 @@ RingBuffer tx1Buffer, rx1Buffer;
 
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
-    ringbuffer_put(&tx1Buffer, *buf++, TRUE);
-    if (R8_UART1_LSR & RB_LSR_TX_ALL_EMP) {
-      R8_UART1_THR = ringbuffer_get(&tx1Buffer);
+    ringbufferPut(&tx1Buffer, *buf++, TRUE);
+    if (R8_UART1_LSR & RB_LSR_TX_FIFO_EMP) {
+      while (ringbufferAvailable(&tx1Buffer) && R8_UART1_TFC < UART_FIFO_SIZE) {
+        R8_UART1_THR = ringbufferGet(&tx1Buffer);
+      }
     }
   }
   return size;
 }
 
 void flushUart0Tx() {
-  // while (ringbuffer_available(&tx0Buffer));
-  while (!(R8_UART0_LSR & RB_LSR_TX_ALL_EMP));
+  while (!(R8_UART0_LSR & RB_LSR_TX_FIFO_EMP)) {
+    __WFI();
+    __nop();
+    __nop();
+  };
 }
 
 void flushUart1Tx() {
-  while (!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
+  // while (ringbufferAvailable(&tx1Buffer));
+  while (!(R8_UART1_LSR & RB_LSR_TX_FIFO_EMP)) {
+    __WFI();
+    __nop();
+    __nop();
+  };
 }
 
 void handleAT(uint8_t * payload, uint8_t len) {
@@ -88,9 +98,11 @@ void handleATECHO(uint8_t * payload, uint8_t len) {
 
 void handleATFWD(uint8_t * payload, uint8_t len) {
   for (uint8_t i = 0; i < len; i++) {
-    ringbuffer_put(&tx0Buffer, payload[i], TRUE);
-    if (R8_UART0_LSR & RB_LSR_TX_ALL_EMP) {
-      R8_UART0_THR = ringbuffer_get(&tx0Buffer);
+    ringbufferPut(&tx0Buffer, payload[i], TRUE);
+    if (R8_UART0_LSR & RB_LSR_TX_FIFO_EMP) {
+      while (ringbufferAvailable(&tx0Buffer) && R8_UART0_TFC < UART_FIFO_SIZE) {
+        R8_UART0_THR = ringbufferGet(&tx0Buffer);
+      }
       GPIOB_ResetBits(LED);
     }
   }
@@ -99,14 +111,14 @@ void handleATFWD(uint8_t * payload, uint8_t len) {
   lastReceivedAt = jiffies;
   GPIOB_SetBits(LED);
 
-  while (jiffies != (uint32_t)(lastReceivedAt + 2)) {
+  while (jiffies != (uint32_t)(lastReceivedAt + 4)) {
     __WFI();
     __nop();
     __nop();
   }
 
-  while (ringbuffer_available(&rx0Buffer)) {
-    printf("%02X", ringbuffer_get(&rx0Buffer));
+  while (ringbufferAvailable(&rx0Buffer)) {
+    printf("%02X", ringbufferGet(&rx0Buffer));
   }
 
   sendOK();
@@ -128,8 +140,8 @@ BOOL athandler() {
   static uint8_t content[128];
   BOOL LFrecevied = FALSE;
 
-  while (ringbuffer_available(&rx1Buffer)) {
-    uint8_t temp = ringbuffer_get(&rx1Buffer);
+  while (ringbufferAvailable(&rx1Buffer)) {
+    uint8_t temp = ringbufferGet(&rx1Buffer);
     if (temp == '\n') {
       LFrecevied = TRUE;
       break;
@@ -173,11 +185,11 @@ int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
   SysTick_Config(GetSysClock() / 60); // 60Hz
 
-  ringbuffer_init(&tx0Buffer, 64);
-  ringbuffer_init(&rx0Buffer, 128);
+  ringbufferInit(&tx0Buffer, 64);
+  ringbufferInit(&rx0Buffer, 128);
 
-  ringbuffer_init(&tx1Buffer, 64);
-  ringbuffer_init(&rx1Buffer, 128);
+  ringbufferInit(&tx1Buffer, 64);
+  ringbufferInit(&rx1Buffer, 128);
 
   GPIOB_ModeCfg(LED, GPIO_ModeOut_PP_5mA);
   GPIOB_SetBits(LED);
@@ -230,14 +242,14 @@ __HIGH_CODE
 void UART0_IRQHandler(void) {
   switch (UART0_GetITFlag()) {
     case UART_II_THR_EMPTY: // trigger when THR and FIFOtx all empty
-      while (ringbuffer_available(&tx0Buffer) && R8_UART0_TFC < UART_FIFO_SIZE) {
-        R8_UART0_THR = ringbuffer_get(&tx0Buffer);
+      while (ringbufferAvailable(&tx0Buffer) && R8_UART0_TFC < UART_FIFO_SIZE) {
+        R8_UART0_THR = ringbufferGet(&tx0Buffer);
       }
       break;
     case UART_II_RECV_RDY: // Rx FIFO is full
     case UART_II_RECV_TOUT: // Rx FIFO is not full, but there is something when no new data comming in within timeout
       while (R8_UART0_RFC) {
-        ringbuffer_put(&rx0Buffer, R8_UART0_RBR, FALSE);
+        ringbufferPut(&rx0Buffer, R8_UART0_RBR, FALSE);
         lastReceivedAt = jiffies;
       }
       break;
@@ -249,14 +261,14 @@ __HIGH_CODE
 void UART1_IRQHandler(void) {
   switch (UART1_GetITFlag()) {
     case UART_II_THR_EMPTY: // trigger when THR and FIFOtx all empty
-      while (ringbuffer_available(&tx1Buffer) && R8_UART1_TFC < UART_FIFO_SIZE) {
-        R8_UART1_THR = ringbuffer_get(&tx1Buffer);
+      while (ringbufferAvailable(&tx1Buffer) && R8_UART1_TFC < UART_FIFO_SIZE) {
+        R8_UART1_THR = ringbufferGet(&tx1Buffer);
       }
       break;
     case UART_II_RECV_RDY: // Rx FIFO is full
     case UART_II_RECV_TOUT: // Rx FIFO is not full, but there is something when no new data comming in within timeout
       while (R8_UART1_RFC) {
-        ringbuffer_put(&rx1Buffer, R8_UART1_RBR, FALSE);
+        ringbufferPut(&rx1Buffer, R8_UART1_RBR, FALSE);
       }
       break;
   }
