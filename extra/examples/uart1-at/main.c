@@ -10,10 +10,11 @@ volatile uint32_t jiffies = 0;
 
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
-    ringbuffer_put(&txBuffer, *buf++, TRUE);
-    if (R8_UART1_LSR & RB_LSR_TX_ALL_EMP) {
-      R8_UART1_THR = ringbuffer_get(&txBuffer);
-      // GPIOB_ResetBits(LED);
+    ringbufferPut(&txBuffer, *buf++, TRUE);
+    if (R8_UART1_LSR & RB_LSR_TX_FIFO_EMP) {
+      while (ringbufferAvailable(&txBuffer) && R8_UART1_TFC < UART_FIFO_SIZE) {
+        R8_UART1_THR = ringbufferGet(&txBuffer);
+      }
     }
   }
   return size;
@@ -34,7 +35,9 @@ void delayInJiffy(uint32_t t) {
 }
 
 void flushUart1Tx() {
-  while (!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
+  while (!(R8_UART1_LSR & RB_LSR_TX_FIFO_EMP)) {
+    __WFI();
+  }
 }
 
 void handleAT(uint8_t * payload, uint8_t len) {
@@ -87,8 +90,8 @@ BOOL athandler() {
   static uint8_t content[128];
   BOOL LFrecevied = FALSE;
 
-  while (ringbuffer_available(&rxBuffer)) {
-    uint8_t temp = ringbuffer_get(&rxBuffer);
+  while (ringbufferAvailable(&rxBuffer)) {
+    uint8_t temp = ringbufferGet(&rxBuffer);
     if (temp == '\n') {
       LFrecevied = TRUE;
       break;
@@ -132,8 +135,8 @@ int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
   SysTick_Config(GetSysClock() / 60); // 60Hz
 
-  ringbuffer_init(&txBuffer, 64);
-  ringbuffer_init(&rxBuffer, 128);
+  ringbufferInit(&txBuffer, 64);
+  ringbufferInit(&rxBuffer, 128);
 
   GPIOB_ModeCfg(LED, GPIO_ModeOut_PP_5mA);
   GPIOB_SetBits(LED);
@@ -167,14 +170,14 @@ __HIGH_CODE
 void UART1_IRQHandler(void) {
   switch (UART1_GetITFlag()) {
     case UART_II_THR_EMPTY: // trigger when THR and FIFOtx all empty
-      while (ringbuffer_available(&txBuffer) && R8_UART1_TFC != UART_FIFO_SIZE) {
-        R8_UART1_THR = ringbuffer_get(&txBuffer);
+      while (ringbufferAvailable(&txBuffer) && R8_UART1_TFC != UART_FIFO_SIZE) {
+        R8_UART1_THR = ringbufferGet(&txBuffer);
       }
       break;
     case UART_II_RECV_RDY: // Rx FIFO is full
     case UART_II_RECV_TOUT: // Rx FIFO is not full, but there is something when no new data comming in within timeout
       while (R8_UART1_RFC) {
-        ringbuffer_put(&rxBuffer, R8_UART1_RBR, FALSE);
+        ringbufferPut(&rxBuffer, R8_UART1_RBR, FALSE);
       }
       break;
   }

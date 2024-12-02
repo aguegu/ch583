@@ -15,13 +15,13 @@ typedef struct {
   uint8_t mask;
 } RingBuffer;
 
-void ringbuffer_init(RingBuffer * rb, uint16_t size);
+void ringbufferInit(RingBuffer * rb, uint16_t size);
 
-void ringbuffer_put(RingBuffer * rb, uint8_t c, BOOL waitForConsuming);
+void ringbufferPut(RingBuffer * rb, uint8_t c, BOOL waitForConsuming);
 
-uint8_t ringbuffer_get(RingBuffer * rb);
+uint8_t ringbufferGet(RingBuffer * rb);
 
-BOOL ringbuffer_available(RingBuffer *rb);
+BOOL ringbufferAvailable(RingBuffer *rb);
 
 #ifdef __cplusplus
 }

@@ -59,6 +59,6 @@ $(TARGET).hex: $(TARGET).elf
 	$(BIN)/riscv-none-embed-objcopy -O ihex "$<" "$@"
 
 flash: $(TARGET).hex
-	sudo ../../isp/WCHISPTool_CMD -p /dev/ch37x0 -c ../../isp/config.ini -o program -f $<
+	sudo ../../isp/WCHISPTool_CMD -p /dev/ch37x0 -c ./config.ini -o program -f $<
 
 .PHONY: version clean flash

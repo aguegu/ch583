@@ -124,6 +124,20 @@ void handleATFWD(uint8_t * payload, uint8_t len) {
   sendOK();
 }
 
+void handleATRE(uint8_t * payload, uint8_t len) {
+  uint8_t rx[64];
+  EEPROM_READ(0, rx, 64);
+  for (uint8_t i = 0; i < 64; i++) {
+    printf("%02X", rx[i]);
+  }
+  sendOK();
+}
+
+void handleATWE(uint8_t * payload, uint8_t len) {
+  EEPROM_WRITE(0, payload, len);
+  sendOK();
+}
+
 const static CommandHandler atHandlers[] = {
   { "AT", TRUE, handleAT },
   { "AT+MAC", TRUE, handleATMAC },
@@ -131,6 +145,8 @@ const static CommandHandler atHandlers[] = {
   { "AT+RESET", TRUE, handleATRESET },
   { "AT+ECHO=", FALSE, handleATECHO },
   { "AT+FWD=", FALSE, handleATFWD},
+  { "AT+RE", TRUE, handleATRE },
+  { "AT+WE=", FALSE, handleATWE },
   { NULL, TRUE, NULL}  // End marker
 };
 
