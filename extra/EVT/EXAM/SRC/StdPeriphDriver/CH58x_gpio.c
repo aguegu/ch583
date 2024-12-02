@@ -6,7 +6,7 @@
  * Description
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -206,7 +206,7 @@ void GPIOB_ITModeCfg(uint32_t pin, GPIOITModeTpDef mode)
  *                    RB_PIN_UART2  -  UART2: PA6/PA7 ->  PB22/PB23
  *                    RB_PIN_UART1  -  UART1: PA8/PA9 ->  PB12/PB13
  *                    RB_PIN_UART0  -  UART0: PB4/PB7 ->  PA15/PA14
- *                    RB_PIN_TMR3   -  TMR2:  PA9 ->  PB23
+ *                    RB_PIN_TMR3   -  TMR3:  PB22 ->  PA2
  *                    RB_PIN_TMR2   -  TMR2:  PA11 ->  PB11
  *                    RB_PIN_TMR1   -  TMR1:  PA10 ->  PB10
  *                    RB_PIN_TMR0   -  TMR0:  PA9 ->  PB23
