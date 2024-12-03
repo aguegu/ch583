@@ -131,9 +131,11 @@ BOOL athandler() {
   return LFrecevied;
 }
 
+volatile uint32_t stepCount = 0;
+
 int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
-  SysTick_Config(GetSysClock() / 60); // 60Hz
+  SysTick_Config(GetSysClock() / 6000); // 60Hz
 
   ringbufferInit(&txBuffer, 64);
   ringbufferInit(&rxBuffer, 128);
@@ -149,33 +151,24 @@ int main() {
   UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY | RB_IER_RECV_RDY);
   PFIC_EnableIRQ(UART1_IRQn);
 
-  // TMR0_TimerInit(FREQ_SYS / 10);         // 10 Hz
-  TMR0_TimerInit(60);
-  TMR0_ITCfg(ENABLE, TMR0_3_IT_CYC_END);
-  PFIC_EnableIRQ(TMR0_IRQn);
-
-  // GPIOB_ResetBits(GPIO_Pin_22); // 配置PWM口 PB22
-  // GPIOB_ModeCfg(GPIO_Pin_22, GPIO_ModeOut_PP_5mA);
-
-  GPIOPinRemap(ENABLE, RB_PIN_TMR3);
-  GPIOA_ResetBits(GPIO_Pin_2);
-  GPIOA_ModeCfg(GPIO_Pin_2, GPIO_ModeOut_PP_5mA);
-
-  TMR3_PWMInit(High_Level, PWM_Times_1);
-  TMR3_PWMCycleCfg(FREQ_SYS / 400000);   // 400kHz(150)
-  TMR3_PWMActDataWidth(50); // 50 / 150 = 1/3
-  TMR3_PWMEnable();
-  TMR3_Enable();
-
   GPIOPinRemap(ENABLE, RB_PIN_TMR1);
   GPIOB_ResetBits(GPIO_Pin_10);
   GPIOB_ModeCfg(GPIO_Pin_10, GPIO_ModeOut_PP_5mA);
 
+  __attribute__((aligned(4))) uint32_t bufferPWM[8] = { 15, 30, 45, 60, 75, 90, 105, 120 };
+
   TMR1_PWMInit(High_Level, PWM_Times_1);
   TMR1_PWMCycleCfg(FREQ_SYS / 400000);   // 400kHz(150)
-  TMR1_PWMActDataWidth(50); // 50 / 150 = 1/3
+
+  // TMR2_DMACfg(ENABLE, (uint16_t)(uint32_t)&PwmBuf[0], (uint16_t)(uint32_t)&PwmBuf[100], Mode_LOOP);
+
+  TMR1_ITCfg(ENABLE, TMR0_3_IT_DATA_ACT);
+  PFIC_EnableIRQ(TMR1_IRQn);
+
   TMR1_PWMEnable();
-  TMR1_Enable();
+
+  TMR1_PWMActDataWidth(50); // 50 / 150 = 1/3
+  // TMR1_DMACfg(ENABLE, (uint16_t)(uint32_t)bufferPWM, (uint16_t)(uint32_t)(bufferPWM+8), Mode_LOOP);
 
   while (1) {
     if (!athandler()) {
@@ -183,6 +176,11 @@ int main() {
       __nop();
       __nop();
     }
+
+    stepCount = 0;
+    TMR1_Enable();
+
+    delayInJiffy(1);
   }
 }
 
@@ -213,9 +211,12 @@ void UART1_IRQHandler(void) {
 
 __INTERRUPT
 __HIGH_CODE
-void TMR0_IRQHandler(void) {
-  if (TMR0_GetITFlag(TMR0_3_IT_CYC_END)) {
-    TMR0_ClearITFlag(TMR0_3_IT_CYC_END);
-    GPIOB_InverseBits(LED);
+void TMR1_IRQHandler(void) {
+  if (TMR1_GetITFlag(TMR0_3_IT_DATA_ACT)) {
+    TMR1_ClearITFlag(TMR0_3_IT_DATA_ACT);
+    stepCount++;
+    if (stepCount == 3) {
+      TMR1_Disable();
+    }
   }
 }
