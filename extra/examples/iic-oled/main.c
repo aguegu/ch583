@@ -75,12 +75,40 @@ void handleATECHO(uint8_t * payload, uint8_t len) {
   sendOK();
 }
 
+void handleATSC(uint8_t * payload, uint8_t len) {
+  for (uint8_t slaveAddress = 0x03; slaveAddress < 0x78; slaveAddress++) {
+
+    while (I2C_GetFlagStatus(I2C_FLAG_BUSY) != RESET);
+    I2C_GenerateSTART(ENABLE);
+
+    while (!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT));
+    I2C_Send7bitAddress(slaveAddress << 1, I2C_Direction_Transmitter);
+
+    while (!I2C_CheckEvent(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && !I2C_GetFlagStatus(I2C_FLAG_AF));
+
+    if (I2C_GetFlagStatus(I2C_FLAG_AF)) {
+      I2C_ClearFlag(I2C_FLAG_AF);
+    }
+
+    BOOL acked = I2C_GetFlagStatus(I2C_FLAG_TXE);
+
+    I2C_GenerateSTOP(ENABLE);
+
+    if (acked) {
+      printf("%02X", slaveAddress);
+    }
+  }
+
+  sendOK();
+}
+
 const static CommandHandler atHandlers[] = {
   { "AT", TRUE, handleAT },
   { "AT+MAC", TRUE, handleATMAC },
   { "AT+ID", TRUE, handleATID },
   { "AT+RESET", TRUE, handleATRESET },
   { "AT+ECHO=", FALSE, handleATECHO },
+  { "AT+SC", TRUE, handleATSC },
   { NULL, TRUE, NULL}  // End marker
 };
 
@@ -131,19 +159,20 @@ BOOL athandler() {
   return LFrecevied;
 }
 
-volatile uint32_t stepCount = 0;
-
-__attribute__((aligned(4))) uint32_t bufferPWMZero = { 0 };
-
 int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
+  SysTick_Config(GetSysClock() / 60); // 60Hz
 
-  SysTick_Config(GetSysClock() / 6000); // 60Hz
   ringbufferInit(&txBuffer, 64);
   ringbufferInit(&rxBuffer, 128);
 
   GPIOB_ModeCfg(LED, GPIO_ModeOut_PP_5mA);
   GPIOB_SetBits(LED);
+
+  GPIOB_ModeCfg(GPIO_Pin_12, GPIO_ModeIN_PU); // i2c SDA
+  GPIOB_ModeCfg(GPIO_Pin_13, GPIO_ModeIN_PU); // i2c SCL
+
+  I2C_Init(I2C_Mode_I2C, 400000, I2C_DutyCycle_16_9, I2C_Ack_Enable, I2C_AckAddr_7bit, 0x00);
 
   GPIOA_SetBits(GPIO_Pin_9);
   GPIOA_ModeCfg(GPIO_Pin_8, GPIO_ModeIN_PU);      // RXD: PA8, in with pullup
@@ -153,39 +182,12 @@ int main() {
   UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY | RB_IER_RECV_RDY);
   PFIC_EnableIRQ(UART1_IRQn);
 
-  GPIOPinRemap(ENABLE, RB_PIN_TMR1);
-  GPIOB_ResetBits(GPIO_Pin_10);
-  GPIOB_ModeCfg(GPIO_Pin_10, GPIO_ModeOut_PP_5mA);
-
-  // __attribute__((aligned(4))) uint32_t bufferPWM[8] = { 15, 30, 45, 60, 75, 90, 105, 120 };
-
-  // TMR1_PWMInit(High_Level, PWM_Times_1);
-  TMR1_PWMCycleCfg(FREQ_SYS / 400000);   // 400kHz(150)
-
-  // TMR2_DMACfg(ENABLE, (uint16_t)(uint32_t)&PwmBuf[0], (uint16_t)(uint32_t)&PwmBuf[100], Mode_LOOP);
-
-  TMR1_ITCfg(ENABLE, TMR0_3_IT_DATA_ACT);
-  PFIC_EnableIRQ(TMR1_IRQn);
-
-  // TMR1_Enable();
-  // TMR1_DMACfg(ENABLE, (uint16_t)(uint32_t)bufferPWM, (uint16_t)(uint32_t)(bufferPWM+8), Mode_LOOP);
-
   while (1) {
     if (!athandler()) {
       __WFI();
       __nop();
       __nop();
     }
-
-    TMR1_Disable();
-
-    TMR1_PWMInit(High_Level, PWM_Times_1);
-    TMR1_PWMActDataWidth(75); // 50 / 150 = 1/3
-    TMR1_PWMEnable();
-    stepCount = 0;
-    TMR1_Enable();
-
-    delayInJiffy(1);
   }
 }
 
@@ -211,19 +213,5 @@ void UART1_IRQHandler(void) {
         ringbufferPut(&rxBuffer, R8_UART1_RBR, FALSE);
       }
       break;
-  }
-}
-
-__INTERRUPT
-__HIGH_CODE
-void TMR1_IRQHandler(void) {
-  if (TMR1_GetITFlag(TMR0_3_IT_DATA_ACT)) {
-    TMR1_ClearITFlag(TMR0_3_IT_DATA_ACT);
-    stepCount++;
-    if (stepCount == 4) {
-      // TMR1_PWMActDataWidth(0);
-      TMR1_PWMDisable();
-      // TMR1_Disable();
-    }
   }
 }

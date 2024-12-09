@@ -78,11 +78,16 @@ static MotorSetting setting = {
   .yEnd = 16000,
   .zId = 3,
   .zStart = 0,
-  .zEnd = -20000,
+  .zEnd = -32000,
   .xSpeed = 600,
   .ySpeed = 600,
   .zSpeed = 600,
 };
+
+// when y at yEnd, z = -32000 reach top
+
+// y = yStart, z = -32000 | y = yEnd, z = - 240000
+// y = yStart, z = zStart | y = yEnd, z =
 
 static uint8_t mode = 0x00;
 
@@ -323,14 +328,19 @@ void taskKeyboardPool() {
 
   if (mode == 0x00) {
     if (btnsA & KEYBOARD_MID) {
-      mode = 1;
-      transmitCommands((uint8_t []){ setting.xId, 0x0A, 0x6D, 0x6B }, 4, NULL);
+      transmitCommands((uint8_t []){ setting.xId, 0x0A, 0x6D, 0x6B }, 4, NULL); // reset coordintate
       transmitCommands((uint8_t []){ setting.yId, 0x0A, 0x6D, 0x6B }, 4, NULL);
       transmitCommands((uint8_t []){ setting.zId, 0x0A, 0x6D, 0x6B }, 4, NULL);
 
-      transmitCommands((uint8_t []){ setting.xId, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6, NULL);
+      transmitCommands((uint8_t []){ setting.xId, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6, NULL); // enable
       transmitCommands((uint8_t []){ setting.yId, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6, NULL);
       transmitCommands((uint8_t []){ setting.zId, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6, NULL);
+
+      // transmitCommands((uint8_t []){ 0x00, 0xFF, 0x66, 0x6B }, 4, NULL);
+      // int16_t zOffset = -8000;
+      // transmitCommands((uint8_t []){ setting.zId, 0xFB, zOffset >= 0 ? 0 : 1, BYTE1(setting.zSpeed), BYTE0(setting.zSpeed), BYTE3(ABS(zOffset)), BYTE2(ABS(zOffset)), BYTE1(ABS(zOffset)), BYTE0(ABS(zOffset)), 0x01, 0x01, 0x6B }, 12, NULL);
+
+      mode = 1;
     }
   }
 
