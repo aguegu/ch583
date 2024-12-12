@@ -6,7 +6,7 @@
 #define LED  GPIO_Pin_19
 RingBuffer txBuffer, rxBuffer;
 
-volatile uint32_t jiffies = 0;
+static volatile uint32_t jiffies = 0;
 
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
@@ -77,13 +77,12 @@ void handleATECHO(uint8_t * payload, uint8_t len) {
 
 void handleATSC(uint8_t * payload, uint8_t len) {
   for (uint8_t slaveAddress = 0x03; slaveAddress < 0x78; slaveAddress++) {
-
     while (I2C_GetFlagStatus(I2C_FLAG_BUSY) != RESET);
+
     I2C_GenerateSTART(ENABLE);
+    while(!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT));
 
-    while (!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT));
     I2C_Send7bitAddress(slaveAddress << 1, I2C_Direction_Transmitter);
-
     while (!I2C_CheckEvent(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && !I2C_GetFlagStatus(I2C_FLAG_AF));
 
     if (I2C_GetFlagStatus(I2C_FLAG_AF)) {
@@ -91,13 +90,60 @@ void handleATSC(uint8_t * payload, uint8_t len) {
     }
 
     BOOL acked = I2C_GetFlagStatus(I2C_FLAG_TXE);
-
     I2C_GenerateSTOP(ENABLE);
 
     if (acked) {
       printf("%02X", slaveAddress);
     }
   }
+
+  sendOK();
+}
+
+void handleATTR(uint8_t * payload, uint8_t len) {
+  if (len < 2) {
+    return sendError();
+  }
+
+  I2C_GenerateSTART(ENABLE);
+  while (!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT)); // 0x00030001
+
+  I2C_Send7bitAddress(payload[0] << 1, I2C_Direction_Transmitter);
+  while (!I2C_CheckEvent(I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED) && !I2C_GetFlagStatus(I2C_FLAG_AF));  // 0x00070082
+
+  if (I2C_GetFlagStatus(I2C_FLAG_AF)) {
+    I2C_ClearFlag(I2C_FLAG_AF);
+    I2C_GenerateSTOP(ENABLE);
+    return sendError();
+  }
+
+  if (len > 2) {
+    uint8_t writeCount = len - 2;
+    uint8_t *toWrite = payload + 1;
+    while (writeCount--) {
+      I2C_SendData(*toWrite++);
+      while (!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_TRANSMITTED));  // 0x00070084
+    }
+  }
+
+  uint8_t readCount = payload[len - 1];
+
+  if (readCount) {
+    I2C_GenerateSTART(ENABLE);  // restart
+    while (!I2C_CheckEvent(I2C_EVENT_MASTER_MODE_SELECT)); // 0x00030001
+
+    I2C_Send7bitAddress(payload[0] << 1, I2C_Direction_Receiver);
+    while (!I2C_CheckEvent(I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)); // 0x00030002
+
+    while (readCount--) {
+      I2C_AcknowledgeConfig(readCount);
+      while (!I2C_CheckEvent(I2C_EVENT_MASTER_BYTE_RECEIVED)); // 0x00030040
+      printf("%02X", I2C_ReceiveData());
+    }
+  }
+
+  I2C_GenerateSTOP(ENABLE);
+  while (I2C_GetFlagStatus(I2C_FLAG_BUSY) != RESET); // 0x00000000
 
   sendOK();
 }
@@ -109,6 +155,7 @@ const static CommandHandler atHandlers[] = {
   { "AT+RESET", TRUE, handleATRESET },
   { "AT+ECHO=", FALSE, handleATECHO },
   { "AT+SC", TRUE, handleATSC },
+  { "AT+TR=", FALSE, handleATTR },
   { NULL, TRUE, NULL}  // End marker
 };
 
