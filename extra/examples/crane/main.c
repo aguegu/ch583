@@ -2,6 +2,7 @@
 #include "CH58x_common.h"
 #include "ringbuffer.h"
 #include "at.h"
+#include "ssd1306.h"
 
 // UART0: PB4: RXD0; PB7: TXD0; PB5: DTR
 // UART1: PA8: RXD1; PA9: TXD1
@@ -39,7 +40,7 @@ typedef struct {
   BOOL ready;
 } Task;
 
-#define TASK_LEN (3)
+#define TASK_LEN (4)
 
 static Task taskList[TASK_LEN];
 
@@ -383,6 +384,18 @@ void taskBlink(void) {
   GPIOB_InverseBits(LED1);
 }
 
+void taskDisplay(void) {
+  static char line0[16];
+  static uint8_t x = 0;
+
+  sprintf(line0, "X: %d", x++);
+  ssdPutString(line0, 0, 0);
+  ssdPutString("Y: ", 2, 0);
+  ssdPutString("Z: ", 4, 0);
+
+  ssdRefresh();
+}
+
 int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
   SysTick_Config(GetSysClock() / 1800); // 1800Hz
@@ -432,9 +445,12 @@ int main() {
   UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY | RB_IER_RECV_RDY);
   PFIC_EnableIRQ(UART1_IRQn);
 
+  ssdInit();
+
   registerTask(0, taskBlink, 180, 1);
   registerTask(1, taskAtCommands, 12, 0);
   registerTask(2, taskKeyboardPool, 120, 2);  // 1800 / 120 = 15 Hz
+  registerTask(3, taskDisplay, 120, 60);
 
   dispatchTasks();
 }
