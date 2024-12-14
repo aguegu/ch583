@@ -20,10 +20,6 @@ void delayInJiffy(uint32_t t) {
   }
 }
 
-uint32_t getJiffies() {
-  return jiffies;
-}
-
 void registerTask(uint8_t index, TaskFunction task, unsigned int period, unsigned int delay) {
   taskList[index].task = task;
   taskList[index].period = period;

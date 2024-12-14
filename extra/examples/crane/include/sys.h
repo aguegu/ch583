@@ -17,6 +17,5 @@ void registerTask(uint8_t index, TaskFunction task, unsigned int period, unsigne
 void dispatchTasks(void);
 
 void delayInJiffy(uint32_t t);
-uint32_t getJiffies();
 
 #endif

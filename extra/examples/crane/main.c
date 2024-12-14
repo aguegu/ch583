@@ -2,6 +2,8 @@
 #include "CH58x_common.h"
 #include "ringbuffer.h"
 #include "at.h"
+#include "sys.h"
+#include "uart1.h"
 #include "ssd1306.h"
 
 // UART0: PB4: RXD0; PB7: TXD0; PB5: DTR
@@ -28,21 +30,6 @@
 
 #define LED1 GPIO_Pin_18
 #define LED2 GPIO_Pin_19
-
-volatile uint32_t jiffies = 0;
-
-typedef void (*TaskFunction)(void);
-
-typedef struct {
-  TaskFunction task;
-  uint32_t period;
-  uint32_t delay;
-  BOOL ready;
-} Task;
-
-#define TASK_LEN (4)
-
-static Task taskList[TASK_LEN];
 
 #define BYTE0(a) ((a) & 0xFF)
 #define BYTE1(a) (((a) >> 8) & 0xFF)
@@ -92,38 +79,10 @@ static MotorSetting setting = {
 
 static uint8_t mode = 0x00;
 
-void registerTask(uint8_t index, TaskFunction task, unsigned int period, unsigned int delay) {
-  taskList[index].task = task;
-  taskList[index].period = period;
-  taskList[index].delay = delay;
-}
-
 RingBuffer tx0Buffer, rx0Buffer;
-RingBuffer tx1Buffer, rx1Buffer;
-
-int _write(int fd, char *buf, int size) {
-  for (int i = 0; i < size; i++) {
-    ringbufferPut(&tx1Buffer, *buf++, TRUE);
-    if (R8_UART1_LSR & RB_LSR_TX_FIFO_EMP) {
-      while (ringbufferAvailable(&tx1Buffer) && R8_UART1_TFC < UART_FIFO_SIZE) {
-        R8_UART1_THR = ringbufferGet(&tx1Buffer);
-      }
-    }
-  }
-  return size;
-}
 
 void flushUart0Tx() {
   while (!(R8_UART0_LSR & RB_LSR_TX_FIFO_EMP)) {
-    __WFI();
-    __nop();
-    __nop();
-  };
-}
-
-void flushUart1Tx() {
-  // while (ringbufferAvailable(&tx1Buffer));
-  while (!(R8_UART1_LSR & RB_LSR_TX_FIFO_EMP)) {
     __WFI();
     __nop();
     __nop();
@@ -154,7 +113,7 @@ void handleATID(uint8_t * payload, uint8_t len) {
 
 void handleATRESET(uint8_t * payload, uint8_t len) {
   sendOK();
-  flushUart1Tx();
+  uart1FlushTx();
   SYS_ResetExecute();
 }
 
@@ -176,11 +135,8 @@ uint8_t transmitCommands(uint8_t * tx, uint8_t len, uint8_t *rx) {
   }
 
   flushUart0Tx();
-  uint32_t lastReceivedAt = jiffies;
 
-  while (jiffies != (uint32_t)(lastReceivedAt + 4)) {
-    __WFI();
-  }
+  delayInJiffy(4);
 
   uint8_t j = 0, t;
   while (ringbufferAvailable(&rx0Buffer)) {
@@ -222,8 +178,8 @@ void taskAtCommands() {
   static uint8_t content[128];
   BOOL LFrecevied = FALSE;
 
-  while (ringbufferAvailable(&rx1Buffer)) {
-    uint8_t temp = ringbufferGet(&rx1Buffer);
+  while (uart1RxAvailable()) {
+    uint8_t temp = uart1RxGet();
     if (temp == '\n') {
       LFrecevied = TRUE;
       break;
@@ -258,7 +214,7 @@ void taskAtCommands() {
     }
 
     l = 0;
-    flushUart1Tx();
+    uart1FlushTx();
   }
 }
 
@@ -326,7 +282,6 @@ void taskKeyboardPool() {
       break;
   }
 
-
   if (mode == 0x00) {
     if (btnsA & KEYBOARD_MID) {
       transmitCommands((uint8_t []){ setting.xId, 0x0A, 0x6D, 0x6B }, 4, NULL); // reset coordintate
@@ -362,24 +317,6 @@ void taskKeyboardPool() {
   btnsALast = btnsA;
 }
 
-void dispatchTasks(void) {
-  while (1) {
-    BOOL idle = TRUE;
-    for (uint8_t i = 0; i < TASK_LEN; i++) {
-      if (taskList[i].ready) {
-        taskList[i].ready = FALSE;
-        idle = FALSE;
-        taskList[i].task();
-      }
-    }
-    if (idle) {
-      __WFI();
-      __nop();
-      __nop();
-    }
-  }
-}
-
 void taskBlink(void) {
   GPIOB_InverseBits(LED1);
 }
@@ -407,9 +344,6 @@ int main() {
 
   ringbufferInit(&tx0Buffer, 64);
   ringbufferInit(&rx0Buffer, 128);
-
-  ringbufferInit(&tx1Buffer, 64);
-  ringbufferInit(&rx1Buffer, 128);
 
   GPIOB_ModeCfg(LED1, GPIO_ModeOut_PP_5mA);
   GPIOB_SetBits(LED1);
@@ -439,11 +373,7 @@ int main() {
   GPIOA_SetBits(GPIO_Pin_9);
   GPIOA_ModeCfg(GPIO_Pin_9, GPIO_ModeOut_PP_5mA); // TXD: PA9, pushpull, but set it high beforehand
   GPIOA_ModeCfg(GPIO_Pin_8, GPIO_ModeIN_PU);      // RXD: PA8, in with pullup
-
-  UART1_DefInit();  // default baudrate 115200
-  UART1_ByteTrigCfg(UART_7BYTE_TRIG);
-  UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY | RB_IER_RECV_RDY);
-  PFIC_EnableIRQ(UART1_IRQn);
+  uart1Init();
 
   ssdInit();
 
@@ -453,23 +383,6 @@ int main() {
   registerTask(3, taskDisplay, 120, 60);
 
   dispatchTasks();
-}
-
-__INTERRUPT
-__HIGH_CODE
-void SysTick_Handler(void) {
-  jiffies++;
-  static volatile uint8_t i;
-  for (i = 0; i < TASK_LEN; i++) {
-    if (taskList[i].delay == 0) {
-      taskList[i].ready = TRUE;
-      taskList[i].delay = taskList[i].period - 1;
-    } else {
-      taskList[i].delay--;
-    }
-  }
-
-  SysTick->SR = 0;
 }
 
 __INTERRUPT
@@ -485,24 +398,6 @@ void UART0_IRQHandler(void) {
     case UART_II_RECV_TOUT: // Rx FIFO is not full, but there is something when no new data comming in within timeout
       while (R8_UART0_RFC) {
         ringbufferPut(&rx0Buffer, R8_UART0_RBR, FALSE);
-      }
-      break;
-  }
-}
-
-__INTERRUPT
-__HIGH_CODE
-void UART1_IRQHandler(void) {
-  switch (UART1_GetITFlag()) {
-    case UART_II_THR_EMPTY: // trigger when THR and FIFOtx all empty
-      while (ringbufferAvailable(&tx1Buffer) && R8_UART1_TFC < UART_FIFO_SIZE) {
-        R8_UART1_THR = ringbufferGet(&tx1Buffer);
-      }
-      break;
-    case UART_II_RECV_RDY: // Rx FIFO is full
-    case UART_II_RECV_TOUT: // Rx FIFO is not full, but there is something when no new data comming in within timeout
-      while (R8_UART1_RFC) {
-        ringbufferPut(&rx1Buffer, R8_UART1_RBR, FALSE);
       }
       break;
   }
