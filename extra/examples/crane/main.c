@@ -36,8 +36,6 @@
 #define BYTE2(a) (((a) >> 16) & 0xFF)
 #define BYTE3(a) (((a) >> 24) & 0xFF)
 
-// #define __bswap_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
-
 #define ABS(n)  (((n) < 0) ? -(n) : (n))
 
 typedef struct {
@@ -54,6 +52,11 @@ typedef struct {
   uint16_t xSpeed;
   uint16_t ySpeed;
   uint16_t zSpeed;
+  int32_t zOffsetStart;
+  int32_t zOffsetEnd;
+  uint16_t zOffsetSpeed;
+  int32_t zHeight;
+  uint16_t thresholdReach;
 } MotorSetting;
 
 static MotorSetting setting = {
@@ -70,12 +73,12 @@ static MotorSetting setting = {
   .xSpeed = 600,
   .ySpeed = 600,
   .zSpeed = 600,
+  .zOffsetStart = -32000,
+  .zOffsetEnd = -24000,
+  .zOffsetSpeed = 300,
+  .zHeight = 20000,
+  .thresholdReach = 10,
 };
-
-// when y at yEnd, z = -32000 reach top
-
-// y = yStart, z = -32000 | y = yEnd, z = - 240000
-// y = yStart, z = zStart | y = yEnd, z =
 
 static uint8_t mode = 0x00;
 
@@ -136,11 +139,11 @@ uint8_t transmitCommands(uint8_t * tx, uint8_t len, uint8_t *rx) {
 
   flushUart0Tx();
 
-  delayInJiffy(4);
+  delayInJiffy(40);
 
   uint8_t j = 0, t;
   while (ringbufferAvailable(&rx0Buffer)) {
-    t = ringbufferGet(&rx0Buffer);;
+    t = ringbufferGet(&rx0Buffer);
     if (rx) {
       rx[j] = t;
     }
@@ -168,7 +171,6 @@ const static CommandHandler atHandlers[] = {
   { "AT+RESET", TRUE, handleATRESET },
   { "AT+ECHO=", FALSE, handleATECHO },
   { "AT+FWD=", FALSE, handleATFWD},
-  // { "AT+", FALSE, },
   { NULL, TRUE, NULL}  // End marker
 };
 
@@ -232,54 +234,72 @@ void keyboardInit() {
   GPIOA_ModeCfg(KEYBOARD_RST, GPIO_ModeIN_PU);
 }
 
+static int32_t positionX, positionY, positionZ;
+
 static const uint32_t btnsBMask = KEYBOARD_UP | KEYBOARD_DOWN | KEYBOARD_LEFT | KEYBOARD_RIGHT | ONBOARD_DOWNLOAD;
 static const uint32_t btnsAMask = KEYBOARD_MID | KEYBOARD_RST | KEYBOARD_SET;
 
+// mode 0: Loose
+// mode 1: Z Reset
+// mode 2: Move
+// mode 3: Down
+// mode 4: pick then up
+// mode 5: exit then release -> mode 2
+
 void taskKeyboardPool() {
-  // static uint8_t rx[64];
   static uint32_t btnsBLast = 0, btnsALast = 0;
+  static uint8_t recv[32];
+  static int32_t positionZCache;
 
   uint32_t btnsB = GPIOB_ReadPortPin(btnsBMask) ^ (btnsBMask);
   uint32_t btnsA = GPIOA_ReadPortPin(btnsAMask) ^ (btnsAMask);
+
+  transmitCommands((uint8_t []){ setting.xId, 0x36, 0x6B }, 3, recv),
+  positionX = ((uint32_t)recv[3] << 24) + ((uint32_t)recv[4] << 16) + ((uint32_t)recv[5] << 8) + (uint32_t)recv[6];
+  positionX = recv[2] ? -positionX : positionX;
+
+  transmitCommands((uint8_t []){ setting.yId, 0x36, 0x6B }, 3, recv),
+  positionY = ((uint32_t)recv[3] << 24) + ((uint32_t)recv[4] << 16) + ((uint32_t)recv[5] << 8) + (uint32_t)recv[6];
+  positionY = recv[2] ? -positionY : positionY;
+
+  transmitCommands((uint8_t []){ setting.zId, 0x36, 0x6B }, 3, recv),
+  positionZ = ((uint32_t)recv[3] << 24) + ((uint32_t)recv[4] << 16) + ((uint32_t)recv[5] << 8) + (uint32_t)recv[6];
+  positionZ = recv[2] ? -positionZ : positionZ;
+  // positionX = recv[0];
+
+  if (mode == 1 && abs(positionZ - setting.zOffsetStart) < setting.thresholdReach) {
+    mode = 2;
+  }
+
+  if (mode == 3 && abs(positionZ - (positionZCache + setting.zHeight)) < setting.thresholdReach) {
+    GPIOA_SetBits(CLAW);
+    transmitCommands((uint8_t []){ setting.zId, 0xFB, positionZCache >= 0 ? 0 : 1, BYTE1(setting.zSpeed), BYTE0(setting.zSpeed), BYTE3(ABS(positionZCache)), BYTE2(ABS(positionZCache)), BYTE1(ABS(positionZCache)), BYTE0(ABS(positionZCache)), 0x01, 0x01, 0x6B }, 12, NULL);
+    transmitCommands((uint8_t []){ 0x00, 0xFF, 0x66, 0x6B }, 4, NULL);
+    mode = 4;
+  }
+
+  if (mode == 4 && abs(positionZ - positionZCache) < setting.thresholdReach) {
+    transmitCommands((uint8_t []){ setting.yId, 0xFB, setting.yEnd >= 0 ? 0 : 1, BYTE1(setting.ySpeed), BYTE0(setting.ySpeed), BYTE3(ABS(setting.yEnd)), BYTE2(ABS(setting.yEnd)), BYTE1(ABS(setting.yEnd)), BYTE0(ABS(setting.yEnd)), 0x01, 0x01, 0x6B }, 12, NULL);
+    transmitCommands((uint8_t []){ setting.zId, 0xFB, setting.zOffsetEnd >= 0 ? 0 : 1, BYTE1(setting.zOffsetSpeed), BYTE0(setting.zOffsetSpeed), BYTE3(ABS(setting.zOffsetEnd)), BYTE2(ABS(setting.zOffsetEnd)), BYTE1(ABS(setting.zOffsetEnd)), BYTE0(ABS(setting.zOffsetEnd)), 0x01, 0x01, 0x6B }, 12, NULL);
+    transmitCommands((uint8_t []){ setting.xId, 0xFB, setting.xStart >= 0 ? 0 : 1, BYTE1(setting.xSpeed), BYTE0(setting.xSpeed), BYTE3(ABS(setting.xStart)), BYTE2(ABS(setting.xStart)), BYTE1(ABS(setting.xStart)), BYTE0(ABS(setting.xStart)), 0x01, 0x01, 0x6B }, 12, NULL);
+    transmitCommands((uint8_t []){ 0x00, 0xFF, 0x66, 0x6B }, 4, NULL);
+    mode = 5;
+  }
+
+  if (mode == 5 && abs(positionZ - setting.zOffsetEnd) < setting.thresholdReach && abs(positionY - setting.yEnd) < setting.thresholdReach && abs(positionX - setting.xStart) < setting.thresholdReach) {
+    GPIOA_ResetBits(CLAW);
+    mode = 2;
+  }
 
   if (btnsB == btnsBLast && btnsA == btnsALast) {
     return;
   }
 
-  switch (btnsB & (KEYBOARD_LEFT | KEYBOARD_RIGHT)) {
-    case KEYBOARD_LEFT:
-      transmitCommands((uint8_t []){ setting.xId, 0xFB, setting.xStart >= 0 ? 0 : 1, BYTE1(setting.xSpeed), BYTE0(setting.xSpeed), BYTE3(ABS(setting.xStart)), BYTE2(ABS(setting.xStart)), BYTE1(ABS(setting.xStart)), BYTE0(ABS(setting.xStart)), 0x01, 0x01, 0x6B }, 12, NULL);
-      break;
-    case KEYBOARD_RIGHT:
-      transmitCommands((uint8_t []){ setting.xId, 0xFB, setting.xEnd >= 0 ? 0 : 1, BYTE1(setting.xSpeed), BYTE0(setting.xSpeed), BYTE3(ABS(setting.xEnd)), BYTE2(ABS(setting.xEnd)), BYTE1(ABS(setting.xEnd)), BYTE0(ABS(setting.xEnd)), 0x01, 0x01, 0x6B }, 12, NULL);
-      break;
-    case 0:
-      transmitCommands((uint8_t []){ setting.xId, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
-      break;
-  }
-
-  switch (btnsB & (KEYBOARD_DOWN | KEYBOARD_UP)) {
-    case KEYBOARD_UP:
-      transmitCommands((uint8_t []){ setting.yId, 0xFB, setting.yStart >= 0 ? 0 : 1, BYTE1(setting.ySpeed), BYTE0(setting.ySpeed), BYTE3(ABS(setting.yStart)), BYTE2(ABS(setting.yStart)), BYTE1(ABS(setting.yStart)), BYTE0(ABS(setting.yStart)), 0x01, 0x01, 0x6B }, 12, NULL);
-      break;
-    case KEYBOARD_DOWN:
-      transmitCommands((uint8_t []){ setting.yId, 0xFB, setting.yEnd >= 0 ? 0 : 1, BYTE1(setting.ySpeed), BYTE0(setting.ySpeed), BYTE3(ABS(setting.yEnd)), BYTE2(ABS(setting.yEnd)), BYTE1(ABS(setting.yEnd)), BYTE0(ABS(setting.yEnd)), 0x01, 0x01, 0x6B }, 12, NULL);
-      break;
-    case 0:
-      transmitCommands((uint8_t []){ setting.yId, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
-      break;
-  }
-
-  switch (btnsA & (KEYBOARD_SET | KEYBOARD_RST)) {
-    case KEYBOARD_SET:
-      transmitCommands((uint8_t []){ setting.zId, 0xFB, setting.zStart >= 0 ? 0 : 1, BYTE1(setting.zSpeed), BYTE0(setting.zSpeed), BYTE3(ABS(setting.zStart)), BYTE2(ABS(setting.zStart)), BYTE1(ABS(setting.zStart)), BYTE0(ABS(setting.zStart)), 0x01, 0x01, 0x6B }, 12, NULL);
-      break;
-    case KEYBOARD_RST:
-      transmitCommands((uint8_t []){ setting.zId, 0xFB, setting.zEnd >= 0 ? 0 : 1, BYTE1(setting.zSpeed), BYTE0(setting.zSpeed), BYTE3(ABS(setting.zEnd)), BYTE2(ABS(setting.zEnd)), BYTE1(ABS(setting.zEnd)), BYTE0(ABS(setting.zEnd)), 0x01, 0x01, 0x6B }, 12, NULL);
-      break;
-    case 0:
-      transmitCommands((uint8_t []){ setting.zId, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
-      break;
+  if (btnsB & ONBOARD_DOWNLOAD) { // deactive
+    mode = 0;
+    transmitCommands((uint8_t []){ setting.xId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
+    transmitCommands((uint8_t []){ setting.yId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
+    transmitCommands((uint8_t []){ setting.zId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
   }
 
   if (mode == 0x00) {
@@ -292,23 +312,47 @@ void taskKeyboardPool() {
       transmitCommands((uint8_t []){ setting.yId, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6, NULL);
       transmitCommands((uint8_t []){ setting.zId, 0xF3, 0xAB, 0x01, 0x01, 0x6B }, 6, NULL);
 
-      // transmitCommands((uint8_t []){ 0x00, 0xFF, 0x66, 0x6B }, 4, NULL);
-      // int16_t zOffset = -8000;
-      // transmitCommands((uint8_t []){ setting.zId, 0xFB, zOffset >= 0 ? 0 : 1, BYTE1(setting.zSpeed), BYTE0(setting.zSpeed), BYTE3(ABS(zOffset)), BYTE2(ABS(zOffset)), BYTE1(ABS(zOffset)), BYTE0(ABS(zOffset)), 0x01, 0x01, 0x6B }, 12, NULL);
+      transmitCommands((uint8_t []){ 0x00, 0xFF, 0x66, 0x6B }, 4, NULL);
+      transmitCommands((uint8_t []){ setting.zId, 0xFB, setting.zOffsetStart >= 0 ? 0 : 1, BYTE1(setting.zSpeed), BYTE0(setting.zSpeed), BYTE3(ABS(setting.zOffsetStart)), BYTE2(ABS(setting.zOffsetStart)), BYTE1(ABS(setting.zOffsetStart)), BYTE0(ABS(setting.zOffsetStart)), 0x01, 0x01, 0x6B }, 12, NULL);
 
       mode = 1;
     }
   }
 
-  if (mode == 1) {
-    btnsA & KEYBOARD_MID ? GPIOA_SetBits(CLAW) : GPIOA_ResetBits(CLAW);
-  }
+  if (mode == 2) {
+    switch (btnsB & (KEYBOARD_LEFT | KEYBOARD_RIGHT)) {
+      case KEYBOARD_LEFT:
+        transmitCommands((uint8_t []){ setting.xId, 0xFB, setting.xStart >= 0 ? 0 : 1, BYTE1(setting.xSpeed), BYTE0(setting.xSpeed), BYTE3(ABS(setting.xStart)), BYTE2(ABS(setting.xStart)), BYTE1(ABS(setting.xStart)), BYTE0(ABS(setting.xStart)), 0x01, 0x01, 0x6B }, 12, NULL);
+        break;
+      case KEYBOARD_RIGHT:
+        transmitCommands((uint8_t []){ setting.xId, 0xFB, setting.xEnd >= 0 ? 0 : 1, BYTE1(setting.xSpeed), BYTE0(setting.xSpeed), BYTE3(ABS(setting.xEnd)), BYTE2(ABS(setting.xEnd)), BYTE1(ABS(setting.xEnd)), BYTE0(ABS(setting.xEnd)), 0x01, 0x01, 0x6B }, 12, NULL);
+        break;
+      case 0:
+        transmitCommands((uint8_t []){ setting.xId, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
+        break;
+    }
 
-  if (btnsB & ONBOARD_DOWNLOAD) { // deactive
-    mode = 0;
-    transmitCommands((uint8_t []){ setting.xId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
-    transmitCommands((uint8_t []){ setting.yId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
-    transmitCommands((uint8_t []){ setting.zId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
+    switch (btnsB & (KEYBOARD_DOWN | KEYBOARD_UP)) {
+      case KEYBOARD_UP:
+        transmitCommands((uint8_t []){ setting.yId, 0xFB, setting.yStart >= 0 ? 0 : 1, BYTE1(setting.ySpeed), BYTE0(setting.ySpeed), BYTE3(ABS(setting.yStart)), BYTE2(ABS(setting.yStart)), BYTE1(ABS(setting.yStart)), BYTE0(ABS(setting.yStart)), 0x01, 0x01, 0x6B }, 12, NULL);
+        transmitCommands((uint8_t []){ setting.zId, 0xFB, setting.zOffsetStart >= 0 ? 0 : 1, BYTE1(setting.zOffsetSpeed), BYTE0(setting.zOffsetSpeed), BYTE3(ABS(setting.zOffsetStart)), BYTE2(ABS(setting.zOffsetStart)), BYTE1(ABS(setting.zOffsetStart)), BYTE0(ABS(setting.zOffsetStart)), 0x01, 0x01, 0x6B }, 12, NULL);
+        break;
+      case KEYBOARD_DOWN:
+        transmitCommands((uint8_t []){ setting.yId, 0xFB, setting.yEnd >= 0 ? 0 : 1, BYTE1(setting.ySpeed), BYTE0(setting.ySpeed), BYTE3(ABS(setting.yEnd)), BYTE2(ABS(setting.yEnd)), BYTE1(ABS(setting.yEnd)), BYTE0(ABS(setting.yEnd)), 0x01, 0x01, 0x6B }, 12, NULL);
+        transmitCommands((uint8_t []){ setting.zId, 0xFB, setting.zOffsetEnd >= 0 ? 0 : 1, BYTE1(setting.zOffsetSpeed), BYTE0(setting.zOffsetSpeed), BYTE3(ABS(setting.zOffsetEnd)), BYTE2(ABS(setting.zOffsetEnd)), BYTE1(ABS(setting.zOffsetEnd)), BYTE0(ABS(setting.zOffsetEnd)), 0x01, 0x01, 0x6B }, 12, NULL);
+        break;
+      case 0:
+        transmitCommands((uint8_t []){ setting.yId, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
+        transmitCommands((uint8_t []){ setting.zId, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
+        break;
+    }
+
+    if (btnsA & KEYBOARD_MID) {
+      positionZCache = positionZ;
+      int32_t positionZTarget = positionZCache + setting.zHeight;
+      transmitCommands((uint8_t []){ setting.zId, 0xFB, positionZTarget >= 0 ? 0 : 1, BYTE1(setting.zSpeed), BYTE0(setting.zSpeed), BYTE3(ABS(positionZTarget)), BYTE2(ABS(positionZTarget)), BYTE1(ABS(positionZTarget)), BYTE0(ABS(positionZTarget)), 0x01, 0x01, 0x6B }, 12, NULL);
+      mode = 3;
+    }
   }
 
   transmitCommands((uint8_t []){ 0x00, 0xFF, 0x66, 0x6B }, 4, NULL);
@@ -323,12 +367,19 @@ void taskBlink(void) {
 
 void taskDisplay(void) {
   static char line0[16];
-  static uint8_t x = 0;
+  static char line1[16];
+  static char line2[16];
+  static char line3[16];
 
-  sprintf(line0, "X: %d", x++);
+  sprintf(line0, "X: %13d", positionX);
+  sprintf(line1, "Y: %13d", positionY);
+  sprintf(line2, "Z: %13d", positionZ);
+  sprintf(line3, "mode: %d", mode);
+
   ssdPutString(line0, 0, 0);
-  ssdPutString("Y: ", 2, 0);
-  ssdPutString("Z: ", 4, 0);
+  ssdPutString(line1, 2, 0);
+  ssdPutString(line2, 4, 0);
+  ssdPutString(line3, 6, 0);
 
   ssdRefresh();
 }
@@ -377,10 +428,19 @@ int main() {
 
   ssdInit();
 
+  delayInJiffy(1800);
+  // disable motors
+
   registerTask(0, taskBlink, 180, 1);
   registerTask(1, taskAtCommands, 12, 0);
   registerTask(2, taskKeyboardPool, 120, 2);  // 1800 / 120 = 15 Hz
   registerTask(3, taskDisplay, 120, 60);
+
+  transmitCommands((uint8_t []){ setting.xId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
+  transmitCommands((uint8_t []){ setting.yId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
+  transmitCommands((uint8_t []){ setting.zId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
+  transmitCommands((uint8_t []){ 0x00, 0xFF, 0x66, 0x6B }, 4, NULL);
+  mode = 0;
 
   dispatchTasks();
 }

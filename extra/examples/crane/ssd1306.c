@@ -31,6 +31,22 @@ void ssdPutString(const char * s, uint8_t row, uint8_t col) {
 }
 
 void ssdRefresh() {
+  GPIOB_ResetBits(GPIO_Pin_20);
+
+  SPI0_MasterTrans((uint8_t []){ 0xA8, 63 }, 2);  // Multiplex ratio, height - 1
+  SPI0_MasterTrans((uint8_t []){ 0xD3, 0x00 }, 2); // set display offset
+  SPI0_MasterTrans((uint8_t []){ 0xD5, 0x80 }, 2); // set osc division
+
+  SPI0_MasterTrans((uint8_t []){ 0x20, 0x01 }, 2);  // Memeory Address Mode
+
+  SPI0_MasterTrans((uint8_t []){ 0xDA, 0x12 }, 2); // set COM pins
+  SPI0_MasterTrans((uint8_t []){ 0xC8 }, 1); // COM Direction: C0: low to high, C8: high to low
+  SPI0_MasterTrans((uint8_t []){ 0xA1 }, 1); // Segment mapping: A0: low to high, A1: high to low
+
+  SPI0_MasterTrans((uint8_t []){ 0x40 }, 1); // display start line at 0
+  SPI0_MasterTrans((uint8_t []){ 0xb0 }, 1); // page start at 0
+
+  GPIOB_SetBits(GPIO_Pin_20);
   SPI0_MasterDMATrans(screen, 1024);
 }
 
@@ -79,7 +95,7 @@ void ssdInit() {
 
   memset(screen, 0x00, 1024);
 
-  GPIOB_SetBits(GPIO_Pin_20);
+
 
   ssdRefresh();
 }
