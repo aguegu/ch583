@@ -11,22 +11,25 @@
 // UART2: PA6: RXD2; PA7: TXD2
 
 // Keyboard:
-// Up: PB17, Down: PB9, Left: PB16, Right: PB8, Mid: PA3
+// Up: PB17, Down: PB9, Left: PB16, Right: PB8, Mid: PB15
 // Set: PA1, Rst: PA0
 
 #define KEYBOARD_RIGHT GPIO_Pin_8
 #define KEYBOARD_DOWN GPIO_Pin_9
 #define KEYBOARD_LEFT GPIO_Pin_16
 #define KEYBOARD_UP GPIO_Pin_17
+#define KEYBOARD_MID GPIO_Pin_15
 
-#define KEYBOARD_MID GPIO_Pin_3
 #define KEYBOARD_SET GPIO_Pin_1
 #define KEYBOARD_RST GPIO_Pin_0
+
+#define COIN_SIG GPIO_Pin_14
+#define COIN_LED GPIO_Pin_13
 
 // #define ONBOARD_KEY GPIO_Pin_4
 #define ONBOARD_DOWNLOAD GPIO_Pin_22
 
-#define CLAW  GPIO_Pin_2
+#define CLAW  GPIO_Pin_5
 
 #define LED1 GPIO_Pin_18
 #define LED2 GPIO_Pin_19
@@ -74,13 +77,20 @@ static MotorSetting setting = {
   .ySpeed = 600,
   .zSpeed = 600,
   .zOffsetStart = -32000,
-  .zOffsetEnd = -24000,
-  .zOffsetSpeed = 300,
+  .zOffsetEnd = -23000,
+  .zOffsetSpeed = 0,  // calculated in main
   .zHeight = 20000,
   .thresholdReach = 10,
 };
 
+// { y: 0, z: -32000 }
+// { y: 16000, z: -23000 }
+
+// y: 16000 / 600
+// z: 9000 /
+
 static uint8_t mode = 0x00;
+static uint16_t coins = 0x00;
 
 RingBuffer tx0Buffer, rx0Buffer;
 
@@ -225,24 +235,24 @@ void keyboardInit() {
   GPIOB_ModeCfg(KEYBOARD_DOWN, GPIO_ModeIN_PU);
   GPIOB_ModeCfg(KEYBOARD_LEFT, GPIO_ModeIN_PU);
   GPIOB_ModeCfg(KEYBOARD_RIGHT, GPIO_ModeIN_PU);
+  GPIOB_ModeCfg(KEYBOARD_MID, GPIO_ModeIN_PU);
 
   // GPIOB_ModeCfg(ONBOARD_KEY, GPIO_ModeIN_PU);
   GPIOB_ModeCfg(ONBOARD_DOWNLOAD, GPIO_ModeIN_PU);
 
-  GPIOA_ModeCfg(KEYBOARD_MID, GPIO_ModeIN_PU);
   GPIOA_ModeCfg(KEYBOARD_SET, GPIO_ModeIN_PU);
   GPIOA_ModeCfg(KEYBOARD_RST, GPIO_ModeIN_PU);
 }
 
 static int32_t positionX, positionY, positionZ;
 
-static const uint32_t btnsBMask = KEYBOARD_UP | KEYBOARD_DOWN | KEYBOARD_LEFT | KEYBOARD_RIGHT | ONBOARD_DOWNLOAD;
-static const uint32_t btnsAMask = KEYBOARD_MID | KEYBOARD_RST | KEYBOARD_SET;
+static const uint32_t btnsBMask = KEYBOARD_UP | KEYBOARD_DOWN | KEYBOARD_LEFT | KEYBOARD_RIGHT | ONBOARD_DOWNLOAD | KEYBOARD_MID;
+static const uint32_t btnsAMask = KEYBOARD_RST | KEYBOARD_SET;
 
 // mode 0: Loose
 // mode 1: Z Reset
 // mode 2: Move
-// mode 3: Down
+// mode 3: hook Down
 // mode 4: pick then up
 // mode 5: exit then release -> mode 2
 
@@ -303,7 +313,7 @@ void taskKeyboardPool() {
   }
 
   if (mode == 0x00) {
-    if (btnsA & KEYBOARD_MID) {
+    if (btnsB & KEYBOARD_MID) {
       transmitCommands((uint8_t []){ setting.xId, 0x0A, 0x6D, 0x6B }, 4, NULL); // reset coordintate
       transmitCommands((uint8_t []){ setting.yId, 0x0A, 0x6D, 0x6B }, 4, NULL);
       transmitCommands((uint8_t []){ setting.zId, 0x0A, 0x6D, 0x6B }, 4, NULL);
@@ -347,11 +357,18 @@ void taskKeyboardPool() {
         break;
     }
 
-    if (btnsA & KEYBOARD_MID) {
-      positionZCache = positionZ;
-      int32_t positionZTarget = positionZCache + setting.zHeight;
-      transmitCommands((uint8_t []){ setting.zId, 0xFB, positionZTarget >= 0 ? 0 : 1, BYTE1(setting.zSpeed), BYTE0(setting.zSpeed), BYTE3(ABS(positionZTarget)), BYTE2(ABS(positionZTarget)), BYTE1(ABS(positionZTarget)), BYTE0(ABS(positionZTarget)), 0x01, 0x01, 0x6B }, 12, NULL);
-      mode = 3;
+    if (btnsB & KEYBOARD_MID) {
+      if (coins > 0) {
+        transmitCommands((uint8_t []){ setting.xId, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
+        transmitCommands((uint8_t []){ setting.yId, 0xFE, 0x98, 0x01, 0x6B }, 5, NULL);
+
+        positionZCache = positionZ;
+        int32_t positionZTarget = positionZCache + setting.zHeight;
+        transmitCommands((uint8_t []){ setting.zId, 0xFB, positionZTarget >= 0 ? 0 : 1, BYTE1(setting.zSpeed), BYTE0(setting.zSpeed), BYTE3(ABS(positionZTarget)), BYTE2(ABS(positionZTarget)), BYTE1(ABS(positionZTarget)), BYTE0(ABS(positionZTarget)), 0x01, 0x01, 0x6B }, 12, NULL);
+
+        mode = 3;
+        coins--;
+      }
     }
   }
 
@@ -374,7 +391,7 @@ void taskDisplay(void) {
   sprintf(line0, "X: %13d", positionX);
   sprintf(line1, "Y: %13d", positionY);
   sprintf(line2, "Z: %13d", positionZ);
-  sprintf(line3, "mode: %d", mode);
+  sprintf(line3, "Mode:%2d  Coin:%2d", mode, coins);
 
   ssdPutString(line0, 0, 0);
   ssdPutString(line1, 2, 0);
@@ -384,14 +401,37 @@ void taskDisplay(void) {
   ssdRefresh();
 }
 
+void taskCoin(void) {
+  static uint32_t coinLast = 0;
+  uint32_t coinNow = GPIOB_ReadPortPin(COIN_SIG) ^ (COIN_SIG);
+
+  if (coins) {
+    GPIOB_SetBits(COIN_LED);
+  } else {
+    GPIOB_ResetBits(COIN_LED);
+  }
+
+  if (coinNow == coinLast) {
+    return;
+  }
+
+  if (coinNow) {
+    coins++;
+  }
+
+  coinLast = coinNow;
+}
+
 int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
   SysTick_Config(GetSysClock() / 1800); // 1800Hz
 
+  setting.zOffsetSpeed = (setting.zOffsetEnd - setting.zOffsetStart) * setting.ySpeed / (setting.yEnd - setting.yStart) ;
+
   keyboardInit();
 
-  GPIOB_ResetBits(CLAW);
-  GPIOA_ModeCfg(CLAW, GPIO_ModeOut_PP_20mA);
+  GPIOA_ResetBits(CLAW);
+  GPIOA_ModeCfg(CLAW, GPIO_ModeOut_PP_5mA);
 
   ringbufferInit(&tx0Buffer, 64);
   ringbufferInit(&rx0Buffer, 128);
@@ -402,13 +442,15 @@ int main() {
   GPIOB_ModeCfg(LED2, GPIO_ModeOut_PP_5mA);
   GPIOB_SetBits(LED2);
 
-  GPIOB_ResetBits(GPIO_Pin_3);
-  GPIOB_ModeCfg(GPIO_Pin_3, GPIO_ModeOut_PP_5mA);
+  GPIOB_ModeCfg(COIN_SIG, GPIO_ModeIN_PU);
+  GPIOB_ModeCfg(COIN_LED, GPIO_ModeOut_PP_20mA);
 
+  GPIOB_ResetBits(GPIO_Pin_6);
   GPIOB_SetBits(GPIO_Pin_7);
   GPIOB_ModeCfg(GPIO_Pin_7, GPIO_ModeOut_PP_5mA); // TXD: PB7, pushpull, but set it high beforehand
   GPIOB_ModeCfg(GPIO_Pin_5, GPIO_ModeOut_PP_5mA); // DTR: PB5, pushpull
   GPIOB_ModeCfg(GPIO_Pin_4, GPIO_ModeIN_PU);      // RXD: RB4, in with pullup
+  GPIOB_ModeCfg(GPIO_Pin_6, GPIO_ModeOut_PP_5mA); // PB6: Max485-RE, always 0
 
   UART0_BaudRateCfg(115200);
 
@@ -435,6 +477,7 @@ int main() {
   registerTask(1, taskAtCommands, 12, 0);
   registerTask(2, taskKeyboardPool, 120, 2);  // 1800 / 120 = 15 Hz
   registerTask(3, taskDisplay, 120, 60);
+  registerTask(4, taskCoin, 90, 30);
 
   transmitCommands((uint8_t []){ setting.xId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
   transmitCommands((uint8_t []){ setting.yId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);

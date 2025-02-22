@@ -255,6 +255,25 @@ void taskReadAngle(void) {
   mt6701.accumulated = mt6701.rounds * 16384 + mt6701.corrected;
 }
 
+
+uint16_t coins = 0;
+
+void taskKeyboardPool() {
+   static uint32_t btnsLast = 0;
+   uint32_t btns = GPIOB_ReadPortPin(GPIO_Pin_4) ^ (GPIO_Pin_4);
+
+   if (btns == btnsLast) {
+     return;
+   }
+
+   if (btns & GPIO_Pin_4) {
+     coins++;
+   }
+
+   btnsLast = btns;
+
+}
+
 void taskDisplay(void) {
   static char line0[16];
   static char line1[16];
@@ -274,15 +293,15 @@ void taskDisplay(void) {
     sprintf(line2, "rnd: %+7d.%02d", fa / 100, abs(fa) % 100);
   }
 
-  int32_t fa2 = mt6701.accumulated * 10000 / 4551;
-
-  if (fa2 == 0) {
-    sprintf(line3, "pos:       0.00");
-  } else if (abs(fa2) < 100) {
-    sprintf(line3, "pos:      %c0.%02d", fa2 > 0 ? '+' : '-', abs(fa2) % 100);
-  } else {
-    sprintf(line3, "pos: %+7d.%02d", fa2 / 100, abs(fa2) % 100);
-  }
+  // int32_t fa2 = mt6701.accumulated * 10000 / 4551;
+  // if (fa2 == 0) {
+  //   sprintf(line3, "pos:       0.00");
+  // } else if (abs(fa2) < 100) {
+  //   sprintf(line3, "pos:      %c0.%02d", fa2 > 0 ? '+' : '-', abs(fa2) % 100);
+  // } else {
+  //   sprintf(line3, "pos: %+2d.%02d", fa2 / 100, abs(fa2) % 100);
+  // }
+  sprintf(line3, "%d", coins);
 
   ssdPutString(line0, 0, 0);
   ssdPutString(line1, 2, 0);
@@ -291,12 +310,16 @@ void taskDisplay(void) {
   ssdRefresh();
 }
 
+
+
 int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
-  SysTick_Config(GetSysClock() / 1800); // 60Hz
+  SysTick_Config(GetSysClock() / 1800); // 1800Hz
 
   GPIOB_ModeCfg(LED, GPIO_ModeOut_PP_5mA);
   GPIOB_SetBits(LED);
+
+  GPIOB_ModeCfg(GPIO_Pin_4, GPIO_ModeIN_PU);
 
   GPIOB_ModeCfg(GPIO_Pin_12, GPIO_ModeIN_PU); // i2c SDA
   GPIOB_ModeCfg(GPIO_Pin_13, GPIO_ModeIN_PU); // i2c SCL
@@ -326,6 +349,7 @@ int main() {
   registerTask(1, taskAtCommands, 12, 1);
   registerTask(2, taskReadAngle, 15, 0);
   registerTask(3, taskDisplay, 30, 15);
+  registerTask(4, taskKeyboardPool, 90, 0);
 
   dispatchTasks();
 }

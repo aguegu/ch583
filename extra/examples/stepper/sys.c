@@ -1,6 +1,6 @@
 #include "sys.h"
 
-#define TASK_LEN (4)
+#define TASK_LEN (5)
 
 static Task taskList[TASK_LEN];
 
