@@ -149,7 +149,7 @@ uint8_t transmitCommands(uint8_t * tx, uint8_t len, uint8_t *rx) {
 
   flushUart0Tx();
 
-  delayInJiffy(40);
+  delayInJiffy(10);
 
   uint8_t j = 0, t;
   while (ringbufferAvailable(&rx0Buffer)) {
@@ -477,7 +477,7 @@ int main() {
   registerTask(1, taskAtCommands, 12, 0);
   registerTask(2, taskKeyboardPool, 120, 2);  // 1800 / 120 = 15 Hz
   registerTask(3, taskDisplay, 120, 60);
-  registerTask(4, taskCoin, 90, 30);
+  registerTask(4, taskCoin, 60, 30);  // 1800 / 60 = 30 Hz
 
   transmitCommands((uint8_t []){ setting.xId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
   transmitCommands((uint8_t []){ setting.yId, 0xF3, 0xAB, 0x00, 0x01, 0x6B }, 6, NULL);
