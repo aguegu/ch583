@@ -160,15 +160,25 @@ int main() {
   // __attribute__((aligned(4))) uint32_t bufferPWM[8] = { 15, 30, 45, 60, 75, 90, 105, 120 };
 
   // TMR1_PWMInit(High_Level, PWM_Times_1);
-  TMR1_PWMCycleCfg(FREQ_SYS / 400000);   // 400kHz(150)
+  // TMR1_PWMCycleCfg(FREQ_SYS / 400000);   // 400kHz(150)
 
   // TMR2_DMACfg(ENABLE, (uint16_t)(uint32_t)&PwmBuf[0], (uint16_t)(uint32_t)&PwmBuf[100], Mode_LOOP);
 
-  TMR1_ITCfg(ENABLE, TMR0_3_IT_DATA_ACT);
-  PFIC_EnableIRQ(TMR1_IRQn);
+  // TMR1_ITCfg(ENABLE, TMR0_3_IT_DATA_ACT);
+  // PFIC_EnableIRQ(TMR1_IRQn);
 
   // TMR1_Enable();
   // TMR1_DMACfg(ENABLE, (uint16_t)(uint32_t)bufferPWM, (uint16_t)(uint32_t)(bufferPWM+8), Mode_LOOP);
+
+  uint8_t k = 1;
+
+  TMR1_PWMInit(High_Level, PWM_Times_1);
+  TMR1_PWMCycleCfg(FREQ_SYS / 1000000);   // 1MHz(60)
+  TMR1_PWMActDataWidth(30);
+  TMR1_PWMEnable();
+
+  TMR1_Enable();
+
 
   while (1) {
     if (!athandler()) {
@@ -177,13 +187,16 @@ int main() {
       __nop();
     }
 
-    TMR1_Disable();
+    // TMR1_Disable();
 
-    TMR1_PWMInit(High_Level, PWM_Times_1);
-    TMR1_PWMActDataWidth(75); // 50 / 150 = 1/3
-    TMR1_PWMEnable();
-    stepCount = 0;
-    TMR1_Enable();
+
+
+
+
+    k++;
+    if (k == 4) {
+      k = 1;
+    }
 
     delayInJiffy(1);
   }
@@ -219,11 +232,15 @@ __HIGH_CODE
 void TMR1_IRQHandler(void) {
   if (TMR1_GetITFlag(TMR0_3_IT_DATA_ACT)) {
     TMR1_ClearITFlag(TMR0_3_IT_DATA_ACT);
-    stepCount++;
-    if (stepCount == 4) {
+    // stepCount++;
+    // if (stepCount == 1) {
       // TMR1_PWMActDataWidth(0);
-      TMR1_PWMDisable();
-      // TMR1_Disable();
-    }
+      // TMR1_PWMDisable();
+      TMR1_Disable();
+      TMR1_PWMCycleCfg(FREQ_SYS / 400000 * (1 + (stepCount & 1)));
+      TMR1_Enable();
+      // // TMR1_Disable();
+      // TMR1_PWMEnable();
+    // }
   }
 }
