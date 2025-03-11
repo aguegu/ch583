@@ -7,7 +7,7 @@ To keep trace of upstream, all my modification would live in `extra` folder.
 
 `extra/EVT` is the `UTF-8` encoded source files from `EVT`(which most of the text files are in GBK).
 
-Since WCH ch581/ch582/ch583 share the same datasheets and official EVT examples, this repo should be fine for WCH ch58x series.
+Since WCH ch581/ch582/ch583 share the same datasheets and official EVT examples, this repo should work fine on all of them.
 
 1. Setup Toolchains
 

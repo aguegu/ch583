@@ -65,7 +65,7 @@ int main() {
 
   while(1) {
 
-    float s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+    double s0 = 0, s1 = 0, s2 = 0, s3 = 0;
 
     uint32_t t0 = jiffies;
     for (uint16_t i = 1; i < 251; i++) {
@@ -89,8 +89,15 @@ int main() {
     uint32_t t4 = jiffies;
 
     printf("sqrtf, sqrt, Q_rsprt, Q_rsqrt_2\r\n");
-    printf("%f, %f, %f, %f\r\n", s0, s1, s2, s3);
+    printf("%lf, %lf, %lf, %lf\r\n", s0, s1, s2, s3);
     printf("%ld, %ld, %ld, %ld\r\n\r\n", t1-t0, t2-t1, t3-t2, t4-t3);
+
+    for (uint16_t i = 1; i < 40; i++) {
+      printf("sqrtf(%d) = %lf, ", i, sqrtf(i));
+      printf("sqrt(%d) = %lf\r\n", i, sqrt(i));
+      printf("1/Q_rsqrt(%d) = %lf, ", i, 1.0 / Q_rsqrt(i));
+      printf("1/Q_rsqrt_2(%d) = %lf\r\n\r\n", i, 1.0 / Q_rsqrt_2(i));
+    }
 
     delayInJiffy(60);
   }
