@@ -19,21 +19,26 @@ RVMSIS_OBJ 	= $(addprefix $(OUTPUT_DIR)/RVMSIS/, $(RVMSIS_SRC:.c=.o))
 
 StdPeriphDriver_ROOT = ../../EVT/EXAM/SRC/StdPeriphDriver
 StdPeriphDriver_INC = $(StdPeriphDriver_ROOT)/inc
-StdPeriphDriver_SRC = CH58x_sys.c CH58x_clk.c CH58x_gpio.c CH58x_adc.c CH58x_uart1.c 
+StdPeriphDriver_SRC = CH58x_sys.c CH58x_clk.c CH58x_gpio.c CH58x_adc.c CH58x_uart1.c
 StdPeriphDriver_OBJ = $(addprefix $(OUTPUT_DIR)/StdPeriphDriver/, $(StdPeriphDriver_SRC:.c=.o))
 
+Project_ROOT = ./src
+Project_INC = ./inc
+Project_SRC = $(notdir $(wildcard $(Project_ROOT)/*.c))
+Project_OBJ = $(addprefix $(OUTPUT_DIR)/, $(Project_SRC:.c=.o))
+
 HAL_ROOT	=	./HAL
-HAL_INC	 	= $(HAL_ROOT)/include
+HAL_INC	 	= $(HAL_ROOT)/inc
 HAL_SRC 	= MCU.c RTC.c
 HAL_OBJ 	= $(addprefix $(OUTPUT_DIR)/HAL/, $(HAL_SRC:.c=.o))
 
 APP_ROOT	= ./APP
-APP_INC		= $(APP_ROOT)/include
+APP_INC		= $(APP_ROOT)/inc
 APP_SRC		=	$(notdir $(wildcard $(APP_ROOT)/*.c))
 APP_OBJ = $(addprefix $(OUTPUT_DIR)/APP/, $(APP_SRC:.c=.o))
 APP_HEADERS = $(addprefix $(APP_INC)/, $(notdir $(wildcard $(APP_INC)/*.h)))
 
-VPATH = $(Startup_ROOT):$(RVMSIS_ROOT):$(StdPeriphDriver_ROOT):$(HAL_ROOT):$(Profile_ROOT):$(APP_ROOT)
+VPATH = $(Startup_ROOT):$(RVMSIS_ROOT):$(StdPeriphDriver_ROOT):$(HAL_ROOT):$(Profile_ROOT):$(APP_ROOT):$(Project_ROOT)
 
 LIBS := -lISP583 -lCH58xBLE -lMESH
 
@@ -69,9 +74,19 @@ $(OUTPUT_DIR)/APP/%.o: %.c
 		-I $(APP_INC) \
 		-std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
+$(OUTPUT_DIR)/%.o: %.c
+	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g $(DEFINES) \
+		-I ../../EVT/EXAM/BLE/LIB \
+		-I ../../EVT/EXAM/BLE/MESH/MESH_LIB \
+		-I $(RVMSIS_ROOT) \
+		-I $(StdPeriphDriver_INC) \
+		-I $(HAL_INC) \
+		-I $(APP_INC) \
+		-std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
+
 all: $(OUTPUT_DIR) $(TARGET).hex $(TARGET).siz $(TARGET).lst
 
-$(TARGET).elf: $(Startup_OBJ) $(RVMSIS_OBJ) $(StdPeriphDriver_OBJ) $(HAL_OBJ) $(Profile_OBJ) $(APP_OBJ)
+$(TARGET).elf: $(Startup_OBJ) $(RVMSIS_OBJ) $(StdPeriphDriver_OBJ) $(HAL_OBJ) $(Profile_OBJ) $(APP_OBJ) $(Project_OBJ)
 	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g \
 		-T "../../EVT/EXAM/SRC/Ld/Link.ld" \
 		-nostartfiles -Xlinker --gc-sections \
