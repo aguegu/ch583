@@ -1,5 +1,7 @@
 #include "app.h"
 
+__attribute__((aligned(4))) uint32_t MEM_BUF[BLE_MEMHEAP_SIZE / 4];
+
 static uint8_t MESH_MEM[1024 * 2] = {0};
 static __attribute__((aligned(4))) uint8_t dev_uuid[16];
 extern const ble_mesh_cfg_t app_mesh_cfg;
@@ -52,10 +54,8 @@ static const struct bt_mesh_prov app_prov = {
 };
 
 void blemesh_on_sync(const struct bt_mesh_comp *app_comp) {
-  int err;
   mem_info_t info;
-  uint8_t i;
-
+  
   if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
     PRINT("head file error...\n");
     while (1);
@@ -68,7 +68,7 @@ void blemesh_on_sync(const struct bt_mesh_comp *app_comp) {
   info.mem_len = ARRAY_SIZE(MESH_MEM);
 
   GetMACAddress(dev_uuid);
-  err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, dev_uuid, &info);
+  int err = bt_mesh_cfg_set(&app_mesh_cfg, &app_dev, dev_uuid, &info);
   if (err) {
     APP_DBG("Unable set configuration (err:%d)", err);
     return;
@@ -152,4 +152,23 @@ void blemesh_on_sync(const struct bt_mesh_comp *app_comp) {
     prov_enable();
   }
   APP_DBG("Mesh initialized");
+}
+
+uint8_t bt_mesh_lib_init(void) {
+  if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
+    PRINT("mesh head file error...\n");
+    while (1);
+  }
+
+  uint8_t ret = RF_RoleInit();
+
+#if ((CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_OTA))
+  ret = GAPRole_PeripheralInit();
+#endif
+
+  MeshTimer_Init();
+  MeshDeamon_Init();
+  ble_sm_alg_ecc_init();
+
+  return ret;
 }

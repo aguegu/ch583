@@ -71,7 +71,24 @@ uint16_t health_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UN
 uint16_t generic_onoff_client_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
 uint16_t generic_onoff_client_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
-void generic_onoff_client_rsp_handler(const generic_onoff_client_status_t *val);
+void generic_onoff_client_rsp_handler(const generic_onoff_client_status_t *val) {
+  APP_DBG("status 0x%02x", val->generic_onoff_Hdr.status);
+  APP_DBG("opcode 0x%02x", val->generic_onoff_Hdr.opcode);
+  if (val->generic_onoff_Hdr.opcode == BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
+    if (val->generic_onoff_Hdr.status == 0xff) {
+      printf("{\"level\": \"warn\",\"msg\": \"ACK Timeout\", \"source\": \"BLE_MESH_MODEL_OP_GEN_ONOFF_SET\"}\n");
+    } else if (val->generic_onoff_Hdr.status == SUCCESS) {
+      printf("{\"level\": \"info\",\"state\": %d, \"source\": %d}\n", val->generic_onoff_Event.status.state, val->generic_onoff_Event.status.source);
+    } else {
+      APP_DBG("unknown status");
+    }
+  }
+
+  if (val->generic_onoff_Hdr.opcode == 0) {
+    APP_DBG("incoming status report");
+    printf("{\"level\": \"info\",\"state\": %d, \"source\": %d}\n", val->generic_onoff_Event.status.state, val->generic_onoff_Event.status.source);
+  }
+}
 
 struct bt_mesh_generic_onoff_client generic_onoff_client = {
   .handler = generic_onoff_client_rsp_handler,
@@ -177,24 +194,7 @@ static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
   }
 }
 
-void generic_onoff_client_rsp_handler(const generic_onoff_client_status_t *val) {
-  APP_DBG("status 0x%02x", val->generic_onoff_Hdr.status);
-  APP_DBG("opcode 0x%02x", val->generic_onoff_Hdr.opcode);
-  if (val->generic_onoff_Hdr.opcode == BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
-    if (val->generic_onoff_Hdr.status == 0xff) {
-      printf("{\"level\": \"warn\",\"msg\": \"ACK Timeout\", \"source\": \"BLE_MESH_MODEL_OP_GEN_ONOFF_SET\"}\n");
-    } else if (val->generic_onoff_Hdr.status == SUCCESS) {
-      printf("{\"level\": \"info\",\"state\": %d, \"source\": %d}\n", val->generic_onoff_Event.status.state, val->generic_onoff_Event.status.source);
-    } else {
-      APP_DBG("unknown status");
-    }
-  }
 
-  if (val->generic_onoff_Hdr.opcode == 0) {
-    APP_DBG("incoming status report");
-    printf("{\"level\": \"info\",\"state\": %d, \"source\": %d}\n", val->generic_onoff_Event.status.state, val->generic_onoff_Event.status.source);
-  }
-}
 
 void blemesh_on_sync(void) {
   int err;

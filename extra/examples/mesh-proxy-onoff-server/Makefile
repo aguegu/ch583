@@ -19,7 +19,7 @@ RVMSIS_OBJ 	= $(addprefix $(OUTPUT_DIR)/RVMSIS/, $(RVMSIS_SRC:.c=.o))
 
 StdPeriphDriver_ROOT = ../../EVT/EXAM/SRC/StdPeriphDriver
 StdPeriphDriver_INC = $(StdPeriphDriver_ROOT)/inc
-StdPeriphDriver_SRC = $(notdir $(wildcard $(StdPeriphDriver_ROOT)/*.c))
+StdPeriphDriver_SRC = CH58x_sys.c CH58x_clk.c CH58x_gpio.c CH58x_adc.c CH58x_uart1.c 
 StdPeriphDriver_OBJ = $(addprefix $(OUTPUT_DIR)/StdPeriphDriver/, $(StdPeriphDriver_SRC:.c=.o))
 
 HAL_ROOT	=	./HAL

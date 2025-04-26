@@ -81,23 +81,23 @@ void handleATECHO(uint8_t * payload, uint8_t len) {
   sendOK();
 }
 
-void handleATPWM6(uint8_t * payload, uint8_t len) {
-  if (len == 1) {
-    PWM6_ActDataWidth(payload[0]);
-    sendOK();
-  } else {
-    sendError();
-  }
-}
-
-void handleATPWM8(uint8_t * payload, uint8_t len) {
-  if (len == 1) {
-    PWM8_ActDataWidth(payload[0]);
-    sendOK();
-  } else {
-    sendError();
-  }
-}
+// void handleATPWM6(uint8_t * payload, uint8_t len) {
+//   if (len == 1) {
+//     PWM6_ActDataWidth(payload[0]);
+//     sendOK();
+//   } else {
+//     sendError();
+//   }
+// }
+//
+// void handleATPWM8(uint8_t * payload, uint8_t len) {
+//   if (len == 1) {
+//     PWM8_ActDataWidth(payload[0]);
+//     sendOK();
+//   } else {
+//     sendError();
+//   }
+// }
 
 typedef struct {
   uint8_t pwmChannel;

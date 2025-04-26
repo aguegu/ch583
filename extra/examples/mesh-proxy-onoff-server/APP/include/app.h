@@ -1,5 +1,5 @@
-#ifndef app_H
-#define app_H
+#ifndef APP_H
+#define APP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -7,6 +7,7 @@ extern "C" {
 
 #include "MESH_LIB.h"
 #include "config.h"
+#include "HAL.h"
 
 // LEDs: Low: On, High: Off
 #define LED_UNPROVISION  GPIO_Pin_19
@@ -21,6 +22,7 @@ extern "C" {
 
 void App_Init(void);
 
+uint8_t bt_mesh_lib_init(void);
 void blemesh_on_sync(const struct bt_mesh_comp *app_comp);
 
 #ifdef __cplusplus
