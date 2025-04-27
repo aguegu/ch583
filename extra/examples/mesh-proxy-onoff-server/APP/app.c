@@ -1,10 +1,4 @@
-#include "HAL.h"
 #include "app.h"
-#include "app_generic_onoff_server_model.h"
-
-static uint8_t App_TaskID = 0; // Task ID for internal task/event processing
-
-static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events);
 
 static void cfg_srv_rsp_handler(const cfg_srv_status_t *val) {
   if (val->cfgHdr.status) {
@@ -71,19 +65,6 @@ int generic_onoff_srv_pub_update(struct bt_mesh_model *model) {
 
 BLE_MESH_MODEL_PUB_DEFINE(generic_onoff_srv_pub, generic_onoff_srv_pub_update, 12);
 
-BOOL ledRead() {
-  return !GPIOB_ReadPortPin(LED_ONOFF);
-}
-
-void ledWrite(BOOL state) {
-  state ? GPIOB_ResetBits(LED_ONOFF) : GPIOB_SetBits(LED_ONOFF);
-}
-
-struct bt_mesh_generic_onoff_server generic_onoff_server = {
-  .onReadState = ledRead,
-  .onWriteState = ledWrite,
-};
-
 static struct bt_mesh_model root_models[] = {
   BLE_MESH_MODEL_CFG_SRV(cfg_srv_keys, cfg_srv_groups, &cfg_srv),
   BLE_MESH_MODEL_HEALTH_SRV(health_srv_keys, health_srv_groups, &health_srv, &health_pub),
@@ -103,64 +84,12 @@ const struct bt_mesh_comp app_comp = {
   .elem_count = ARRAY_SIZE(elements),
 };
 
-void pinsInit() {
-  GPIOB_ModeCfg(BTN_ONOFF, GPIO_ModeIN_PU);
-  GPIOB_ModeCfg(BTN_UNPROVISION, GPIO_ModeIN_PU);
-
-  GPIOB_ModeCfg(LED_ONOFF, GPIO_ModeOut_PP_5mA);
-  ledWrite(FALSE);
-}
-
-void buttonsPoll() {
-  static uint32_t pinResetPressedAt;
-  static BOOL pinResetPressed = FALSE;
-  static uint32_t buttons = BTN_ONOFF | BTN_UNPROVISION;
-  uint32_t buttonsNow = GPIOB_ReadPortPin(BTN_ONOFF | BTN_UNPROVISION);
-
-  if (buttonsNow != buttons) {
-    if ((buttonsNow ^ buttons) & BTN_ONOFF) {
-      ledWrite(!(buttonsNow & BTN_ONOFF));
-      APP_DBG("%04x", bt_mesh_app_key_find(root_models[2].pub->key)->net_idx);
-      generic_onoff_status_publish(root_models + 2);
-    }
-
-    if (((buttonsNow ^ buttons) & BTN_UNPROVISION) && !(buttonsNow & BTN_UNPROVISION) ) {
-      APP_DBG("RESET pressed");
-      pinResetPressed = TRUE;
-      pinResetPressedAt = TMOS_GetSystemClock();
-    }
-    APP_DBG("buttons: %08x", buttonsNow);
-  }
-
-  if (pinResetPressed && !(buttonsNow & BTN_UNPROVISION)) {
-    if (TMOS_GetSystemClock() - pinResetPressedAt > 9600) { // 9600 * 0.625 ms = 6s
-      APP_DBG("duration: %d, about to self unprovision", TMOS_GetSystemClock() - pinResetPressedAt);
-      tmos_start_task(App_TaskID, APP_RESET_MESH_EVENT, 160);
-      pinResetPressed = FALSE;
-    }
-  }
-
-  buttons = buttonsNow;
-}
-
 void App_Init() {
-  App_TaskID = TMOS_ProcessEventRegister(App_ProcessEvent);
-  pinsInit();
+  // APP_DBG("%s", VER_LIB);
+  // APP_DBG("%s", VER_MESH_LIB);
 
+  CH58X_BLEInit();
+  HAL_Init();
+  bt_mesh_lib_init();
   blemesh_on_sync(&app_comp);
-  tmos_set_event(App_TaskID, APP_BUTTON_POLL_EVENT); /* Kick off polling */
-}
-
-static uint16_t App_ProcessEvent(uint8_t task_id, uint16_t events) {
-  if (events & APP_RESET_MESH_EVENT) { // 收到删除命令，删除自身网络信息
-    bt_mesh_reset();
-    return (events ^ APP_RESET_MESH_EVENT);
-  }
-
-  if (events & APP_BUTTON_POLL_EVENT) {
-    buttonsPoll();
-    tmos_start_task(App_TaskID, APP_BUTTON_POLL_EVENT, MS1_TO_SYSTEM_TIME(100));
-    return events ^ APP_BUTTON_POLL_EVENT;
-  }
-  return 0;
 }

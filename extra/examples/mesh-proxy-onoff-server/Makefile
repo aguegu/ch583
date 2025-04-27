@@ -5,7 +5,7 @@ LINTER = clang-format --style=LLVM -i
 
 OUTPUT_DIR = ./dist
 
-DEFINES := -DDEBUG=1 -DBLE_MEMHEAP_SIZE=4096
+DEFINES := -DBLE_MEMHEAP_SIZE=4096
 
 TARGET     := $(addprefix $(OUTPUT_DIR)/, $(notdir $(CURDIR)))
 
@@ -82,6 +82,7 @@ $(OUTPUT_DIR)/%.o: %.c
 		-I $(StdPeriphDriver_INC) \
 		-I $(HAL_INC) \
 		-I $(APP_INC) \
+		-I $(Project_INC) \
 		-std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
 all: $(OUTPUT_DIR) $(TARGET).hex $(TARGET).siz $(TARGET).lst

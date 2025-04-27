@@ -36,12 +36,12 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
 
 static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
   APP_DBG("net_idx %x, addr %x, iv_index %x", net_idx, addr, iv_index);
-  GPIOB_SetBits(LED_UNPROVISION);
+  // GPIOB_SetBits(LED_UNPROVISION);
 }
 
 static void prov_reset(void) {
   APP_DBG("provision reset completed");
-  GPIOB_ResetBits(LED_UNPROVISION);
+  // GPIOB_ResetBits(LED_UNPROVISION);
   prov_enable();
 }
 
@@ -55,14 +55,11 @@ static const struct bt_mesh_prov app_prov = {
 
 void blemesh_on_sync(const struct bt_mesh_comp *app_comp) {
   mem_info_t info;
-  
+
   if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
     PRINT("head file error...\n");
     while (1);
   }
-
-  GPIOB_ModeCfg(LED_UNPROVISION, GPIO_ModeOut_PP_5mA);
-  GPIOB_ResetBits(LED_UNPROVISION);
 
   info.base_addr = MESH_MEM;
   info.mem_len = ARRAY_SIZE(MESH_MEM);

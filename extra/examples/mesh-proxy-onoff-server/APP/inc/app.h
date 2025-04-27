@@ -9,16 +9,9 @@ extern "C" {
 #include "config.h"
 #include "HAL.h"
 
-// LEDs: Low: On, High: Off
-#define LED_UNPROVISION  GPIO_Pin_19
-#define BTN_UNPROVISION  GPIO_Pin_4
+#include "app_generic_onoff_server_model.h"
 
-// buttons: Low: Pressed, High: Unpressed
-#define LED_ONOFF GPIO_Pin_18
-#define BTN_ONOFF GPIO_Pin_22
-
-#define APP_RESET_MESH_EVENT (1 << 0)
-#define APP_BUTTON_POLL_EVENT (1 << 1)
+extern struct bt_mesh_generic_onoff_server generic_onoff_server;
 
 void App_Init(void);
 
