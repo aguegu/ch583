@@ -3,6 +3,7 @@
 #include "crc16.h"
 #include "ringbuffer.h"
 #include "at.h"
+#include "gpio.h"
 
 // UART0: PB4: RXD0; PB7: TXD0; PB5: DTR
 // UART1: PA8: RXD1; PA9: TXD1
@@ -10,7 +11,14 @@
 
 #define __bswap_16(x) ((uint16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
 
-#define LED  GPIO_Pin_19
+const static Gpio led = {.portOut = &R32_PB_OUT, .pin = GPIO_Pin_18};
+const static Gpio uart1Tx = {.portOut = &R32_PA_OUT, .pin = GPIO_Pin_9};
+const static Gpio uart1Rx = {.portOut = &R32_PA_OUT, .pin = GPIO_Pin_8};
+
+const static Gpio uart0Tx = {.portOut = &R32_PB_OUT, .pin = GPIO_Pin_7};  // MAX3485 DI
+const static Gpio uart0Rx = {.portOut = &R32_PB_OUT, .pin = GPIO_Pin_4};  // MAX3485 RO
+const static Gpio uart0Dtr = {.portOut = &R32_PB_OUT, .pin = GPIO_Pin_5}; // DE
+// MAX3485 RE connected to GND
 
 volatile uint32_t jiffies = 0;
 volatile uint32_t lastReceivedAt = 0;
@@ -61,6 +69,14 @@ void flushUart1Tx() {
   };
 }
 
+float toFloat(uint8_t *p) {
+  float f;
+  for (uint8_t i = 0; i < 4; i++) {
+    ((uint8_t *)(&f))[3 - i] = p[i];
+  }
+  return f;
+}
+
 void handleAT(uint8_t * payload, uint8_t len) {
   sendOK();
 }
@@ -96,29 +112,60 @@ void handleATECHO(uint8_t * payload, uint8_t len) {
   sendOK();
 }
 
-void handleATFWD(uint8_t * payload, uint8_t len) {
-  for (uint8_t i = 0; i < len; i++) {
-    ringbufferPut(&tx0Buffer, payload[i], TRUE);
+void modbusTransmit(uint8_t * tx, uint8_t len) {
+  appendCrc16(tx, len);
+  for (uint8_t i = 0; i < len + 2; i++) {
+    ringbufferPut(&tx0Buffer, tx[i], TRUE);
     if (R8_UART0_LSR & RB_LSR_TX_FIFO_EMP) {
       while (ringbufferAvailable(&tx0Buffer) && R8_UART0_TFC < UART_FIFO_SIZE) {
         R8_UART0_THR = ringbufferGet(&tx0Buffer);
       }
-      GPIOB_ResetBits(LED);
     }
   }
 
   flushUart0Tx();
-  lastReceivedAt = jiffies;
-  GPIOB_SetBits(LED);
+}
 
-  while (jiffies != (uint32_t)(lastReceivedAt + 4)) {
+uint8_t modbusReceive(uint8_t * rx) {
+  uint8_t len = 0, * p = rx;
+  lastReceivedAt = jiffies;
+  while (jiffies < (uint32_t)(lastReceivedAt + 4)) {
     __WFI();
     __nop();
     __nop();
   }
 
   while (ringbufferAvailable(&rx0Buffer)) {
-    printf("%02X", ringbufferGet(&rx0Buffer));
+    *p ++ = ringbufferGet(&rx0Buffer);
+    len ++;
+  }
+  return len;
+}
+
+void handleATFWD(uint8_t * payload, uint8_t len) {
+  static uint8_t rx[64], rxLen;
+  modbusTransmit(payload, len);
+  rxLen = modbusReceive(rx);
+
+  for (uint8_t i = 0; i < rxLen; i++) {
+    printf("%02X", rx[i]);
+  }
+
+  sendOK();
+}
+
+void handleATALL(uint8_t * payload, uint8_t len) {
+  const static uint16_t addresses[8] = {0x2000, 0x2002, 0x2004, 0x2006, 0x2008, 0x200A, 0x200E, 0x4000};
+  static uint8_t tx[8] = { 0x01, 0x04, 0x00, 0x00, 0x00, 0x02 };
+  static uint8_t rx[64], rxLen;
+  // modbusTransmit((uint8_t[]){0x01, 0x04, 0x20, 0x00, 0x00, 0x02}, 6);
+  //
+  // rxLen = modbusReceive(rx);
+  for (uint8_t k = 0; k < 8; k++) {
+    *(uint16_t *)(tx + 2) = __bswap_16(addresses[k]);
+    modbusTransmit(tx, 6);
+    rxLen = modbusReceive(rx);
+    printf("%d, ", (int)toFloat(rx + 3));
   }
 
   sendOK();
@@ -145,6 +192,7 @@ const static CommandHandler atHandlers[] = {
   { "AT+RESET", TRUE, handleATRESET },
   { "AT+ECHO=", FALSE, handleATECHO },
   { "AT+FWD=", FALSE, handleATFWD},
+  { "AT+ALL", TRUE, handleATALL},
   { "AT+RE", TRUE, handleATRE },
   { "AT+WE=", FALSE, handleATWE },
   { NULL, TRUE, NULL}  // End marker
@@ -207,16 +255,13 @@ int main() {
   ringbufferInit(&tx1Buffer, 64);
   ringbufferInit(&rx1Buffer, 128);
 
-  GPIOB_ModeCfg(LED, GPIO_ModeOut_PP_5mA);
-  GPIOB_SetBits(LED);
+  gpioMode(&led, GPIO_ModeOut_PP_5mA);
+  gpioSet(&led);
 
-  GPIOB_ResetBits(GPIO_Pin_3);
-  GPIOB_ModeCfg(GPIO_Pin_3, GPIO_ModeOut_PP_5mA);
-
-  GPIOB_SetBits(GPIO_Pin_7);
-  GPIOB_ModeCfg(GPIO_Pin_7, GPIO_ModeOut_PP_5mA); // TXD: PB7, pushpull, but set it high beforehand
-  GPIOB_ModeCfg(GPIO_Pin_5, GPIO_ModeOut_PP_5mA); // DTR: PB5, pushpull
-  GPIOB_ModeCfg(GPIO_Pin_4, GPIO_ModeIN_PU);      // RXD: RB4, in with pullup
+  gpioSet(&uart0Tx);
+  gpioMode(&uart0Rx, GPIO_ModeIN_PU);
+  gpioMode(&uart0Tx, GPIO_ModeOut_PP_5mA);
+  gpioMode(&uart0Dtr, GPIO_ModeOut_PP_5mA);
 
   UART0_BaudRateCfg(9600);
 
@@ -229,9 +274,9 @@ int main() {
   UART0_INTCfg(ENABLE, RB_IER_THR_EMPTY | RB_IER_RECV_RDY);
   PFIC_EnableIRQ(UART0_IRQn);
 
-  GPIOA_SetBits(GPIO_Pin_9);
-  GPIOA_ModeCfg(GPIO_Pin_9, GPIO_ModeOut_PP_5mA); // TXD: PA9, pushpull, but set it high beforehand
-  GPIOA_ModeCfg(GPIO_Pin_8, GPIO_ModeIN_PU);      // RXD: PA8, in with pullup
+  gpioSet(&uart1Tx);
+  gpioMode(&uart1Rx, GPIO_ModeIN_PU);
+  gpioMode(&uart1Tx, GPIO_ModeOut_PP_5mA);
   UART1_DefInit();  // default baudrate 115200
   UART1_ByteTrigCfg(UART_7BYTE_TRIG);
   UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY | RB_IER_RECV_RDY);

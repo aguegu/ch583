@@ -1,9 +1,12 @@
 #include "app.h"
+#include "gpio.h"
 #include "ringbuffer.h"
 
-#define LED_ONOFF GPIO_Pin_18
+const static Gpio led = {.portOut = &R32_PB_OUT, .pin = GPIO_Pin_18};
+const static Gpio btnDownload = { .portOut = &R32_PB_OUT, .pin = GPIO_Pin_22 };
 
-#define BTN_DOWNLOAD GPIO_Pin_22 // PB22: Download Button, PB23: Reset Button
+const static Gpio uart1Tx = {.portOut = &R32_PA_OUT, .pin = GPIO_Pin_9};
+// const static Gpio uart1Rx = {.portOut = &R32_PA_OUT, .pin = GPIO_Pin_8};
 
 #define MAIN_EVENT_PollButtons (1 << 0)
 
@@ -17,11 +20,11 @@ __attribute__((noinline)) void Main_Circulation() {
 }
 
 BOOL ledRead() {
-  return !GPIOB_ReadPortPin(LED_ONOFF);
+  return !gpioRead(&led);
 }
 
 void ledWrite(BOOL state) {
-  state ? GPIOB_ResetBits(LED_ONOFF) : GPIOB_SetBits(LED_ONOFF);
+  gpioWrite(&led, !state);
 }
 
 struct bt_mesh_generic_onoff_server generic_onoff_server = {
@@ -36,17 +39,17 @@ void pollButtons() {
   static uint32_t stateLast = 0;
   static BOOL resetTriggered = FALSE;
 
-  uint32_t stateNow = GPIOB_ReadPortPin(BTN_DOWNLOAD) ^ BTN_DOWNLOAD;
+  uint32_t stateNow = gpioRead(&btnDownload) ^ btnDownload.pin;
 
   if (stateNow != stateLast) {
-    if (stateNow & BTN_DOWNLOAD) {
+    if (stateNow & btnDownload.pin) {
       downloadPressed = TRUE;
       downloadPressedAt = TMOS_GetSystemClock();
     } else {
       downloadPressed = FALSE;
       resetTriggered = FALSE;
       if (TMOS_GetSystemClock() - downloadPressedAt < 3200) { // 2 seconds, short click
-        GPIOB_InverseBits(LED_ONOFF);
+        gpioInverse(&led);
       }
     }
   }
@@ -77,14 +80,17 @@ int _write(int fd, char *buf, int size) {
 }
 
 void pinsInit() {
-  ledWrite(FALSE);
-  GPIOB_ModeCfg(LED_ONOFF, GPIO_ModeOut_PP_5mA);
-  GPIOB_ModeCfg(BTN_DOWNLOAD, GPIO_ModeIN_PU);
+  gpioReset(&led);
+  gpioMode(&led, GPIO_ModeOut_PP_5mA);
+
+  gpioMode(&btnDownload, GPIO_ModeIN_PU);
 
   ringbufferInit(&txBuffer, 64);
 
-  GPIOA_SetBits(GPIO_Pin_9);
-  GPIOA_ModeCfg(GPIO_Pin_9, GPIO_ModeOut_PP_5mA);
+  gpioSet(&uart1Tx);
+  // gpioMode(&uart1Rx, GPIO_ModeIN_PU);
+  gpioMode(&uart1Tx, GPIO_ModeOut_PP_5mA);
+
   UART1_DefInit();
   UART1_ByteTrigCfg(UART_7BYTE_TRIG);
   UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY);

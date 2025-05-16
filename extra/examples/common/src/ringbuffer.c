@@ -7,7 +7,7 @@ void ringbufferInit(RingBuffer *rb, uint16_t size) {
   rb->mask = size - 1;
 }
 
-void ringbufferPut(RingBuffer *rb, uint8_t c, BOOL waitForConsuming) {
+__HIGH_CODE void ringbufferPut(RingBuffer *rb, uint8_t c, BOOL waitForConsuming) {
   uint8_t indexInNext = (rb->indexIn + 1) & rb->mask;
   while (waitForConsuming && indexInNext == rb->indexOut) {
     __WFI();
@@ -18,11 +18,11 @@ void ringbufferPut(RingBuffer *rb, uint8_t c, BOOL waitForConsuming) {
   rb->indexIn = indexInNext;
 }
 
-uint8_t ringbufferGet(RingBuffer *rb) {
+__HIGH_CODE uint8_t ringbufferGet(RingBuffer *rb) {
   uint8_t indexOutNext = (rb->indexOut + 1) & rb->mask;
   uint8_t c = rb->buffer[rb->indexOut];
   rb->indexOut = indexOutNext;
   return c;
 }
 
-BOOL ringbufferAvailable(RingBuffer *rb) { return rb->indexIn != rb->indexOut; }
+__HIGH_CODE BOOL ringbufferAvailable(RingBuffer *rb) { return rb->indexIn != rb->indexOut; }

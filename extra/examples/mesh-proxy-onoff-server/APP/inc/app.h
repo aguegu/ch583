@@ -7,9 +7,8 @@ extern "C" {
 
 #include "MESH_LIB.h"
 #include "config.h"
-#include "HAL.h"
 
-#include "app_generic_onoff_server_model.h"
+#include "generic_onoff_server_model.h"
 
 extern struct bt_mesh_generic_onoff_server generic_onoff_server;
 
