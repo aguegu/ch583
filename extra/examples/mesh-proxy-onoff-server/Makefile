@@ -20,6 +20,12 @@ Common_SRC_DIR = $(Common_ROOT)/src
 Common_SOURCES = gpio.c ringbuffer.c
 Common_OBJECTS = $(addprefix $(OUTPUT_DIR)/, $(Common_SOURCES:.c=.o))
 
+BleMeshModels_ROOT = ../blemesh-models
+BleMeshModels_INC_DIR = $(BleMeshModels_ROOT)/inc
+BleMeshModels_SRC_DIR = $(BleMeshModels_ROOT)/src
+BleMeshModels_SOURCES = generic_onoff_server_model.c
+BleMeshModels_OBJECTS = $(addprefix $(OUTPUT_DIR)/, $(BleMeshModels_SOURCES:.c=.o))
+
 HAL_ROOT	=	./HAL
 HAL_INC_DIR	 	= $(HAL_ROOT)/inc
 HAL_SOURCES 	= MCU.c RTC.c
@@ -44,7 +50,7 @@ StdPeriphDriver_INC_DIR = $(StdPeriphDriver_ROOT)/inc
 StdPeriphDriver_SOURCES = CH58x_sys.c CH58x_clk.c CH58x_gpio.c CH58x_adc.c CH58x_uart1.c
 StdPeriphDriver_OBJECTS = $(addprefix $(OUTPUT_DIR)/StdPeriphDriver/, $(StdPeriphDriver_SOURCES:.c=.o))
 
-VPATH = $(Startup_ROOT):$(RVMSIS_ROOT):$(StdPeriphDriver_ROOT):$(HAL_ROOT):$(Profile_ROOT):$(APP_ROOT):$(Project_ROOT):$(Common_SRC_DIR)
+VPATH = $(Startup_ROOT):$(RVMSIS_ROOT):$(StdPeriphDriver_ROOT):$(HAL_ROOT):$(Profile_ROOT):$(APP_ROOT):$(Project_ROOT):$(Common_SRC_DIR):$(BleMeshModels_SRC_DIR)
 
 LIBS := -lISP583 -lCH58xBLE -lMESH
 
@@ -78,6 +84,7 @@ $(OUTPUT_DIR)/APP/%.o: %.c
 		-I $(RVMSIS_ROOT) \
 		-I $(StdPeriphDriver_INC_DIR) \
 		-I $(APP_INC_DIR) \
+		-I $(BleMeshModels_INC_DIR) \
 		-std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
 $(OUTPUT_DIR)/%.o: %.c
@@ -90,17 +97,18 @@ $(OUTPUT_DIR)/%.o: %.c
 		-I $(APP_INC_DIR) \
 		-I $(Project_INC_DIR) \
 		-I $(Common_INC_DIR) \
+		-I $(BleMeshModels_INC_DIR) \
 		-std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 
 all: $(OUTPUT_DIR) $(TARGET).hex $(TARGET).siz $(TARGET).lst
 
-$(TARGET).elf: $(Startup_OBJECTS) $(RVMSIS_OBJECTS) $(StdPeriphDriver_OBJECTS) $(HAL_OBJECTS) $(Profile_OBJ) $(APP_OBJECTS) $(Project_OBJECTS) $(Common_OBJECTS)
+$(TARGET).elf: $(Startup_OBJECTS) $(RVMSIS_OBJECTS) $(StdPeriphDriver_OBJECTS) $(HAL_OBJECTS) $(Profile_OBJ) $(APP_OBJECTS) $(Project_OBJECTS) $(Common_OBJECTS) $(BleMeshModels_OBJECTS)
 	$(BIN)/$(BIN_PREFIX)-gcc -march=rv32imac -mabi=ilp32 -mcmodel=medany -msmall-data-limit=8 -mno-save-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common  -g \
 		-T "../../EVT/EXAM/SRC/Ld/Link.ld" \
 		-nostartfiles -Xlinker --gc-sections \
-		-L"../../EVT/EXAM/BLE/LIB" \
-		-L"../../EVT/EXAM/BLE/MESH/MESH_LIB" \
-		-L"$(StdPeriphDriver_ROOT)" \
+		-L "../../EVT/EXAM/BLE/LIB" \
+		-L "../../EVT/EXAM/BLE/MESH/MESH_LIB" \
+		-L "$(StdPeriphDriver_ROOT)" \
 		-Xlinker --print-memory-usage -Wl,-Map,"$(OUTPUT_DIR)/project.map" --specs=nano.specs --specs=nosys.specs -o "$@" $^ $(LIBS)
 
 $(TARGET).hex: $(OUTPUT_DIR) $(TARGET).elf

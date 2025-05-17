@@ -7,6 +7,7 @@ extern "C" {
 
 #include "MESH_LIB.h"
 #include "config.h"
+#include "HAL.h"
 
 #include "generic_onoff_server_model.h"
 
