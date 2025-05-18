@@ -1,5 +1,5 @@
-#ifndef APP_GENERIC_ONOFF_CLIENT_MODEL_H
-#define APP_GENERIC_ONOFF_CLIENT_MODEL_H
+#ifndef GENERIC_ONOFF_CLIENT_MODEL_H
+#define GENERIC_ONOFF_CLIENT_MODEL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,8 +17,7 @@ struct bt_mesh_generic_onoff_client {
   void (*onStatus)(uint16_t address, BOOL state);
 };
 
-int generic_onoff_client_set_unack(struct bt_mesh_model *model);
-int generic_onoff_client_set(struct bt_mesh_model *model);
+int generic_onoff_client_set(struct bt_mesh_model *model, BOOL isAckExpected);
 
 #ifdef __cplusplus
 }
