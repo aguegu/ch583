@@ -91,8 +91,8 @@ const struct bt_mesh_comp app_comp = {
 };
 
 void App_Init() {
-  APP_DBG("%s", VER_LIB);
-  APP_DBG("%s", VER_MESH_LIB);
+  // APP_DBG("%s", VER_LIB);
+  // APP_DBG("%s", VER_MESH_LIB);
 
   CH58X_BLEInit();
   HAL_Init();

@@ -32,7 +32,7 @@ RVMSIS_OBJECTS = $(addprefix $(OUTPUT_DIR)/, $(RVMSIS_SOURCES:.c=.o))
 StdPeriphDriver_ROOT    = ../../EVT/EXAM/SRC/StdPeriphDriver
 StdPeriphDriver_INC_DIR = $(StdPeriphDriver_ROOT)/inc
 StdPeriphDriver_SRC_DIR = $(StdPeriphDriver_ROOT)
-StdPeriphDriver_SOURCES = CH58x_sys.c CH58x_gpio.c CH58x_clk.c CH58x_uart1.c 
+StdPeriphDriver_SOURCES = CH58x_uart1.c CH58x_sys.c CH58x_gpio.c CH58x_pwr.c CH58x_clk.c CH58x_spi0.c
 StdPeriphDriver_OBJECTS = $(addprefix $(OUTPUT_DIR)/, $(StdPeriphDriver_SOURCES:.c=.o))
 
 LINK_FILE = ../../EVT/EXAM/SRC/Ld/Link.ld

@@ -19,9 +19,9 @@ void delayInJiffy(uint32_t t) {
 
 int _write(int fd, char *buf, int size) {
   for (int i = 0; i < size; i++) {
-    ringbuffer_put(&txBuffer, *buf++, TRUE);
+    ringbufferPut(&txBuffer, *buf++, TRUE);
     if (R8_UART1_LSR & RB_LSR_TX_ALL_EMP) {
-      R8_UART1_THR = ringbuffer_get(&txBuffer);
+      R8_UART1_THR = ringbufferGet(&txBuffer);
       GPIOB_ResetBits(LED);
     }
   }
@@ -29,7 +29,7 @@ int _write(int fd, char *buf, int size) {
 }
 
 void flushUart1Tx() {
-  // while (ringbuffer_available(&txBuffer));
+  // while (ringbufferAvailable(&txBuffer));
   while (!(R8_UART1_LSR & RB_LSR_TX_ALL_EMP));
 }
 
@@ -37,7 +37,7 @@ int main() {
   SetSysClock(CLK_SOURCE_PLL_60MHz);
   SysTick_Config(GetSysClock() / 60); // 60Hz
 
-  ringbuffer_init(&txBuffer, 64);
+  ringbufferInit(&txBuffer, 64);
 
   GPIOB_ModeCfg(LED, GPIO_ModeOut_PP_5mA);
   GPIOB_SetBits(LED);
@@ -72,8 +72,8 @@ __HIGH_CODE
 void UART1_IRQHandler(void) {
   switch (UART1_GetITFlag()) {
     case UART_II_THR_EMPTY: // trigger when THR and FIFOtx all empty
-      while (ringbuffer_available(&txBuffer) && R8_UART1_TFC < UART_FIFO_SIZE) {
-        R8_UART1_THR = ringbuffer_get(&txBuffer);
+      while (ringbufferAvailable(&txBuffer) && R8_UART1_TFC < UART_FIFO_SIZE) {
+        R8_UART1_THR = ringbufferGet(&txBuffer);
       }
       break;
   }
