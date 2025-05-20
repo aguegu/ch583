@@ -59,8 +59,25 @@ uint16_t health_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UN
 uint16_t gen_onoff_srv_keys[CONFIG_MESH_MOD_KEY_COUNT_DEF] = { BLE_MESH_KEY_UNUSED };
 uint16_t gen_onoff_srv_groups[CONFIG_MESH_MOD_GROUP_COUNT_DEF] = { BLE_MESH_ADDR_UNASSIGNED };
 
+const static uint32_t periodResolutions[4] = { 100, 1000, 10000, 600000 };
+
+uint32_t periodToMilliseconds(uint8_t period) {
+  return periodResolutions[period >> 6] * (period & 0x3f);
+}
+
 int generic_onoff_srv_pub_update(struct bt_mesh_model *model) {
-  APP_DBG("");
+  APP_DBG("addr: %x", model->pub->addr);
+  // APP_DBG("period: %x", model->pub->period);
+  APP_DBG("period_start: %x", model->pub->period_start);
+
+  uint32_t period = periodToMilliseconds(model->pub->period);
+  APP_DBG("period: %ld ms", period);
+
+  // model->pub->msg
+  // bt_mesh_model_msg_init(model->pub->msg, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS); // 0x8204
+  // net_buf_simple_add_u8(model->pub->msg, generic_onoff_server.onReadState());
+  // 
+  // return 0;
 }
 
 BLE_MESH_MODEL_PUB_DEFINE(generic_onoff_srv_pub, generic_onoff_srv_pub_update, 12);

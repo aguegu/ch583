@@ -34,8 +34,7 @@ static void link_close(bt_mesh_prov_bearer_t bearer, uint8_t reason) {
   }
 }
 
-static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags,
-                          uint32_t iv_index) {
+static void prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index) {
   APP_DBG("net_idx %x, addr %x, iv_index %x", net_idx, addr, iv_index);
   // GPIOB_SetBits(LED_UNPROVISION);
 }
@@ -47,21 +46,19 @@ static void prov_reset(void) {
 }
 
 static const struct bt_mesh_prov app_prov = {
-    .uuid = dev_uuid,
-    .link_open = link_open,
-    .link_close = link_close,
-    .complete = prov_complete,
-    .reset = prov_reset,
+  .uuid = dev_uuid,
+  .link_open = link_open,
+  .link_close = link_close,
+  .complete = prov_complete,
+  .reset = prov_reset,
 };
 
 void blemesh_on_sync(const struct bt_mesh_comp *app_comp) {
   mem_info_t info;
 
-  if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) ==
-      FALSE) {
+  if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
     PRINT("head file error...\n");
-    while (1)
-      ;
+    while (1);
   }
 
   info.base_addr = MESH_MEM;
@@ -91,15 +88,15 @@ void blemesh_on_sync(const struct bt_mesh_comp *app_comp) {
 #endif
 
 #if (CONFIG_BLE_MESH_PROXY || CONFIG_BLE_MESH_PB_GATT)
-#if (CONFIG_BLE_MESH_PROXY)
-  bt_mesh_proxy_beacon_init_register((void *)bt_mesh_proxy_beacon_init);
-  gatts_notify_register(bt_mesh_gatts_notify);
-  proxy_gatt_enable_register(bt_mesh_proxy_gatt_enable);
-#endif
+  #if (CONFIG_BLE_MESH_PROXY)
+    bt_mesh_proxy_beacon_init_register((void *)bt_mesh_proxy_beacon_init);
+    gatts_notify_register(bt_mesh_gatts_notify);
+    proxy_gatt_enable_register(bt_mesh_proxy_gatt_enable);
+  #endif
 
-#if (CONFIG_BLE_MESH_PB_GATT)
-  proxy_prov_enable_register(bt_mesh_proxy_prov_enable);
-#endif
+  #if (CONFIG_BLE_MESH_PB_GATT)
+    proxy_prov_enable_register(bt_mesh_proxy_prov_enable);
+  #endif
 
   bt_mesh_proxy_init();
 #endif
@@ -119,8 +116,7 @@ void blemesh_on_sync(const struct bt_mesh_comp *app_comp) {
 
   bt_mesh_adv_init();
 
-#if ((CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_PROXY) ||                   \
-     (CONFIG_BLE_MESH_OTA))
+#if ((CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_OTA))
   bt_mesh_conn_adv_init();
 #endif /* PROXY || PB-GATT || OTA */
 
@@ -132,8 +128,7 @@ void blemesh_on_sync(const struct bt_mesh_comp *app_comp) {
   bt_mesh_proxy_cli_adapt_init();
 #endif /* PROXY_CLI */
 
-#if ((CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_PB_GATT) ||                   \
-     (CONFIG_BLE_MESH_PROXY_CLI) || (CONFIG_BLE_MESH_OTA))
+#if ((CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_PROXY_CLI) || (CONFIG_BLE_MESH_OTA))
   bt_mesh_adapt_init();
 #endif /* PROXY || PB-GATT || PROXY_CLI || OTA */
 
@@ -157,17 +152,14 @@ void blemesh_on_sync(const struct bt_mesh_comp *app_comp) {
 }
 
 uint8_t bt_mesh_lib_init(void) {
-  if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) ==
-      FALSE) {
+  if (tmos_memcmp(VER_MESH_LIB, VER_MESH_FILE, strlen(VER_MESH_FILE)) == FALSE) {
     PRINT("mesh head file error...\n");
-    while (1)
-      ;
+    while (1);
   }
 
   uint8_t ret = RF_RoleInit();
 
-#if ((CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_PB_GATT) ||                   \
-     (CONFIG_BLE_MESH_OTA))
+#if ((CONFIG_BLE_MESH_PROXY) || (CONFIG_BLE_MESH_PB_GATT) || (CONFIG_BLE_MESH_OTA))
   ret = GAPRole_PeripheralInit();
 #endif
 

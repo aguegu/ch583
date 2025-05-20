@@ -1,12 +1,12 @@
 #include "generic_onoff_client_model.h"
+#include "config.h"
 
-#define BLE_MESH_GEN_ONOFF_SET_MSG_LEN (2 + 4 + 4)
+#define BLE_MESH_GEN_ONOFF_SET_MSG_LEN (2 + 2 + 4)
 
 static void generic_onoff_client_status(struct bt_mesh_model *model,
                                         struct bt_mesh_msg_ctx *ctx,
                                         struct net_buf_simple *buf) {
-  // APP_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u", ctx->net_idx,
-  // ctx->app_idx, ctx->addr, buf->len);
+  // APP_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u", ctx->net_idx, ctx->app_idx, ctx->addr, buf->len);
 
   ((struct bt_mesh_generic_onoff_client *)(model->user_data))->isAcked = TRUE;
   ((struct bt_mesh_generic_onoff_client *)(model->user_data))->isAckExpected =
@@ -43,8 +43,7 @@ int generic_onoff_client_set(struct bt_mesh_model *model, BOOL isAckExpected) {
 
   updateTid(model);
 
-  // APP_DBG("msg len: 0x%02x: %02x %02x %02x %02x", msg.len, msg.data[0],
-  // msg.data[1], msg.data[2], msg.data[3]);
+  // APP_DBG("msg len: 0x%02x: %02x %02x %02x %02x", msg.len, msg.data[0], msg.data[1], msg.data[2], msg.data[3]);
 
   struct bt_mesh_msg_ctx ctx = {
       .net_idx = bt_mesh_app_key_find(model->pub->key)->net_idx,
@@ -52,6 +51,8 @@ int generic_onoff_client_set(struct bt_mesh_model *model, BOOL isAckExpected) {
       .addr = model->pub->addr,
       .send_ttl = BLE_MESH_TTL_DEFAULT,
   };
+
+  // APP_DBG("net: %d, key: %d, addr: %02x", ctx.net_idx, ctx.app_idx, ctx.addr);
 
   ((struct bt_mesh_generic_onoff_client *)(model->user_data))->isAckExpected = isAckExpected;
   ((struct bt_mesh_generic_onoff_client *)(model->user_data))->isAcked = FALSE;
