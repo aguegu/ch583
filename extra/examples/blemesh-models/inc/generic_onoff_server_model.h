@@ -14,7 +14,7 @@ struct bt_mesh_generic_onoff_server {
   void (*onWriteState)(BOOL state);
 };
 
-void generic_onoff_status_publish(struct bt_mesh_model *model);
+int generic_onoff_srv_pub_update(struct bt_mesh_model *model);
 
 #ifdef __cplusplus
 }

@@ -19,6 +19,8 @@ struct bt_mesh_generic_onoff_client {
 
 int generic_onoff_client_set(struct bt_mesh_model *model, BOOL isAckExpected);
 
+int generic_onoff_cli_pub_update(struct bt_mesh_model *model);
+
 #ifdef __cplusplus
 }
 #endif

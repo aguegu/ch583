@@ -65,13 +65,24 @@ const struct bt_mesh_model_op generic_onoff_server_ops[] = {
   BLE_MESH_MODEL_OP_END,
 };
 
-void generic_onoff_status_publish(struct bt_mesh_model *model) {
-  struct bt_mesh_msg_ctx ctx = {
-    .net_idx = bt_mesh_app_key_find(model->pub->key)->net_idx,
-    .app_idx = model->pub->key,
-    .addr = model->pub->addr,
-    .send_ttl = BLE_MESH_TTL_DEFAULT,
-  };
+const static uint32_t periodResolutions[4] = { 100, 1000, 10000, 600000 };
 
-  generic_onoff_status(model, &ctx);
+uint32_t periodToMilliseconds(uint8_t period) {
+  return periodResolutions[period >> 6] * (period & 0x3f);
+}
+
+int generic_onoff_srv_pub_update(struct bt_mesh_model *model) {
+  APP_DBG("addr: %x", model->pub->addr);
+  // APP_DBG("period: %x", model->pub->period);
+  APP_DBG("period_start: %x", model->pub->period_start);
+
+  uint32_t period = periodToMilliseconds(model->pub->period);
+  APP_DBG("period: %ld ms", period);
+
+  // bt_mesh_model_msg_init(model->pub->msg, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS); // 0x8204
+  // if (((struct bt_mesh_generic_onoff_server *)(model->user_data))->onReadState) {
+  //   net_buf_simple_add_u8(model->pub->msg, ((struct bt_mesh_generic_onoff_server *)(model->user_data))->onReadState());
+  // }
+
+  return -1;
 }
