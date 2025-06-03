@@ -113,19 +113,24 @@ static const uint8_t FONTS[] = { // 16x7
     0x01, 0x10, 0xb1, 0x11, 0x4e, 0x0e, 0x00, 0x00, 0x80, 0x00, 0x40, 0x00,
     0x40, 0x00, 0x80, 0x00, 0x00, 0x01, 0x00, 0x01, 0x80, 0x00};
 
-void ssdPutFont(SSDspi *ssd, char c, uint8_t row, uint8_t col) {
-  const uint8_t *p = FONTS + (c - ' ') * 14;
+
+void ssdPutBuffer(SSDspi *ssd, const uint8_t * buffer, uint8_t length, uint8_t bytesInColumn, uint8_t row, uint8_t col) {
   uint16_t i = col * ssd->bytesPerColumn + row;
   if (row >
-      ssd->bytesPerColumn - 2) // need 2 rows left to fit a char (height: 16)
+      ssd->bytesPerColumn - bytesInColumn) // need 2 rows left to fit a char (height: 16)
     return;
-  if (col > ssd->width - 8) // need 8 cols left to fit a char (width: 7)
+  if (col > ssd->width - length / bytesInColumn) // need 8 cols left to fit a char (width: 7)
     return;
-  for (int8_t j = 0; j < 14;) {
-    ssd->buffer[i] = p[j++];
-    ssd->buffer[i + 1] = p[j++];
+  for (int8_t j = 0; j < length;) {
+    for (uint8_t k = 0; k < bytesInColumn; k++) {
+      ssd->buffer[i + k] = buffer[j++];
+    }
     i += ssd->bytesPerColumn;
   }
+}
+
+void ssdPutFont(SSDspi *ssd, char c, uint8_t row, uint8_t col) {
+  ssdPutBuffer(ssd, FONTS + (c - ' ') * 14, 14, 2, row, col);
 }
 
 void ssdPutString(SSDspi *ssd, const char *s, uint8_t row, uint8_t col) {

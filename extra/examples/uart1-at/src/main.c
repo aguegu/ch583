@@ -1,9 +1,15 @@
 #include <stdio.h>
 #include "CH58x_common.h"
 #include "ringbuffer.h"
+#include "gpio.h"
 #include "at.h"
 
-#define LED  GPIO_Pin_19
+// #define LED  GPIO_Pin_19
+
+const static Gpio led = {.portOut = &R32_PB_OUT, .pin = GPIO_Pin_18};
+const static Gpio uart1Tx = {.portOut = &R32_PA_OUT, .pin = GPIO_Pin_9};
+const static Gpio uart1Rx = {.portOut = &R32_PA_OUT, .pin = GPIO_Pin_8};
+
 RingBuffer txBuffer, rxBuffer;
 
 volatile uint32_t jiffies = 0;
@@ -138,12 +144,12 @@ int main() {
   ringbufferInit(&txBuffer, 64);
   ringbufferInit(&rxBuffer, 128);
 
-  GPIOB_ModeCfg(LED, GPIO_ModeOut_PP_5mA);
-  GPIOB_SetBits(LED);
+  gpioMode(&led, GPIO_ModeOut_PP_5mA);
+  gpioSet(&led);
 
-  GPIOA_SetBits(GPIO_Pin_9);
-  GPIOA_ModeCfg(GPIO_Pin_8, GPIO_ModeIN_PU);      // RXD: PA8, in with pullup
-  GPIOA_ModeCfg(GPIO_Pin_9, GPIO_ModeOut_PP_5mA); // TXD: PA9, pushpull, but set it high beforehand
+  gpioSet(&uart1Tx);
+  gpioMode(&uart1Rx, GPIO_ModeIN_PU);
+  gpioMode(&uart1Tx, GPIO_ModeOut_PP_5mA);
   UART1_DefInit();  // default baudrate 115200
   UART1_ByteTrigCfg(UART_7BYTE_TRIG);
   UART1_INTCfg(ENABLE, RB_IER_THR_EMPTY | RB_IER_RECV_RDY);
@@ -154,6 +160,7 @@ int main() {
       __WFI();
       __nop();
       __nop();
+      gpioInverse(&led);
     }
   }
 }

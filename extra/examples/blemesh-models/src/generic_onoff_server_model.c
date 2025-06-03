@@ -79,10 +79,15 @@ int generic_onoff_srv_pub_update(struct bt_mesh_model *model) {
   uint32_t period = periodToMilliseconds(model->pub->period);
   APP_DBG("period: %ld ms", period);
 
-  // bt_mesh_model_msg_init(model->pub->msg, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS); // 0x8204
-  // if (((struct bt_mesh_generic_onoff_server *)(model->user_data))->onReadState) {
-  //   net_buf_simple_add_u8(model->pub->msg, ((struct bt_mesh_generic_onoff_server *)(model->user_data))->onReadState());
-  // }
+  struct net_buf_simple *msg = model->pub->msg;
+  msg->len = 0;
 
-  return -1;
+  bt_mesh_model_msg_init(msg, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS); // 0x8204
+  // bt_mesh_model_msg_init(model->pub->msg, BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS); // 0x8204
+  if (((struct bt_mesh_generic_onoff_server *)(model->user_data))->onReadState) {
+    // net_buf_simple_add_u8(model->pub->msg, ((struct bt_mesh_generic_onoff_server *)(model->user_data))->onReadState());
+    net_buf_simple_add_u8(msg, ((struct bt_mesh_generic_onoff_server *)(model->user_data))->onReadState());
+  }
+
+  return 0;
 }
