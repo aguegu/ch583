@@ -81,12 +81,38 @@ void handleATECHO(uint8_t * payload, uint8_t len) {
   sendOK();
 }
 
+void handleATRE(uint8_t * payload, uint8_t len) {
+  __attribute__((aligned(4))) uint8_t buff[256];
+  uint16_t start = (payload[0] << 8) + payload[1];
+
+  if (len != 3 || start + payload[2] >= EEPROM_MAX_SIZE) {
+    return sendError();
+  }
+
+  EEPROM_READ(start, buff, payload[2]);
+  for (uint8_t i = 0; i < payload[2]; i++) {
+    printf("%02X", buff[i]);
+  }
+  sendOK();
+}
+
+void handleATWE(uint8_t * payload, uint8_t len) {
+  uint16_t start = (payload[0] << 8) + payload[1];
+  if (len < 3 || start + len - 2 >= EEPROM_MAX_SIZE) {
+    return sendError();
+  }
+  EEPROM_WRITE(start, payload + 2, len - 2);
+  sendOK();
+}
+
 const static CommandHandler atHandlers[] = {
   { "AT", TRUE, handleAT },
   { "AT+MAC", TRUE, handleATMAC },
   { "AT+ID", TRUE, handleATID },
   { "AT+RESET", TRUE, handleATRESET },
   { "AT+ECHO=", FALSE, handleATECHO },
+  { "AT+RE=", FALSE, handleATRE },
+  { "AT+WE=", FALSE, handleATWE },
   { NULL, TRUE, NULL}  // End marker
 };
 

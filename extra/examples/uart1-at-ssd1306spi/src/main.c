@@ -181,19 +181,22 @@ int main() {
   ssdInit(&ssd, 128, 32);
   ssdPutString(&ssd, "Hello, world.", 0, 0);
 
-  ssdPutBuffer(&ssd, ICONS, 14, 2, 2, 0);
-  ssdPutBuffer(&ssd, ICONS + 14, 14, 2, 2, 8);
-  ssdPutBuffer(&ssd, ICONS + 28, 14, 2, 2, 16);
-  ssdPutBuffer(&ssd, ICONS + 42, 14, 2, 2, 24);
-
-  ssdRefresh(&ssd);
+  // ssdPutBuffer(&ssd, ICONS, 14, 2, 2, 0);
+  // ssdPutBuffer(&ssd, ICONS + 14, 14, 2, 2, 8);
+  // ssdPutBuffer(&ssd, ICONS + 28, 14, 2, 2, 16);
+  // ssdPutBuffer(&ssd, ICONS + 42, 14, 2, 2, 24);
+  //
+  // ssdRefresh(&ssd);
 
   while (1) {
-    if (!athandler()) {
-      __WFI();
-      __nop();
-      __nop();
-    }
+    // if (!athandler()) {
+    //   __WFI();
+    //   __nop();
+    //   __nop();
+    // }
+
+    ssdRefresh(&ssd);
+    delayInJiffy(1);
   }
 }
 

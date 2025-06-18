@@ -154,7 +154,8 @@ void ssdRefresh(SSDspi *ssd) {
     gpioReset(&ssd->cs);
   }
 
-  SPI0_MasterDMATrans(ssd->buffer, ssd->bufferLength);
+  // SPI0_MasterDMATrans(ssd->buffer, ssd->bufferLength);
+  SPI0_MasterTrans((uint8_t[]){0xAE}, 1); // turn off
 
   if (ssd->cs.pin) {
     gpioSet(&ssd->cs);
@@ -181,6 +182,7 @@ void ssdInit(SSDspi *ssd, uint8_t width, uint8_t height) {
   }
 
   SPI0_MasterDefInit();
+  R8_SPI0_CLOCK_DIV = 32;
 
   gpioReset(&ssd->rst);
   DelayMs(200);
